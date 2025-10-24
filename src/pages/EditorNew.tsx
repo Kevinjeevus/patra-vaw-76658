@@ -568,15 +568,20 @@ export const EditorNew: React.FC = () => {
       setShowMobilePreview(false);
       setInputPanelOpen(true);
     } else {
-      // On desktop/tablet, collapse sidebar
-      setSidebarOpen(false);
+      // On desktop/tablet, keep sidebar open and show input panel behind it
+      setSidebarOpen(true);
       setInputPanelOpen(true);
     }
   };
   
   const handleBackToSidebar = () => {
-    setSidebarOpen(true);
-    setInputPanelOpen(false);
+    if (isMobile) {
+      setSidebarOpen(true);
+      setInputPanelOpen(false);
+    } else {
+      // On desktop, just hide the input panel, keep sidebar open
+      setInputPanelOpen(false);
+    }
   };
 
   const toggleMobilePreview = () => {
@@ -1398,6 +1403,19 @@ export const EditorNew: React.FC = () => {
                 </p>
               </div>
 
+            </div>
+            
+            {/* Location Accuracy Note */}
+            <div className=\"p-3 bg-amber-50 border border-amber-200 rounded-lg\">
+              <div className=\"flex items-start gap-2\">
+                <MapPin className=\"w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0\" />
+                <div className=\"text-sm\">
+                  <p className=\"text-amber-800 font-medium\">Location Accuracy Notice</p>
+                  <p className=\"text-amber-700 mt-1\">
+                    The fetched location may not be accurate. Please verify the location on the map and adjust coordinates if needed.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         );
@@ -2708,7 +2726,7 @@ ${cardData.achievements.map(a => `- ${a.title} from ${a.issuer} (${a.date})`).jo
 
       {/* Main */}
       <div className="flex-1 flex overflow-hidden scrollbar-thin">
-        <div className="flex flex-1 overflow-hidden relative scrollbar-thin">
+        <div className="flex flex-1 overflow-hidden relative scrollbar-thin min-w-0">
           {/* Sidebar */}
           <aside
             className={`
@@ -2716,7 +2734,7 @@ ${cardData.achievements.map(a => `- ${a.title} from ${a.issuer} (${a.date})`).jo
               scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent
               ${isMobile 
                 ? (sidebarOpen ? 'w-full absolute inset-y-0 left-0 z-30' : 'w-0') 
-                : (sidebarOpen ? 'w-full max-w-[400px] absolute inset-y-0 left-0 z-30' : 'w-0')
+                : (sidebarOpen ? 'w-[400px] absolute inset-y-0 left-0 z-30' : 'w-0')
               }
             `}
             style={{ 
@@ -2837,7 +2855,7 @@ ${cardData.achievements.map(a => `- ${a.title} from ${a.issuer} (${a.date})`).jo
             className={`overflow-y-auto p-4 md:p-6 transition-all duration-300 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent
               ${isMobile 
                 ? (showMobilePreview ? 'hidden' : 'w-full')
-                : (inputPanelOpen ? 'w-full max-w-[400px] absolute inset-y-0 left-0 z-20' : 'hidden')
+                : (inputPanelOpen ? 'w-[400px] absolute inset-y-0 left-0 z-10' : 'hidden')
               }`}
             style={{ maxHeight: 'calc(100vh - 4rem)' }}
           >
@@ -2861,7 +2879,7 @@ ${cardData.achievements.map(a => `- ${a.title} from ${a.issuer} (${a.date})`).jo
         {!isMobile && (
           <aside 
             data-tour="preview"
-            className="flex-1 border-l border-border overflow-y-auto p-6 bg-muted/30 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent"
+            className="flex-1 border-l border-border overflow-y-auto p-6 bg-muted/30 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent min-w-0"
             style={{ maxHeight: 'calc(100vh - 4rem)' }}
           >
             <div className="max-w-md mx-auto">
