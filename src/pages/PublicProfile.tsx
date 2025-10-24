@@ -52,6 +52,8 @@ interface CardData {
   };
   address?: string;
   showAddressMap?: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export const PublicProfile: React.FC = () => {
@@ -83,7 +85,8 @@ export const PublicProfile: React.FC = () => {
             profiles:owner_user_id (
               ai_enabled,
               address,
-              show_address_map
+              show_address_map,
+              location_coordinates
             )
           `)
           .eq('vanity_url', username)
@@ -119,6 +122,17 @@ export const PublicProfile: React.FC = () => {
         // Parse content_json
         const content = card.content_json as any;
         const profile = Array.isArray(card.profiles) ? card.profiles[0] : card.profiles;
+        
+        // Parse location coordinates if available
+        let lat = null;
+        let lng = null;
+        if (profile?.location_coordinates) {
+          const coords = String(profile.location_coordinates).replace(/[()]/g, '').split(',');
+          if (coords.length === 2) {
+            lat = parseFloat(coords[0].trim());
+            lng = parseFloat(coords[1].trim());
+          }
+        }
         
         setCardData({
           fullName: content.fullName || card.title || '',
@@ -160,6 +174,10 @@ export const PublicProfile: React.FC = () => {
             gallery: true,
             languages: true,
           },
+          address: profile?.address || '',
+          showAddressMap: profile?.show_address_map || false,
+          latitude: lat,
+          longitude: lng,
         });
 
         // Track analytics

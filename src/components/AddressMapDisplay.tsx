@@ -5,19 +5,30 @@ interface AddressMapDisplayProps {
   address: string;
   showMap?: boolean;
   className?: string;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export const AddressMapDisplay: React.FC<AddressMapDisplayProps> = ({ 
   address, 
   showMap = false,
-  className = ''
+  className = '',
+  latitude,
+  longitude
 }) => {
-  if (!address) return null;
+  if (!address && !latitude && !longitude) return null;
 
-  // Encode address for Google Maps embed
-  const encodedAddress = encodeURIComponent(address);
-  const mapEmbedUrl = `https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodedAddress}`;
-  const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+  // Use coordinates if available, otherwise encode address
+  const hasCoordinates = latitude !== null && latitude !== undefined && 
+                         longitude !== null && longitude !== undefined;
+  
+  const mapEmbedUrl = hasCoordinates
+    ? `https://www.google.com/maps/embed/v1/view?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&center=${latitude},${longitude}&zoom=15`
+    : `https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodeURIComponent(address)}`;
+  
+  const mapUrl = hasCoordinates
+    ? `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`
+    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
 
   return (
     <div className={`space-y-3 ${className}`}>
@@ -25,7 +36,12 @@ export const AddressMapDisplay: React.FC<AddressMapDisplayProps> = ({
         <MapPin className="w-5 h-5 text-primary shrink-0 mt-0.5" />
         <div className="flex-1 min-w-0">
           <h4 className="font-semibold text-sm mb-1">Location</h4>
-          <p className="text-sm text-muted-foreground break-words">{address}</p>
+          {address && <p className="text-sm text-muted-foreground break-words">{address}</p>}
+          {hasCoordinates && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Coordinates: {latitude}, {longitude}
+            </p>
+          )}
           <a
             href={mapUrl}
             target="_blank"

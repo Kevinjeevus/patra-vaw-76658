@@ -162,6 +162,8 @@ interface CardData {
   cardVisibility: Record<string, boolean>;
   address?: string;
   showAddressMap?: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 const socialPlatforms = [
@@ -277,6 +279,8 @@ export const EditorNew: React.FC = () => {
     },
     address: '',
     showAddressMap: false,
+    latitude: null,
+    longitude: null,
   });
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [showAIConsent, setShowAIConsent] = useState(false);
@@ -456,7 +460,7 @@ export const EditorNew: React.FC = () => {
           .maybeSingle(),
         supabase
           .from('profiles')
-          .select('address, show_address_map')
+          .select('address, show_address_map, location_coordinates')
           .eq('user_id', user.id)
           .maybeSingle()
       ]);
@@ -466,6 +470,17 @@ export const EditorNew: React.FC = () => {
       if (cardResult.data && cardResult.data.content_json) {
         const incoming = cardResult.data.content_json as Partial<CardData>;
         const profileData = profileResult.data;
+        
+        // Parse location coordinates if available
+        let lat = null;
+        let lng = null;
+        if (profileData?.location_coordinates) {
+          const coords = String(profileData.location_coordinates).replace(/[()]/g, '').split(',');
+          if (coords.length === 2) {
+            lat = parseFloat(coords[0].trim());
+            lng = parseFloat(coords[1].trim());
+          }
+        }
         
         setCardData((prev) => ({
           ...prev,
@@ -510,6 +525,8 @@ export const EditorNew: React.FC = () => {
           },
           address: profileData?.address ?? incoming.address ?? '',
           showAddressMap: profileData?.show_address_map ?? incoming.showAddressMap ?? false,
+          latitude: lat ?? incoming.latitude ?? null,
+          longitude: lng ?? incoming.longitude ?? null,
         }));
       }
     } catch (error) {

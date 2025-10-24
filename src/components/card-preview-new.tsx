@@ -81,6 +81,8 @@ interface CardData {
   cardVisibility?: Record<string, boolean>;
   address?: string;
   showAddressMap?: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 interface CardPreviewNewProps {
@@ -312,10 +314,12 @@ export const CardPreviewNew: React.FC<CardPreviewNewProps> = ({ cardData, onOpen
       })()}
 
       {/* Address Map Display */}
-      {cardData.address && (
+      {(cardData.address || cardData.latitude || cardData.longitude) && (
         <AddressMapDisplay 
-          address={cardData.address}
+          address={cardData.address || ''}
           showMap={cardData.showAddressMap}
+          latitude={cardData.latitude}
+          longitude={cardData.longitude}
         />
       )}
 
