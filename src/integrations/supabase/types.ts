@@ -55,6 +55,7 @@ export type Database = {
           is_published: boolean | null
           priority: string | null
           published_at: string | null
+          send_to_all: boolean | null
           title: string
           type: string
           updated_at: string | null
@@ -67,6 +68,7 @@ export type Database = {
           is_published?: boolean | null
           priority?: string | null
           published_at?: string | null
+          send_to_all?: boolean | null
           title: string
           type: string
           updated_at?: string | null
@@ -79,11 +81,47 @@ export type Database = {
           is_published?: boolean | null
           priority?: string | null
           published_at?: string | null
+          send_to_all?: boolean | null
           title?: string
           type?: string
           updated_at?: string | null
         }
         Relationships: []
+      }
+      announcements_recipients: {
+        Row: {
+          announcement_id: string
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          read_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          announcement_id: string
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          read_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          announcement_id?: string
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          read_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcements_recipients_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "announcements"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       card_analytics: {
         Row: {
@@ -299,6 +337,60 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
+      }
+      feedback_submissions: {
+        Row: {
+          admin_response: string | null
+          content: string
+          created_at: string | null
+          device_info: Json | null
+          id: string
+          ip_address: unknown
+          status: string | null
+          subject: string
+          type: Database["public"]["Enums"]["feedback_type"]
+          updated_at: string | null
+          user_email: string
+          user_id: string
+          user_name: string
+          user_phone: string | null
+          user_signature: string | null
+        }
+        Insert: {
+          admin_response?: string | null
+          content: string
+          created_at?: string | null
+          device_info?: Json | null
+          id?: string
+          ip_address?: unknown
+          status?: string | null
+          subject: string
+          type: Database["public"]["Enums"]["feedback_type"]
+          updated_at?: string | null
+          user_email: string
+          user_id: string
+          user_name: string
+          user_phone?: string | null
+          user_signature?: string | null
+        }
+        Update: {
+          admin_response?: string | null
+          content?: string
+          created_at?: string | null
+          device_info?: Json | null
+          id?: string
+          ip_address?: unknown
+          status?: string | null
+          subject?: string
+          type?: Database["public"]["Enums"]["feedback_type"]
+          updated_at?: string | null
+          user_email?: string
+          user_id?: string
+          user_name?: string
+          user_phone?: string | null
+          user_signature?: string | null
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -550,6 +642,7 @@ export type Database = {
     Enums: {
       app_role: "admin" | "moderator" | "user"
       card_material: "metal" | "plastic" | "fiber"
+      feedback_type: "bug" | "feature" | "support" | "feedback"
       nfc_payload_type: "vcard" | "url" | "encrypted_token"
       user_role: "owner" | "admin" | "team_head" | "member" | "designer"
     }
@@ -681,6 +774,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "moderator", "user"],
       card_material: ["metal", "plastic", "fiber"],
+      feedback_type: ["bug", "feature", "support", "feedback"],
       nfc_payload_type: ["vcard", "url", "encrypted_token"],
       user_role: ["owner", "admin", "team_head", "member", "designer"],
     },

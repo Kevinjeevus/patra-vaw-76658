@@ -2,34 +2,73 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { AdminSidebar } from '@/components/AdminSidebar';
+import { MarkdownEditor } from '@/components/MarkdownEditor';
 import { toast } from '@/hooks/use-toast';
 import { 
-  Shield, Users, Bell, FileText, Settings, BarChart3, 
-  Key, Plus, Edit, Trash2, Eye, LogOut, ArrowLeft,
-  Megaphone, Palette, Database, Activity
+  Shield, Plus, Edit, Trash2, Eye, Send,
+  TrendingUp, Users, CreditCard, Activity,
+  CheckCircle, Clock, XCircle
 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 const Admin: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [activeSection, setActiveSection] = useState('dashboard');
+  
+  // Dashboard data
+  const [stats, setStats] = useState({
+    totalCards: 0,
+    activeCards: 0,
+    totalUsers: 0,
+    templates: 0,
+    announcements: 0,
+    pendingFeedback: 0,
+  });
+  
+  // Section-specific data
   const [announcements, setAnnouncements] = useState<any[]>([]);
-  const [templates, setTemplates] = useState<any[]>([]);
-  const [analytics, setAnalytics] = useState<any>(null);
+  const [feedback, setFeedback] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
+  const [templates, setTemplates] = useState<any[]>([]);
+  const [selectedDoc, setSelectedDoc] = useState<string>('');
+  const [docContent, setDocContent] = useState<string>('');
+  
+  // Form states
+  const [announcementForm, setAnnouncementForm] = useState({
+    title: '',
+    content: '',
+    type: 'info',
+    priority: 'normal',
+    sendToAll: false,
+  });
 
   useEffect(() => {
     checkAdminAccess();
   }, [user]);
+
+  useEffect(() => {
+    if (isAdmin && activeSection === 'dashboard') {
+      loadDashboardData();
+    } else if (isAdmin && activeSection === 'announcements') {
+      loadAnnouncements();
+    } else if (isAdmin && activeSection === 'feedback') {
+      loadFeedback();
+    } else if (isAdmin && activeSection === 'users') {
+      loadUsers();
+    } else if (isAdmin && activeSection === 'templates') {
+      loadTemplates();
+    }
+  }, [isAdmin, activeSection]);
 
   const checkAdminAccess = async () => {
     if (!user) {
@@ -56,7 +95,6 @@ const Admin: React.FC = () => {
       }
 
       setIsAdmin(true);
-      loadAdminData();
     } catch (error) {
       console.error('Admin check error:', error);
       navigate('/dashboard');
@@ -65,25 +103,139 @@ const Admin: React.FC = () => {
     }
   };
 
-  const loadAdminData = async () => {
+  const loadDashboardData = async () => {
     try {
-      const [announcementsRes, templatesRes, cardsRes] = await Promise.all([
-        supabase.from('announcements').select('*').order('created_at', { ascending: false }),
-        supabase.from('templates').select('*').order('created_at', { ascending: false }),
-        supabase.from('digital_cards').select('*, card_analytics(count)').limit(100)
+      const [cardsRes, usersRes, templatesRes, announcementsRes, feedbackRes] = await Promise.all([
+        supabase.from('digital_cards').select('id, is_active', { count: 'exact' }),
+        supabase.from('profiles').select('id', { count: 'exact' }),
+        supabase.from('templates').select('id', { count: 'exact' }),
+        supabase.from('announcements').select('id', { count: 'exact' }),
+        supabase.from('feedback_submissions').select('id, status', { count: 'exact' }),
       ]);
 
-      if (announcementsRes.data) setAnnouncements(announcementsRes.data);
-      if (templatesRes.data) setTemplates(templatesRes.data);
-      
-      // Calculate analytics
-      if (cardsRes.data) {
-        const totalCards = cardsRes.data.length;
-        const activeCards = cardsRes.data.filter(c => c.is_active).length;
-        setAnalytics({ totalCards, activeCards });
-      }
+      setStats({
+        totalCards: cardsRes.count || 0,
+        activeCards: cardsRes.data?.filter(c => c.is_active).length || 0,
+        totalUsers: usersRes.count || 0,
+        templates: templatesRes.count || 0,
+        announcements: announcementsRes.count || 0,
+        pendingFeedback: feedbackRes.data?.filter(f => f.status === 'pending').length || 0,
+      });
     } catch (error) {
-      console.error('Error loading admin data:', error);
+      console.error('Error loading dashboard:', error);
+    }
+  };
+
+  const loadAnnouncements = async () => {
+    const { data } = await supabase
+      .from('announcements')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (data) setAnnouncements(data);
+  };
+
+  const loadFeedback = async () => {
+    const { data } = await supabase
+      .from('feedback_submissions')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (data) setFeedback(data);
+  };
+
+  const loadUsers = async () => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(50);
+    if (data) setUsers(data);
+  };
+
+  const loadTemplates = async () => {
+    const { data } = await supabase
+      .from('templates')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (data) setTemplates(data);
+  };
+
+  const handleCreateAnnouncement = async () => {
+    try {
+      const { data: announcement, error } = await supabase
+        .from('announcements')
+        .insert({
+          title: announcementForm.title,
+          content: announcementForm.content,
+          type: announcementForm.type,
+          priority: announcementForm.priority,
+          send_to_all: announcementForm.sendToAll,
+          is_published: true,
+          created_by: user?.id,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // If sending to all users, create announcement recipients
+      if (announcementForm.sendToAll) {
+        const { data: allUsers } = await supabase.from('profiles').select('user_id');
+        
+        if (allUsers && allUsers.length > 0) {
+          const recipients = allUsers.map(u => ({
+            announcement_id: announcement.id,
+            user_id: u.user_id,
+          }));
+
+          await supabase.from('announcements_recipients').insert(recipients);
+        }
+      }
+
+      toast({
+        title: 'Success',
+        description: 'Announcement created and sent',
+      });
+
+      setAnnouncementForm({
+        title: '',
+        content: '',
+        type: 'info',
+        priority: 'normal',
+        sendToAll: false,
+      });
+
+      loadAnnouncements();
+    } catch (error: any) {
+      console.error('Error creating announcement:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to create announcement',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleUpdateFeedbackStatus = async (id: string, status: string) => {
+    try {
+      const { error } = await supabase
+        .from('feedback_submissions')
+        .update({ status })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Status updated',
+      });
+
+      loadFeedback();
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update status',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -98,270 +250,363 @@ const Admin: React.FC = () => {
     );
   }
 
-  if (!isAdmin) {
-    return null;
-  }
+  if (!isAdmin) return null;
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')}>
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
+    <div className="min-h-screen bg-background flex">
+      <AdminSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
+      
+      <main className="flex-1 overflow-y-auto">
+        <div className="container mx-auto px-8 py-8">
+          {/* Dashboard Section */}
+          {activeSection === 'dashboard' && (
+            <div className="space-y-6">
               <div>
-                <h1 className="text-2xl font-bold flex items-center gap-2">
-                  <Shield className="w-6 h-6 text-primary" />
-                  Admin Panel
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  System management and analytics
-                </p>
+                <h1 className="text-3xl font-bold">Dashboard</h1>
+                <p className="text-muted-foreground">System overview and analytics</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                      <CreditCard className="w-4 h-4" />
+                      Total Cards
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-3xl font-bold">{stats.totalCards}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{stats.activeCards} active</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                      <Users className="w-4 h-4" />
+                      Total Users
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-3xl font-bold">{stats.totalUsers}</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                      <Activity className="w-4 h-4" />
+                      Pending Feedback
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-3xl font-bold">{stats.pendingFeedback}</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Recent Activity</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">Activity feed coming soon...</p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Announcements Section */}
+          {activeSection === 'announcements' && (
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-3xl font-bold">Announcements</h1>
+                <p className="text-muted-foreground">Create and manage system announcements</p>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Create Announcement</CardTitle>
+                  <CardDescription>Send announcements to users</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Title</Label>
+                    <Input
+                      value={announcementForm.title}
+                      onChange={(e) => setAnnouncementForm({ ...announcementForm, title: e.target.value })}
+                      placeholder="Announcement title"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Content</Label>
+                    <Textarea
+                      value={announcementForm.content}
+                      onChange={(e) => setAnnouncementForm({ ...announcementForm, content: e.target.value })}
+                      placeholder="Announcement content"
+                      rows={4}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Type</Label>
+                      <Select
+                        value={announcementForm.type}
+                        onValueChange={(v) => setAnnouncementForm({ ...announcementForm, type: v })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="info">Info</SelectItem>
+                          <SelectItem value="warning">Warning</SelectItem>
+                          <SelectItem value="success">Success</SelectItem>
+                          <SelectItem value="error">Error</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Priority</Label>
+                      <Select
+                        value={announcementForm.priority}
+                        onValueChange={(v) => setAnnouncementForm({ ...announcementForm, priority: v })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="low">Low</SelectItem>
+                          <SelectItem value="normal">Normal</SelectItem>
+                          <SelectItem value="high">High</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={announcementForm.sendToAll}
+                      onChange={(e) => setAnnouncementForm({ ...announcementForm, sendToAll: e.target.checked })}
+                      className="rounded"
+                    />
+                    <Label>Send to all users</Label>
+                  </div>
+
+                  <Button onClick={handleCreateAnnouncement}>
+                    <Send className="w-4 h-4 mr-2" />
+                    Send Announcement
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Recent Announcements</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {announcements.map((ann) => (
+                      <div key={ann.id} className="flex items-start justify-between p-4 border rounded-lg">
+                        <div>
+                          <h4 className="font-semibold">{ann.title}</h4>
+                          <p className="text-sm text-muted-foreground mt-1">{ann.content.substring(0, 100)}...</p>
+                          <div className="flex gap-2 mt-2">
+                            <Badge>{ann.type}</Badge>
+                            <Badge variant="outline">{ann.priority}</Badge>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Feedback Section */}
+          {activeSection === 'feedback' && (
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-3xl font-bold">Feedback & Support</h1>
+                <p className="text-muted-foreground">Manage user feedback and support tickets</p>
+              </div>
+
+              <div className="space-y-4">
+                {feedback.map((item) => (
+                  <Card key={item.id}>
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <CardTitle className="text-lg">{item.subject}</CardTitle>
+                          <CardDescription className="mt-1">
+                            From: {item.user_name} ({item.user_email})
+                          </CardDescription>
+                        </div>
+                        <Badge>{item.type}</Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <p className="text-sm">{item.content}</p>
+                      
+                      <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                        {item.ip_address && <span>IP: {item.ip_address}</span>}
+                        {item.user_phone && <span>Phone: {item.user_phone}</span>}
+                        <span>Date: {new Date(item.created_at).toLocaleDateString()}</span>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <Select
+                          value={item.status}
+                          onValueChange={(v) => handleUpdateFeedbackStatus(item.id, v)}
+                        >
+                          <SelectTrigger className="w-[180px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pending">Pending</SelectItem>
+                            <SelectItem value="in-progress">In Progress</SelectItem>
+                            <SelectItem value="resolved">Resolved</SelectItem>
+                            <SelectItem value="closed">Closed</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             </div>
-            <Button variant="outline" onClick={() => navigate('/dashboard')}>
-              <LogOut className="w-4 h-4 mr-2" />
-              Exit Admin
-            </Button>
-          </div>
-        </div>
-      </header>
+          )}
 
-      {/* Stats Overview */}
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Cards</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold">{analytics?.totalCards || 0}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Active Cards</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold">{analytics?.activeCards || 0}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Templates</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold">{templates.length}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Announcements</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold">{announcements.length}</p>
-            </CardContent>
-          </Card>
-        </div>
+          {/* Users Section */}
+          {activeSection === 'users' && (
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-3xl font-bold">User Management</h1>
+                <p className="text-muted-foreground">View and manage user accounts</p>
+              </div>
 
-        {/* Main Content */}
-        <Tabs defaultValue="announcements" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="announcements">
-              <Megaphone className="w-4 h-4 mr-2" />
-              Announcements
-            </TabsTrigger>
-            <TabsTrigger value="templates">
-              <Palette className="w-4 h-4 mr-2" />
-              Templates
-            </TabsTrigger>
-            <TabsTrigger value="users">
-              <Users className="w-4 h-4 mr-2" />
-              Users
-            </TabsTrigger>
-            <TabsTrigger value="analytics">
-              <BarChart3 className="w-4 h-4 mr-2" />
-              Analytics
-            </TabsTrigger>
-            <TabsTrigger value="settings">
-              <Settings className="w-4 h-4 mr-2" />
-              Settings
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="announcements" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Announcements Management</CardTitle>
-                <CardDescription>Create and manage system announcements, news, and changelogs</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button className="mb-4">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Announcement
-                </Button>
-                
-                <div className="space-y-2">
-                  {announcements.map((announcement) => (
-                    <div key={announcement.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div>
-                        <h4 className="font-semibold">{announcement.title}</h4>
-                        <p className="text-sm text-muted-foreground">{announcement.content.substring(0, 100)}...</p>
-                        <div className="flex gap-2 mt-2">
-                          <Badge>{announcement.type}</Badge>
-                          <Badge variant={announcement.is_published ? "default" : "secondary"}>
-                            {announcement.is_published ? 'Published' : 'Draft'}
-                          </Badge>
+              <Card>
+                <CardHeader>
+                  <CardTitle>All Users</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {users.map((user) => (
+                      <div key={user.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div>
+                          <p className="font-medium">{user.display_name}</p>
+                          <p className="text-sm text-muted-foreground">{user.user_id}</p>
                         </div>
+                        <Badge>{user.role || 'member'}</Badge>
                       </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Templates Section */}
+          {activeSection === 'templates' && (
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-3xl font-bold">Templates</h1>
+                <p className="text-muted-foreground">Manage card templates</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {templates.map((template) => (
+                  <Card key={template.id}>
+                    <CardHeader>
+                      <CardTitle className="text-base">{template.name}</CardTitle>
+                      <CardDescription>{template.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
                       <div className="flex gap-2">
-                        <Button variant="ghost" size="icon">
-                          <Edit className="w-4 h-4" />
+                        <Button variant="outline" size="sm">
+                          <Eye className="w-4 h-4 mr-2" />
+                          Preview
                         </Button>
-                        <Button variant="ghost" size="icon">
-                          <Trash2 className="w-4 h-4" />
+                        <Button variant="outline" size="sm">
+                          <Edit className="w-4 h-4 mr-2" />
+                          Edit
                         </Button>
                       </div>
-                    </div>
-                  ))}
-                  {announcements.length === 0 && (
-                    <p className="text-center text-muted-foreground py-8">No announcements yet</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Documentation Section */}
+          {activeSection === 'docs' && (
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-3xl font-bold">Documentation Editor</h1>
+                <p className="text-muted-foreground">Edit API docs and guides using markdown</p>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Edit Documentation</CardTitle>
+                  <CardDescription>Use markdown to format your content</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Select Document</Label>
+                    <Select value={selectedDoc} onValueChange={setSelectedDoc}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose a document" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="api-guide">API Guide</SelectItem>
+                        <SelectItem value="getting-started">Getting Started</SelectItem>
+                        <SelectItem value="features">Features</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {selectedDoc && (
+                    <>
+                      <MarkdownEditor
+                        value={docContent}
+                        onChange={setDocContent}
+                        placeholder="Write your documentation in markdown..."
+                      />
+                      <Button>Save Changes</Button>
+                    </>
                   )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                </CardContent>
+              </Card>
+            </div>
+          )}
 
-          <TabsContent value="templates" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Templates Management</CardTitle>
-                <CardDescription>Manage card and profile templates</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button className="mb-4">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Template
-                </Button>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {templates.map((template) => (
-                    <Card key={template.id}>
-                      <CardHeader>
-                        <div className="flex items-start justify-between">
-                          <CardTitle className="text-base">{template.name}</CardTitle>
-                          <Badge>{template.category}</Badge>
-                        </div>
-                        <CardDescription>{template.description}</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm">
-                            <Eye className="w-4 h-4 mr-2" />
-                            Preview
-                          </Button>
-                          <Button variant="outline" size="sm">
-                            <Edit className="w-4 h-4 mr-2" />
-                            Edit
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                  {templates.length === 0 && (
-                    <p className="col-span-3 text-center text-muted-foreground py-8">No templates yet</p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+          {/* Settings Section */}
+          {activeSection === 'settings' && (
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-3xl font-bold">System Settings</h1>
+                <p className="text-muted-foreground">Configure system-wide settings</p>
+              </div>
 
-          <TabsContent value="users" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>User Management</CardTitle>
-                <CardDescription>View and manage user accounts and roles</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">User management interface coming soon...</p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="analytics" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>System Analytics</CardTitle>
-                <CardDescription>View detailed analytics and insights</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="p-4 border rounded-lg">
-                    <h4 className="font-semibold mb-2">Most Viewed Profiles</h4>
-                    <p className="text-sm text-muted-foreground">Coming soon...</p>
-                  </div>
-                  <div className="p-4 border rounded-lg">
-                    <h4 className="font-semibold mb-2">Most Shared Cards</h4>
-                    <p className="text-sm text-muted-foreground">Coming soon...</p>
-                  </div>
-                  <div className="p-4 border rounded-lg">
-                    <h4 className="font-semibold mb-2">User Growth</h4>
-                    <p className="text-sm text-muted-foreground">Coming soon...</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="settings" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>System Settings</CardTitle>
-                <CardDescription>Manage API keys, integrations, and system configuration</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="p-4 border rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-semibold flex items-center gap-2">
-                        <Key className="w-4 h-4" />
-                        API Keys
-                      </h4>
-                      <Button variant="outline" size="sm">Manage</Button>
-                    </div>
-                    <p className="text-sm text-muted-foreground">Configure external API keys and integrations</p>
-                  </div>
-                  
-                  <div className="p-4 border rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-semibold flex items-center gap-2">
-                        <Database className="w-4 h-4" />
-                        Database
-                      </h4>
-                      <Button variant="outline" size="sm">View</Button>
-                    </div>
-                    <p className="text-sm text-muted-foreground">Database configuration and management</p>
-                  </div>
-
-                  <div className="p-4 border rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-semibold flex items-center gap-2">
-                        <FileText className="w-4 h-4" />
-                        Documentation
-                      </h4>
-                      <Button variant="outline" size="sm" onClick={() => navigate('/docs')}>Edit Docs</Button>
-                    </div>
-                    <p className="text-sm text-muted-foreground">Edit API documentation and guides</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>API Keys</CardTitle>
+                  <CardDescription>Manage external API integrations</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">API key management coming soon...</p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </div>
+      </main>
     </div>
   );
 };

@@ -270,7 +270,12 @@ export const Settings: React.FC = () => {
     { id: 'account', label: 'Account', icon: Building2 },
     { id: 'security', label: 'Security', icon: Shield },
     { id: 'developer', label: 'Developer', icon: Code },
-    { id: 'support', label: 'Support', icon: HelpCircle },
+    { id: 'support', label: 'Support', icon: HelpCircle, submenu: [
+      { id: 'bug', label: 'Report Bug', path: '/settings/bug', icon: Bug },
+      { id: 'feedback', label: 'Send Feedback', path: '/settings/feedback', icon: MessageSquare },
+      { id: 'feature', label: 'Request Feature', path: '/settings/feature', icon: Lightbulb },
+      { id: 'support', label: 'Get Support', path: '/settings/support', icon: HelpCircle },
+    ]},
   ];
 
   const scrollToSection = (sectionId: string) => {
@@ -378,6 +383,41 @@ export const Settings: React.FC = () => {
               {navigationItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = activeSection === item.id;
+                
+                if (item.submenu) {
+                  return (
+                    <div key={item.id} className="space-y-1">
+                      <button
+                        onClick={() => scrollToSection(item.id)}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-200 ${
+                          isActive
+                            ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
+                            : 'hover:bg-muted/50 text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        <Icon className="w-5 h-5 shrink-0" />
+                        <span className="font-medium">{item.label}</span>
+                        <ChevronDown className="w-4 h-4 ml-auto" />
+                      </button>
+                      <div className="ml-6 space-y-1">
+                        {item.submenu.map((subItem) => {
+                          const SubIcon = subItem.icon;
+                          return (
+                            <button
+                              key={subItem.id}
+                              onClick={() => navigate(subItem.path)}
+                              className="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-left text-sm transition-all duration-200 hover:bg-muted/50 text-muted-foreground hover:text-foreground"
+                            >
+                              <SubIcon className="w-4 h-4 shrink-0" />
+                              <span>{subItem.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                }
+                
                 return (
                   <button
                     key={item.id}

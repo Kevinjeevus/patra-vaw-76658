@@ -23,7 +23,6 @@ export const AddressMapDisplay: React.FC<AddressMapDisplayProps> = ({
   const mapRef = useRef<L.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const markerRef = useRef<L.Marker | null>(null);
-  const waypointRef = useRef<HTMLDivElement>(null);
   const [pinPosition, setPinPosition] = useState<{ x: number; y: number; visible: boolean; angle: number } | null>(null);
 
   if (!address && !latitude && !longitude && !mapUrl) return null;
@@ -156,11 +155,6 @@ export const AddressMapDisplay: React.FC<AddressMapDisplayProps> = ({
         <div className="flex-1 min-w-0">
           <h4 className="font-semibold text-sm mb-1">Location</h4>
           {address && <p className="text-sm text-muted-foreground break-words">{address}</p>}
-          {hasCoordinates && (
-            <p className="text-xs text-muted-foreground mt-1">
-              Coordinates: {latitude}, {longitude}
-            </p>
-          )}
           <a
             href={mapsLink}
             target="_blank"
@@ -176,10 +170,9 @@ export const AddressMapDisplay: React.FC<AddressMapDisplayProps> = ({
         <div className="relative w-full h-64 rounded-lg overflow-hidden border border-border/50">
           <div ref={mapContainerRef} className="w-full h-full" />
           
-          {/* Waypoint indicator */}
+          {/* Waypoint indicator - shows when location is off-screen */}
           {pinPosition && !pinPosition.visible && (
             <div
-              ref={waypointRef}
               className="absolute pointer-events-none z-[1000] flex items-center justify-center"
               style={{
                 left: `${pinPosition.x}px`,

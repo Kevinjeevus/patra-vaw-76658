@@ -23,6 +23,7 @@ import NotFound from "./pages/NotFound";
 import AIChat from "./pages/AIChat";
 import { Templates } from "./pages/Templates";
 import Admin from "./pages/Admin";
+import { Feedback } from "./pages/Feedback";
 // import PrintCard from "./pages/Printcard";
 
 const queryClient = new QueryClient();
@@ -86,6 +87,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Admin />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings/:type"
+              element={
+                <ProtectedRoute>
+                  <Feedback />
                 </ProtectedRoute>
               }
             />
