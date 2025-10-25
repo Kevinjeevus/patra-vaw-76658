@@ -18,10 +18,11 @@ import { MyCard } from "./pages/mycard";
 import { EmailSignature } from "./pages/EmailSignature";
 import { ApiDocs } from "./pages/ApiDocs";
 import { Settings } from "./pages/Settings";
-import { Docs } from "./pages/Docs";
+import { DocsNew } from "./pages/DocsNew";
 import NotFound from "./pages/NotFound";
 import AIChat from "./pages/AIChat";
 import { Templates } from "./pages/Templates";
+import Admin from "./pages/Admin";
 // import PrintCard from "./pages/Printcard";
 
 const queryClient = new QueryClient();
@@ -79,7 +80,15 @@ const App = () => (
               }
             />
             <Route path="/api-docs" element={<ApiDocs />} />
-            <Route path="/docs" element={<Docs />} />
+            <Route path="/docs" element={<DocsNew />} />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <Admin />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/settings"
               element={

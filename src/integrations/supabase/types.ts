@@ -46,6 +46,45 @@ export type Database = {
           },
         ]
       }
+      announcements: {
+        Row: {
+          content: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_published: boolean | null
+          priority: string | null
+          published_at: string | null
+          title: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_published?: boolean | null
+          priority?: string | null
+          published_at?: string | null
+          title: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_published?: boolean | null
+          priority?: string | null
+          published_at?: string | null
+          title?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       card_analytics: {
         Row: {
           card_id: string
@@ -194,6 +233,9 @@ export type Database = {
           title: string
           updated_at: string
           vanity_url: string | null
+          video_intro: string | null
+          video_snippets: Json | null
+          video_testimonials: Json | null
         }
         Insert: {
           approved_at?: string | null
@@ -214,6 +256,9 @@ export type Database = {
           title: string
           updated_at?: string
           vanity_url?: string | null
+          video_intro?: string | null
+          video_snippets?: Json | null
+          video_testimonials?: Json | null
         }
         Update: {
           approved_at?: string | null
@@ -234,6 +279,9 @@ export type Database = {
           title?: string
           updated_at?: string
           vanity_url?: string | null
+          video_intro?: string | null
+          video_snippets?: Json | null
+          video_testimonials?: Json | null
         }
         Relationships: [
           {
@@ -410,17 +458,97 @@ export type Database = {
           },
         ]
       }
+      templates: {
+        Row: {
+          category: string
+          created_at: string | null
+          created_by: string | null
+          custom_css: string | null
+          description: string | null
+          features: Json | null
+          id: string
+          is_premium: boolean | null
+          is_public: boolean | null
+          layout: string
+          name: string
+          thumbnail: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          created_by?: string | null
+          custom_css?: string | null
+          description?: string | null
+          features?: Json | null
+          id?: string
+          is_premium?: boolean | null
+          is_public?: boolean | null
+          layout: string
+          name: string
+          thumbnail?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          created_by?: string | null
+          custom_css?: string | null
+          description?: string | null
+          features?: Json | null
+          id?: string
+          is_premium?: boolean | null
+          is_public?: boolean | null
+          layout?: string
+          name?: string
+          thumbnail?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       is_username_restricted: {
         Args: { check_username: string }
         Returns: boolean
       }
     }
     Enums: {
+      app_role: "admin" | "moderator" | "user"
       card_material: "metal" | "plastic" | "fiber"
       nfc_payload_type: "vcard" | "url" | "encrypted_token"
       user_role: "owner" | "admin" | "team_head" | "member" | "designer"
@@ -551,6 +679,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "moderator", "user"],
       card_material: ["metal", "plastic", "fiber"],
       nfc_payload_type: ["vcard", "url", "encrypted_token"],
       user_role: ["owner", "admin", "team_head", "member", "designer"],

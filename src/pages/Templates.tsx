@@ -93,12 +93,14 @@ export const Templates: React.FC = () => {
       // Wait 1 second for better UX
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Apply template to user's card
+      // Apply template to user's card - remove existing theme when template is applied
       if (userCard) {
+        const currentContent = userCard.content_json || {};
+        const { theme, ...contentWithoutTheme } = currentContent;
+        
         const updatedContentJson = {
-          ...userCard.content_json,
+          ...contentWithoutTheme,
           customCSS: template.style.customCSS || '',
-          theme: selectedTemplate
         };
 
         const { error } = await supabase

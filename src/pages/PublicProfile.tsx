@@ -5,10 +5,11 @@ import { CardPreviewNew } from '@/components/card-preview-new';
 import { MyCard } from './mycard';
 import NotFound from './NotFound';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Share2, CreditCard } from 'lucide-react';
+import { ArrowLeft, Share2, CreditCard, Download } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { updateOGMetaTags, getCardImageUrl, generateShareText, shareProfile } from '@/lib/og-utils';
 import { AddressMapDisplay } from '@/components/AddressMapDisplay';
+import { downloadVCard } from '@/lib/vcard-utils';
 
 interface CardData {
   fullName: string;
@@ -34,6 +35,8 @@ interface CardData {
   testimonials?: any[];
   photos?: any[];
   videoIntro?: string;
+  videoTestimonials?: any[];
+  videoSnippets?: any[];
   avatarUrl: string;
   vanityUrl: string;
   aiEnabled?: boolean;
@@ -159,6 +162,8 @@ export const PublicProfile: React.FC = () => {
           testimonials: content.testimonials || [],
           photos: content.photos || [],
           videoIntro: content.videoIntro || '',
+          videoTestimonials: content.videoTestimonials || card.video_testimonials || [],
+          videoSnippets: content.videoSnippets || card.video_snippets || [],
           avatarUrl: content.avatarUrl || '',
           vanityUrl: card.vanity_url || '',
           aiEnabled: profile?.ai_enabled ?? false,
@@ -243,6 +248,27 @@ export const PublicProfile: React.FC = () => {
     }
   };
 
+  const handleDownloadVCard = () => {
+    if (!cardData) return;
+
+    downloadVCard({
+      name: cardData.fullName,
+      title: cardData.jobTitle,
+      company: cardData.company,
+      phone: cardData.phone,
+      email: cardData.email,
+      website: window.location.origin + '/' + cardData.vanityUrl,
+      address: cardData.address,
+      photo: cardData.avatarUrl,
+      socialLinks: cardData.socialLinks,
+    });
+
+    toast({
+      title: 'vCard Downloaded',
+      description: 'Contact information saved to your device.',
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -283,6 +309,10 @@ export const PublicProfile: React.FC = () => {
             <Button variant="outline" size="sm" onClick={() => navigate(`/${username}?card`)}>
               <CreditCard className="mr-2 h-4 w-4" />
               Card
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleDownloadVCard}>
+              <Download className="mr-2 h-4 w-4" />
+              Save Contact
             </Button>
             <Button variant="outline" size="sm" onClick={handleShare}>
               <Share2 className="mr-2 h-4 w-4" />
