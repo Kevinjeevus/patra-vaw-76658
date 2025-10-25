@@ -12,7 +12,9 @@ import {
   Shield, 
   Users, 
   Heart,
-  Leaf
+  Leaf,
+  Palette,
+  Code
 } from 'lucide-react';
 
 export const Docs: React.FC = () => {
@@ -203,6 +205,111 @@ export const Docs: React.FC = () => {
                     <p className="text-sm text-muted-foreground">Monitor views and engagement, update your information anytime</p>
                   </div>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Separator />
+
+          {/* Templates Guide */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Palette className="w-6 h-6 text-primary" />
+                Using Templates
+              </CardTitle>
+              <CardDescription>Customize your card's appearance with beautiful templates</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <h4 className="font-medium mb-2">What are Templates?</h4>
+                <p className="text-sm text-muted-foreground">
+                  Templates are pre-designed layouts and styles that transform how your digital card looks. 
+                  Each template includes custom CSS, color schemes, and layout patterns to give your card a unique appearance.
+                </p>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">How to Apply a Template</h4>
+                <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
+                  <li>Navigate to the Templates page from your dashboard</li>
+                  <li>Browse through Card Templates or Profile Templates tabs</li>
+                  <li>Click on any template to select it</li>
+                  <li>Preview how it looks with your existing card data</li>
+                  <li>Click "Apply Template" to save the changes</li>
+                  <li>Your card will automatically update with the new design</li>
+                </ol>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Available Template Types</h4>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li><strong>Classic:</strong> Traditional professional design with clean layout</li>
+                  <li><strong>Modern:</strong> Bold gradients and glass morphism effects</li>
+                  <li><strong>Minimal:</strong> Ultra-clean with focus on content</li>
+                  <li><strong>Bento Grid:</strong> Modern grid layout (Profile only, Premium)</li>
+                  <li><strong>Magazine:</strong> Editorial-style two-column layout (Premium)</li>
+                  <li><strong>Creative:</strong> Experimental with animated patterns (Premium)</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Separator />
+
+          {/* Custom CSS Guide */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Code className="w-6 h-6 text-primary" />
+                Custom CSS Editing
+              </CardTitle>
+              <CardDescription>Advanced customization for developers</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <h4 className="font-medium mb-2">What is Custom CSS?</h4>
+                <p className="text-sm text-muted-foreground">
+                  Custom CSS allows you to write your own styles to completely customize your card's appearance. 
+                  This is an advanced feature for users comfortable with CSS code.
+                </p>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">How to Edit Custom CSS</h4>
+                <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
+                  <li>Go to the Editor page</li>
+                  <li>Scroll to the "Design" section in the sidebar</li>
+                  <li>Find the "Custom CSS" textarea field</li>
+                  <li>Write your CSS code using semantic tokens from the theme</li>
+                  <li>Save your changes to see them applied immediately</li>
+                </ol>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">CSS Class Names</h4>
+                <div className="bg-muted p-4 rounded-lg text-xs font-mono space-y-1">
+                  <div><span className="text-primary">.card-container</span> - Main wrapper</div>
+                  <div><span className="text-primary">.card-header</span> - Header section with avatar</div>
+                  <div><span className="text-primary">.card-section</span> - Individual content sections</div>
+                  <div><span className="text-primary">.bento-grid</span> - Grid layout (if using bento)</div>
+                  <div><span className="text-primary">.magazine-layout</span> - Two-column layout</div>
+                </div>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Using Theme Variables</h4>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Always use HSL color variables for consistency with dark/light modes:
+                </p>
+                <div className="bg-muted p-4 rounded-lg text-xs font-mono space-y-1">
+                  <div>background: hsl(var(--background));</div>
+                  <div>color: hsl(var(--foreground));</div>
+                  <div>border: 1px solid hsl(var(--border));</div>
+                  <div>background: hsl(var(--primary));</div>
+                  <div>background: hsl(var(--accent));</div>
+                </div>
+              </div>
+              <div className="bg-yellow-50 dark:bg-yellow-950/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-900">
+                <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                  <strong>⚠️ Warning:</strong> Custom CSS can break your card's layout if not used carefully. 
+                  Test your changes and keep backups of working CSS code.
+                </p>
               </div>
             </CardContent>
           </Card>

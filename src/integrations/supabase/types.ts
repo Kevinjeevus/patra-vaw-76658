@@ -351,6 +351,30 @@ export type Database = {
           },
         ]
       }
+      restricted_usernames: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          id: string
+          reason: string | null
+          username: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          reason?: string | null
+          username: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          reason?: string | null
+          username?: string
+        }
+        Relationships: []
+      }
       teams: {
         Row: {
           company_id: string
@@ -398,7 +422,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_username_restricted: {
+        Args: { check_username: string }
+        Returns: boolean
+      }
     }
     Enums: {
       card_material: "metal" | "plastic" | "fiber"

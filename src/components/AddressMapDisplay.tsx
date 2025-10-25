@@ -24,10 +24,12 @@ export const AddressMapDisplay: React.FC<AddressMapDisplayProps> = ({
   const hasCoordinates = latitude !== null && latitude !== undefined && 
                          longitude !== null && longitude !== undefined;
   
-  // Use place mode with marker for coordinates, or search for address
+  // Use Google Maps Embed API with marker - this will show the built-in pin
   const mapEmbedUrl = hasCoordinates
-    ? `https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${latitude},${longitude}&zoom=15`
-    : `https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodeURIComponent(address)}`;
+    ? `https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${latitude},${longitude}&zoom=15&maptype=roadmap`
+    : address 
+      ? `https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodeURIComponent(address)}&zoom=15&maptype=roadmap`
+      : null;
   
   const mapsLink = mapUrl
     ? mapUrl
@@ -58,7 +60,7 @@ export const AddressMapDisplay: React.FC<AddressMapDisplayProps> = ({
         </div>
       </div>
 
-      {showMap && (
+      {showMap && mapEmbedUrl && (
         <div className="relative w-full h-64 rounded-lg overflow-hidden border border-border/50">
           <iframe
             src={mapEmbedUrl}

@@ -1,16 +1,46 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Check, Crown, Palette, Layout, Sparkles } from 'lucide-react';
+import { ArrowLeft, Check, Crown, Palette, Layout, Sparkles, ExternalLink } from 'lucide-react';
 import { defaultCardTemplates, defaultProfileTemplates, CardTemplate } from '@/types/template';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { CardPreviewNew } from '@/components/card-preview-new';
 
 export const Templates: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  const [userCard, setUserCard] = useState<any>(null);
+  const [loadingCard, setLoadingCard] = useState(true);
+  const [applying, setApplying] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      fetchUserCard();
+    }
+  }, [user]);
+
+  const fetchUserCard = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('digital_cards')
+        .select('*')
+        .eq('owner_user_id', user?.id)
+        .single();
+
+      if (error) throw error;
+      setUserCard(data);
+    } catch (error) {
+      console.error('Error fetching card:', error);
+    } finally {
+      setLoadingCard(false);
+    }
+  };
 
   const handleSelectTemplate = (template: CardTemplate) => {
     if (template.isPremium) {
@@ -29,7 +59,7 @@ export const Templates: React.FC = () => {
     });
   };
 
-  const handleApplyTemplate = () => {
+  const handleApplyTemplate = async () => {
     if (!selectedTemplate) {
       toast({
         title: "No Template Selected",
@@ -38,10 +68,70 @@ export const Templates: React.FC = () => {
       });
       return;
     }
+
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to apply templates.",
+        variant: "destructive"
+      });
+      navigate('/auth');
+      return;
+    }
+
+    setApplying(true);
     
-    // Store selected template in localStorage
-    localStorage.setItem('selectedTemplate', selectedTemplate);
-    navigate('/editor');
+    try {
+      // Find the selected template
+      const allTemplates = [...defaultCardTemplates, ...defaultProfileTemplates];
+      const template = allTemplates.find(t => t.id === selectedTemplate);
+      
+      if (!template) {
+        throw new Error('Template not found');
+      }
+
+      // Wait 1 second for better UX
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Apply template to user's card
+      if (userCard) {
+        const updatedContentJson = {
+          ...userCard.content_json,
+          customCSS: template.style.customCSS || '',
+          theme: selectedTemplate
+        };
+
+        const { error } = await supabase
+          .from('digital_cards')
+          .update({
+            content_json: updatedContentJson,
+            template_id: selectedTemplate,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', userCard.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Template Applied! ✨",
+          description: `${template.name} template has been applied to your card.`,
+        });
+
+        // Clear selection and stay on templates page
+        localStorage.removeItem('selectedTemplate');
+        setSelectedTemplate(null);
+        fetchUserCard(); // Refresh the preview
+      }
+    } catch (error: any) {
+      console.error('Error applying template:', error);
+      toast({
+        title: "Application Failed",
+        description: error.message || "Failed to apply template. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setApplying(false);
+    }
   };
 
   const TemplateCard = ({ template }: { template: CardTemplate }) => {
@@ -55,13 +145,12 @@ export const Templates: React.FC = () => {
         onClick={() => handleSelectTemplate(template)}
       >
         <div className="relative aspect-video bg-muted rounded-lg mb-4 overflow-hidden">
-          {/* Template Preview */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center p-4">
-              <Layout className="w-12 h-12 mx-auto mb-2 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">Preview</p>
-            </div>
-          </div>
+          {/* Template Thumbnail */}
+          <img 
+            src={template.thumbnail} 
+            alt={template.name}
+            className="w-full h-full object-cover"
+          />
           
           {isSelected && (
             <div className="absolute top-2 right-2 bg-primary rounded-full p-1">
@@ -120,13 +209,23 @@ export const Templates: React.FC = () => {
               </div>
             </div>
             
-            <Button 
-              onClick={handleApplyTemplate}
-              disabled={!selectedTemplate}
-              size="lg"
-            >
-              Apply Template
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline"
+                onClick={() => navigate(`/${userCard?.vanity_url || 'mycard'}`)}
+                disabled={!userCard}
+              >
+                <ExternalLink className="w-4 h-4 mr-2" />
+                View Profile
+              </Button>
+              <Button 
+                onClick={handleApplyTemplate}
+                disabled={!selectedTemplate || applying}
+                size="lg"
+              >
+                {applying ? 'Applying...' : 'Apply Template'}
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -152,6 +251,38 @@ export const Templates: React.FC = () => {
                 Perfect for business cards and quick sharing
               </p>
             </div>
+
+            {/* Live Preview Section */}
+            {userCard && !loadingCard && (
+              <div className="mb-8 p-6 bg-muted/30 rounded-lg border border-border">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-lg font-semibold">Your Card Preview</h3>
+                    <p className="text-sm text-muted-foreground">
+                      See how templates will look on your card
+                    </p>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => navigate('/editor')}
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Edit Card
+                  </Button>
+                </div>
+                <div className="max-w-md mx-auto">
+                  <CardPreviewNew 
+                    cardData={{
+                      ...userCard.content_json,
+                      customCSS: selectedTemplate 
+                        ? (defaultCardTemplates.find(t => t.id === selectedTemplate)?.style.customCSS || userCard.content_json.customCSS)
+                        : userCard.content_json.customCSS
+                    }} 
+                  />
+                </div>
+              </div>
+            )}
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {defaultCardTemplates.map((template) => (
@@ -167,6 +298,31 @@ export const Templates: React.FC = () => {
                 Comprehensive layouts for full profile pages
               </p>
             </div>
+
+            {/* Live Preview Section */}
+            {userCard && !loadingCard && (
+              <div className="mb-8 p-6 bg-muted/30 rounded-lg border border-border">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-lg font-semibold">Your Profile Preview</h3>
+                    <p className="text-sm text-muted-foreground">
+                      See how templates will look on your full profile
+                    </p>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => navigate(`/${userCard.vanity_url || 'mycard'}`)}
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    View Full Profile
+                  </Button>
+                </div>
+                <div className="text-center text-sm text-muted-foreground">
+                  Profile templates are best viewed on the full profile page
+                </div>
+              </div>
+            )}
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {defaultProfileTemplates.map((template) => (

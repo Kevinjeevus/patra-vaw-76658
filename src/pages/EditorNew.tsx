@@ -309,6 +309,7 @@ export const EditorNew: React.FC = () => {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [urlAvailable, setUrlAvailable] = useState<boolean | null>(null);
   const [checkingUrl, setCheckingUrl] = useState(false);
+  const [urlRestrictionReason, setUrlRestrictionReason] = useState<string | null>(null);
   const [copiedUrl, setCopiedUrl] = useState(false);
   
   // Custom link states
@@ -700,11 +701,30 @@ export const EditorNew: React.FC = () => {
   const checkUrlAvailability = async (url: string) => {
     if (!url || !user) {
       setUrlAvailable(null);
+      setUrlRestrictionReason(null);
       return;
     }
 
     setCheckingUrl(true);
     try {
+      // First check if the username is restricted
+      const { data: restrictedData, error: restrictedError } = await supabase
+        .from('restricted_usernames')
+        .select('username, reason')
+        .ilike('username', url)
+        .maybeSingle();
+
+      if (restrictedError && restrictedError.code !== 'PGRST116') {
+        console.error('Error checking restricted usernames:', restrictedError);
+      }
+
+      if (restrictedData) {
+        setUrlAvailable(false);
+        setUrlRestrictionReason(restrictedData.reason || 'This username is restricted');
+        return;
+      }
+
+      // Then check if the URL is already taken
       const { data, error } = await supabase
         .from('digital_cards')
         .select('id, owner_user_id')
@@ -714,10 +734,13 @@ export const EditorNew: React.FC = () => {
       if (error && error.code !== 'PGRST116') throw error;
 
       // URL is available if no record exists OR if the record belongs to current user
-      setUrlAvailable(!data || data.owner_user_id === user.id);
+      const isAvailable = !data || data.owner_user_id === user.id;
+      setUrlAvailable(isAvailable);
+      setUrlRestrictionReason(null);
     } catch (error) {
       console.error('Error checking URL:', error);
       setUrlAvailable(null);
+      setUrlRestrictionReason(null);
     } finally {
       setCheckingUrl(false);
     }
@@ -1012,7 +1035,10 @@ export const EditorNew: React.FC = () => {
                 )}
                 {!checkingUrl && cardData.vanityUrl && urlAvailable === false && (
                   <p className="text-xs text-red-500 font-medium mt-1">
-                    The selected User ID "{cardData.vanityUrl}" is not available
+                    {urlRestrictionReason 
+                      ? `✗ "${cardData.vanityUrl}" is restricted: ${urlRestrictionReason}`
+                      : `✗ "${cardData.vanityUrl}" is already taken`
+                    }
                   </p>
                 )}
                 {!checkingUrl && cardData.vanityUrl && urlAvailable === true && (
