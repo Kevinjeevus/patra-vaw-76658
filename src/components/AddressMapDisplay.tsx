@@ -24,8 +24,9 @@ export const AddressMapDisplay: React.FC<AddressMapDisplayProps> = ({
   const hasCoordinates = latitude !== null && latitude !== undefined && 
                          longitude !== null && longitude !== undefined;
   
+  // Use place mode with marker for coordinates, or search for address
   const mapEmbedUrl = hasCoordinates
-    ? `https://www.google.com/maps/embed/v1/view?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&center=${latitude},${longitude}&zoom=15`
+    ? `https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${latitude},${longitude}&zoom=15`
     : `https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodeURIComponent(address)}`;
   
   const mapsLink = mapUrl
@@ -69,12 +70,6 @@ export const AddressMapDisplay: React.FC<AddressMapDisplayProps> = ({
             referrerPolicy="no-referrer-when-downgrade"
             title="Location Map"
           />
-          {/* Map Pin Overlay */}
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-            <div className="w-8 h-8 bg-red-500 rounded-full border-2 border-white shadow-lg flex items-center justify-center">
-              <MapPin className="w-4 h-4 text-white" />
-            </div>
-          </div>
         </div>
       )}
     </div>

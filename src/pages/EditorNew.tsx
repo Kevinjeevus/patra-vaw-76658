@@ -392,6 +392,24 @@ export const EditorNew: React.FC = () => {
       fetchExistingCard();
       fetchAIStatus();
       
+      // Check for selected template and apply it
+      const selectedTemplate = localStorage.getItem('selectedTemplate');
+      if (selectedTemplate) {
+        // Import template and apply its styles
+        import('@/types/template').then((module) => {
+          const allTemplates = [...module.defaultCardTemplates, ...module.defaultProfileTemplates];
+          const template = allTemplates.find(t => t.id === selectedTemplate);
+          if (template) {
+            setCardData(prev => ({
+              ...prev,
+              customCSS: template.style.customCSS || prev.customCSS,
+            }));
+          }
+        });
+        // Clear the selection after applying
+        localStorage.removeItem('selectedTemplate');
+      }
+      
       // Show video intro on first visit
       const hasSeenIntro = localStorage.getItem('patra_video_intro_seen');
       const hasCompletedTour = localStorage.getItem('patra-tour-completed') === 'true';
@@ -2892,7 +2910,13 @@ ${cardData.achievements.map(a => `- ${a.title} from ${a.issuer} (${a.date})`).jo
         {!isMobile && (
           <aside 
             data-tour="preview"
-            className="flex-1 border-l border-border overflow-y-auto p-6 bg-muted/30 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent"
+            className={`flex-1 border-l border-border overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent ${
+              cardData.theme === 'modern' ? 'bg-gradient-to-br from-gray-900 to-gray-800' :
+              cardData.theme === 'vibrant' ? 'bg-gradient-to-br from-purple-400 to-pink-600' :
+              cardData.theme === 'professional' ? 'bg-gradient-to-br from-slate-100 to-gray-200' :
+              cardData.theme === 'minimal' ? 'bg-background' :
+              'bg-muted/30'
+            }`}
             style={{ maxHeight: 'calc(100vh - 4rem)' }}
           >
             <div className="max-w-md mx-auto">
@@ -2906,7 +2930,13 @@ ${cardData.achievements.map(a => `- ${a.title} from ${a.issuer} (${a.date})`).jo
 
         {/* Preview Column - Mobile */}
         {isMobile && showMobilePreview && (
-          <div className="fixed inset-0 top-16 bg-background z-40 overflow-y-auto scrollbar-thin p-4 transition-transform duration-300">
+          <div className={`fixed inset-0 top-16 z-40 overflow-y-auto scrollbar-thin p-4 transition-transform duration-300 ${
+            cardData.theme === 'modern' ? 'bg-gradient-to-br from-gray-900 to-gray-800' :
+            cardData.theme === 'vibrant' ? 'bg-gradient-to-br from-purple-400 to-pink-600' :
+            cardData.theme === 'professional' ? 'bg-gradient-to-br from-slate-100 to-gray-200' :
+            cardData.theme === 'minimal' ? 'bg-background' :
+            'bg-background'
+          }`}>
             <CardPreviewNew cardData={{...cardData, aiEnabled}} onOpenPayment={() => setShowPaymentDialog(true)} showAIButton={true} />
           </div>
         )}

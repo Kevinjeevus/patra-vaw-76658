@@ -93,6 +93,8 @@ interface CardData {
   showAddressMap?: boolean;
   latitude?: number | null;
   longitude?: number | null;
+  theme?: string;
+  customCSS?: string;
 }
 
 interface CardPreviewNewProps {
@@ -183,8 +185,13 @@ export const CardPreviewNew: React.FC<CardPreviewNewProps> = ({ cardData, onOpen
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-4 p-4">
+      {/* Custom CSS Injection */}
+      {cardData.customCSS && (
+        <style dangerouslySetInnerHTML={{ __html: cardData.customCSS }} />
+      )}
+      
       {/* Main Profile Card */}
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden card-container">
         {/* Header with gradient */}
         <div className="relative h-32 bg-gradient-to-br from-primary/20 via-primary/10 to-background"></div>
         

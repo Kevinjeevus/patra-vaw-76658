@@ -258,7 +258,18 @@ export const PublicProfile: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className={`min-h-screen ${
+      cardData.theme === 'modern' ? 'bg-gradient-to-br from-gray-900 to-gray-800' :
+      cardData.theme === 'vibrant' ? 'bg-gradient-to-br from-purple-400 to-pink-600' :
+      cardData.theme === 'professional' ? 'bg-gradient-to-br from-slate-100 to-gray-200' :
+      cardData.theme === 'minimal' ? 'bg-background' :
+      'bg-background'
+    }`}>
+      {/* Custom CSS Injection */}
+      {cardData.customCSS && (
+        <style dangerouslySetInnerHTML={{ __html: cardData.customCSS }} />
+      )}
+      
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-sm border-b">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
