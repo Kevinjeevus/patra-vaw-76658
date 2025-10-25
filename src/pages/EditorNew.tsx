@@ -177,6 +177,8 @@ interface CardData {
   latitude?: number | null;
   longitude?: number | null;
   mapUrl?: string;
+  bannerType?: 'gradient' | 'color' | 'image' | 'blurred' | 'pattern';
+  bannerValue?: string; // For color hex, image URL, or pattern type
 }
 
 const socialPlatforms = [
@@ -2486,6 +2488,120 @@ export const EditorNew: React.FC = () => {
                     <p className="text-sm font-medium">{theme.name}</p>
                   </button>
                 ))}
+              </div>
+            </div>
+
+            {/* Banner Customization */}
+            <div className="space-y-4 p-4 border border-border rounded-lg">
+              <h3 className="font-semibold text-sm">Banner Customization</h3>
+              <p className="text-xs text-muted-foreground">
+                Customize your card header background
+              </p>
+              
+              <div className="space-y-3">
+                <Label>Banner Style</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  <Button
+                    variant={cardData.bannerType === 'gradient' || !cardData.bannerType ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCardData({ ...cardData, bannerType: 'gradient' })}
+                  >
+                    Gradient
+                  </Button>
+                  <Button
+                    variant={cardData.bannerType === 'color' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCardData({ ...cardData, bannerType: 'color' })}
+                  >
+                    Color
+                  </Button>
+                  <Button
+                    variant={cardData.bannerType === 'image' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCardData({ ...cardData, bannerType: 'image' })}
+                  >
+                    Image
+                  </Button>
+                  <Button
+                    variant={cardData.bannerType === 'blurred' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCardData({ ...cardData, bannerType: 'blurred' })}
+                  >
+                    Blurred
+                  </Button>
+                  <Button
+                    variant={cardData.bannerType === 'pattern' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCardData({ ...cardData, bannerType: 'pattern' })}
+                  >
+                    Pattern
+                  </Button>
+                </div>
+
+                {cardData.bannerType === 'color' && (
+                  <div className="space-y-2">
+                    <Label>Pick a Color</Label>
+                    <div className="grid grid-cols-5 gap-2">
+                      {['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#ef4444', '#06b6d4', '#6366f1'].map((color) => (
+                        <button
+                          key={color}
+                          onClick={() => setCardData({ ...cardData, bannerValue: color })}
+                          className={`w-full aspect-square rounded-lg border-2 transition-all ${
+                            cardData.bannerValue === color ? 'border-foreground scale-110' : 'border-border'
+                          }`}
+                          style={{ backgroundColor: color }}
+                        />
+                      ))}
+                    </div>
+                    <Input
+                      type="color"
+                      value={cardData.bannerValue || '#3b82f6'}
+                      onChange={(e) => setCardData({ ...cardData, bannerValue: e.target.value })}
+                      className="w-full h-10"
+                    />
+                  </div>
+                )}
+
+                {cardData.bannerType === 'image' && (
+                  <div className="space-y-2">
+                    <Label>Banner Image URL</Label>
+                    <Input
+                      value={cardData.bannerValue || ''}
+                      onChange={(e) => setCardData({ ...cardData, bannerValue: e.target.value })}
+                      placeholder="https://example.com/banner.jpg"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Enter a URL for your banner image
+                    </p>
+                  </div>
+                )}
+
+                {cardData.bannerType === 'blurred' && (
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground">
+                      Your profile photo will be used as a blurred background
+                    </p>
+                  </div>
+                )}
+
+                {cardData.bannerType === 'pattern' && (
+                  <div className="space-y-2">
+                    <Label>Pattern Type</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {['dots', 'lines', 'waves', 'grid'].map((pattern) => (
+                        <Button
+                          key={pattern}
+                          variant={cardData.bannerValue === pattern ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setCardData({ ...cardData, bannerValue: pattern })}
+                          className="capitalize"
+                        >
+                          {pattern}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

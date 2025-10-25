@@ -9,7 +9,7 @@ import { defaultCardTemplates, defaultProfileTemplates, CardTemplate } from '@/t
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { CardPreviewNew } from '@/components/card-preview-new';
+
 
 export const Templates: React.FC = () => {
   const navigate = useNavigate();
@@ -250,39 +250,26 @@ export const Templates: React.FC = () => {
               <p className="text-muted-foreground">
                 Perfect for business cards and quick sharing
               </p>
-            </div>
-
-            {/* Live Preview Section */}
-            {userCard && !loadingCard && (
-              <div className="mb-8 p-6 bg-muted/30 rounded-lg border border-border">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-lg font-semibold">Your Card Preview</h3>
-                    <p className="text-sm text-muted-foreground">
-                      See how templates will look on your card
-                    </p>
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => navigate('/editor')}
-                  >
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    Edit Card
-                  </Button>
-                </div>
-                <div className="max-w-md mx-auto">
-                  <CardPreviewNew 
-                    cardData={{
-                      ...userCard.content_json,
-                      customCSS: selectedTemplate 
-                        ? (defaultCardTemplates.find(t => t.id === selectedTemplate)?.style.customCSS || userCard.content_json.customCSS)
-                        : userCard.content_json.customCSS
-                    }} 
-                  />
-                </div>
+              <div className="flex justify-center gap-2 mt-4">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => navigate('/editor')}
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Edit Card
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => navigate(`/${userCard?.vanity_url || 'mycard'}?card`)}
+                  disabled={!userCard}
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  View Card
+                </Button>
               </div>
-            )}
+            </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {defaultCardTemplates.map((template) => (
@@ -297,32 +284,26 @@ export const Templates: React.FC = () => {
               <p className="text-muted-foreground">
                 Comprehensive layouts for full profile pages
               </p>
-            </div>
-
-            {/* Live Preview Section */}
-            {userCard && !loadingCard && (
-              <div className="mb-8 p-6 bg-muted/30 rounded-lg border border-border">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-lg font-semibold">Your Profile Preview</h3>
-                    <p className="text-sm text-muted-foreground">
-                      See how templates will look on your full profile
-                    </p>
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => navigate(`/${userCard.vanity_url || 'mycard'}`)}
-                  >
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    View Full Profile
-                  </Button>
-                </div>
-                <div className="text-center text-sm text-muted-foreground">
-                  Profile templates are best viewed on the full profile page
-                </div>
+              <div className="flex justify-center gap-2 mt-4">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => navigate('/editor')}
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Edit Profile
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => navigate(`/${userCard?.vanity_url || 'mycard'}`)}
+                  disabled={!userCard}
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  View Profile
+                </Button>
               </div>
-            )}
+            </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {defaultProfileTemplates.map((template) => (

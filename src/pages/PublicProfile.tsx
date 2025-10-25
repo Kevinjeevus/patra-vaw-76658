@@ -181,10 +181,12 @@ export const PublicProfile: React.FC = () => {
           longitude: lng,
         });
 
-        // Track analytics
+        // Track analytics with device and IP info
         await supabase.from('card_analytics').insert({
           card_id: card.id,
           event_type: 'view',
+          user_agent: navigator.userAgent,
+          device_type: /Mobile|Android|iPhone/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
         });
 
         setLoading(false);

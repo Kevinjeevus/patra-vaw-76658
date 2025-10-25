@@ -250,13 +250,6 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
           },
-          {
-            foreignKeyName: "digital_cards_template_id_fkey"
-            columns: ["template_id"]
-            isOneToOne: false
-            referencedRelation: "card_templates"
-            referencedColumns: ["id"]
-          },
         ]
       }
       profiles: {

@@ -24,11 +24,11 @@ export const AddressMapDisplay: React.FC<AddressMapDisplayProps> = ({
   const hasCoordinates = latitude !== null && latitude !== undefined && 
                          longitude !== null && longitude !== undefined;
   
-  // Use Google Maps Embed API with marker - this will show the built-in pin
+  // Use Google Maps Embed API with place mode to show marker
   const mapEmbedUrl = hasCoordinates
-    ? `https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${latitude},${longitude}&zoom=15&maptype=roadmap`
+    ? `https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${latitude},${longitude}&zoom=15`
     : address 
-      ? `https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodeURIComponent(address)}&zoom=15&maptype=roadmap`
+      ? `https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodeURIComponent(address)}&zoom=15`
       : null;
   
   const mapsLink = mapUrl

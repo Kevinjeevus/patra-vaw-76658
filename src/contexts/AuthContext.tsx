@@ -30,12 +30,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Track device info helper
+    const trackDeviceInfo = async (userId: string) => {
+      const deviceInfo = {
+        userAgent: navigator.userAgent,
+        language: navigator.language,
+        platform: navigator.platform,
+        screenResolution: `${window.screen.width}x${window.screen.height}`,
+      };
+
+      // Update profile with device info
+      await supabase
+        .from('profiles')
+        .update({ device_info: deviceInfo })
+        .eq('user_id', userId);
+    };
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+
+        // Track device info on sign in
+        if (event === 'SIGNED_IN' && session?.user) {
+          trackDeviceInfo(session.user.id);
+        }
       }
     );
 
@@ -44,6 +65,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      
+      if (session?.user) {
+        trackDeviceInfo(session.user.id);
+      }
     });
 
     return () => subscription.unsubscribe();
