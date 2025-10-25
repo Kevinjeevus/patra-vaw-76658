@@ -411,11 +411,10 @@ const Admin: React.FC = () => {
 
                   <div className="space-y-2">
                     <Label>Content</Label>
-                    <Textarea
+                    <MarkdownEditor
                       value={announcementForm.content}
-                      onChange={(e) => setAnnouncementForm({ ...announcementForm, content: e.target.value })}
-                      placeholder="Announcement content"
-                      rows={4}
+                      onChange={(content) => setAnnouncementForm({ ...announcementForm, content })}
+                      placeholder="Write your announcement in markdown..."
                     />
                   </div>
 
@@ -794,6 +793,21 @@ const Admin: React.FC = () => {
 
                         {selectedDoc && (
                           <>
+                            <div className="space-y-2">
+                              <Label>Document Title</Label>
+                              <Input 
+                                placeholder="Enter document title"
+                                value={docPages.find(d => d.id === selectedDoc)?.title || ''}
+                                onChange={(e) => {
+                                  const doc = docPages.find(d => d.id === selectedDoc);
+                                  if (doc) {
+                                    setDocPages(docPages.map(d => 
+                                      d.id === selectedDoc ? { ...d, title: e.target.value } : d
+                                    ));
+                                  }
+                                }}
+                              />
+                            </div>
                             <MarkdownEditor
                               value={docContent}
                               onChange={setDocContent}
@@ -802,9 +816,11 @@ const Admin: React.FC = () => {
                             <div className="flex gap-2">
                               <Button onClick={async () => {
                                 try {
+                                  const doc = docPages.find(d => d.id === selectedDoc);
                                   const { error } = await supabase
                                     .from('documentation_pages')
                                     .update({
+                                      title: doc?.title,
                                       content: docContent,
                                     })
                                     .eq('id', selectedDoc);
@@ -822,6 +838,35 @@ const Admin: React.FC = () => {
                                 }
                               }}>
                                 Save Changes
+                              </Button>
+                              <Button 
+                                variant="destructive"
+                                onClick={async () => {
+                                  if (confirm('Are you sure you want to delete this document?')) {
+                                    try {
+                                      const { error } = await supabase
+                                        .from('documentation_pages')
+                                        .delete()
+                                        .eq('id', selectedDoc);
+                                      
+                                      if (error) throw error;
+                                      
+                                      toast({ title: 'Deleted', description: 'Document deleted successfully' });
+                                      setSelectedDoc('');
+                                      setDocContent('');
+                                      loadDocPages();
+                                    } catch (error: any) {
+                                      toast({
+                                        title: 'Error',
+                                        description: error.message || 'Failed to delete document',
+                                        variant: 'destructive',
+                                      });
+                                    }
+                                  }
+                                }}
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Delete
                               </Button>
                               <Button 
                                 variant="outline"

@@ -95,6 +95,8 @@ interface CardData {
   longitude?: number | null;
   theme?: string;
   customCSS?: string;
+  bannerType?: 'gradient' | 'color' | 'image' | 'blurred' | 'pattern';
+  bannerValue?: string;
 }
 
 interface CardPreviewNewProps {
@@ -192,8 +194,51 @@ export const CardPreviewNew: React.FC<CardPreviewNewProps> = ({ cardData, onOpen
       
       {/* Main Profile Card */}
       <Card className="overflow-hidden card-container">
-        {/* Header with gradient */}
-        <div className="relative h-32 bg-gradient-to-br from-primary/20 via-primary/10 to-background"></div>
+        {/* Header Banner - Dynamic based on banner settings */}
+        <div 
+          className="relative h-32"
+          style={{
+            ...(cardData.bannerType === 'color' && cardData.bannerValue
+              ? { backgroundColor: cardData.bannerValue }
+              : cardData.bannerType === 'image' && cardData.bannerValue
+              ? { 
+                  backgroundImage: `url(${cardData.bannerValue})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }
+              : cardData.bannerType === 'blurred' && cardData.avatarUrl
+              ? {
+                  backgroundImage: `url(${cardData.avatarUrl})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  filter: 'blur(20px)',
+                  transform: 'scale(1.1)'
+                }
+              : cardData.bannerType === 'pattern' && cardData.bannerValue === 'dots'
+              ? {
+                  background: 'radial-gradient(circle, hsl(var(--primary) / 0.3) 1px, transparent 1px)',
+                  backgroundSize: '20px 20px'
+                }
+              : cardData.bannerType === 'pattern' && cardData.bannerValue === 'lines'
+              ? {
+                  background: 'repeating-linear-gradient(45deg, hsl(var(--primary) / 0.1), hsl(var(--primary) / 0.1) 10px, transparent 10px, transparent 20px)'
+                }
+              : cardData.bannerType === 'pattern' && cardData.bannerValue === 'waves'
+              ? {
+                  background: 'linear-gradient(135deg, hsl(var(--primary) / 0.2) 25%, transparent 25%), linear-gradient(225deg, hsl(var(--primary) / 0.2) 25%, transparent 25%)',
+                  backgroundSize: '40px 40px'
+                }
+              : cardData.bannerType === 'pattern' && cardData.bannerValue === 'grid'
+              ? {
+                  background: 'linear-gradient(hsl(var(--primary) / 0.1) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary) / 0.1) 1px, transparent 1px)',
+                  backgroundSize: '20px 20px'
+                }
+              : {}),
+            ...(!cardData.bannerType || cardData.bannerType === 'gradient'
+              ? { background: 'linear-gradient(135deg, hsl(var(--primary) / 0.2), hsl(var(--accent) / 0.1))' }
+              : {})
+          }}
+        ></div>
         
         <div className="px-6 pb-6">
           {/* Avatar overlapping header - with QR flip */}
