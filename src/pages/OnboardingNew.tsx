@@ -10,7 +10,8 @@ import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
 import { 
   ChevronRight, ChevronLeft, Users, Building2, User, AlertCircle,
-  Brain, Wand2, Palette, Sparkles, Check, CreditCard, MapPin, Info
+  Brain, Wand2, Palette, Sparkles, Check, CreditCard, MapPin, Info,
+  Camera, Mail, Briefcase, FileText, Upload
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -24,6 +25,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 type AccountType = 'individual' | 'company' | null;
 
@@ -45,6 +47,12 @@ interface OnboardingData {
   company_domain: string;
   termsAccepted: boolean;
   verificationPaid: boolean;
+  // Profile creation fields
+  bio: string;
+  job_title: string;
+  avatar_url: string;
+  website: string;
+  company: string;
 }
 
 const aiLoadingSteps = [
@@ -58,7 +66,7 @@ const aiLoadingSteps = [
 export const OnboardingNew: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [currentStep, setCurrentStep] = useState(0); // 0 = account type, 1 = personal info, 2 = complete
+  const [currentStep, setCurrentStep] = useState(0); // 0 = account type, 1 = personal info, 2-5 = profile setup for individual
   const [loading, setLoading] = useState(false);
   const [showCompanyWarning, setShowCompanyWarning] = useState(false);
   const [showAILoading, setShowAILoading] = useState(false);
@@ -80,6 +88,11 @@ export const OnboardingNew: React.FC = () => {
     company_domain: '',
     termsAccepted: false,
     verificationPaid: false,
+    bio: '',
+    job_title: '',
+    avatar_url: user?.user_metadata?.avatar_url || user?.user_metadata?.picture || '',
+    website: '',
+    company: '',
   });
 
   useEffect(() => {
@@ -239,15 +252,17 @@ export const OnboardingNew: React.FC = () => {
       }
 
       const updateData: any = {
-        display_name: data.display_name,
-        email: data.email,
+        display_name: data.display_name || null,
         phone: data.phone || null,
         age: data.age ? parseInt(data.age) : null,
         account_type: data.accountType,
         location_coordinates: data.locationCoords ? `(${data.locationCoords.lat},${data.locationCoords.lng})` : null,
         device_info: data.deviceInfo,
         onboarding_completed: true,
-        avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
+        avatar_url: data.avatar_url || user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
+        bio: data.bio || null,
+        job_title: data.job_title || null,
+        company_name: data.company || null,
       };
 
       // Company-specific fields
@@ -270,12 +285,62 @@ export const OnboardingNew: React.FC = () => {
         });
       }
 
-      const { error } = await supabase
+      const { error: profileError } = await supabase
         .from('profiles')
         .update(updateData)
         .eq('user_id', user.id);
 
-      if (error) throw error;
+      if (profileError) throw profileError;
+
+      // Update digital card with complete data for individual accounts
+      if (data.accountType === 'individual') {
+        const { data: existingCard } = await supabase
+          .from('digital_cards')
+          .select('id, vanity_url')
+          .eq('owner_user_id', user.id)
+          .single();
+
+        if (existingCard) {
+          const { error: cardError } = await supabase
+            .from('digital_cards')
+            .update({
+              title: data.display_name || 'My Card',
+              content_json: {
+                name: data.display_name,
+                email: data.email,
+                phone: data.phone,
+                jobTitle: data.job_title,
+                bio: data.bio,
+                company: data.company,
+                website: data.website,
+                avatar: data.avatar_url,
+                showAvatar: !!data.avatar_url,
+                showName: true,
+                showJobTitle: !!data.job_title,
+                showPhone: !!data.phone,
+                showEmail: true,
+                showBio: !!data.bio,
+                showQRCode: true,
+                showCompany: !!data.company,
+                showWebsite: !!data.website,
+              }
+            })
+            .eq('id', existingCard.id);
+
+          if (cardError) throw cardError;
+
+          toast({
+            title: "Welcome to Patra!",
+            description: `Your profile has been created successfully.`,
+          });
+
+          // Mark tour as should show
+          localStorage.removeItem('patra-tour-completed');
+
+          navigate(`/${existingCard.vanity_url}?card`);
+          return;
+        }
+      }
 
       toast({
         title: "Welcome to Patra!",
@@ -283,7 +348,7 @@ export const OnboardingNew: React.FC = () => {
       });
 
       // Redirect based on account type
-      navigate(data.accountType === 'company' ? '/dashboard' : '/profile-creation');
+      navigate(data.accountType === 'company' ? '/dashboard' : '/editor');
     } catch (error: any) {
       console.error('Error completing onboarding:', error);
       toast({
@@ -305,7 +370,43 @@ export const OnboardingNew: React.FC = () => {
         return data.display_name.trim() !== '' && data.company_name.trim() !== '' && data.termsAccepted;
       }
     }
+    // All profile steps are optional
     return true;
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}-${Math.random()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      setData({ ...data, avatar_url: publicUrl });
+      
+      toast({
+        title: "Avatar uploaded!",
+        description: "Your profile picture has been updated."
+      });
+    } catch (error: any) {
+      console.error('Error uploading avatar:', error);
+      toast({
+        title: "Upload failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
   };
 
   // AI Loading Screen
@@ -539,11 +640,210 @@ export const OnboardingNew: React.FC = () => {
                     Back
                   </Button>
                   <Button
-                    onClick={handleComplete}
+                    onClick={() => setCurrentStep(2)}
                     disabled={!isStepValid() || loading}
                     className="flex-1"
                   >
-                    Complete Setup
+                    Next
+                    <ChevronRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 2: Avatar (Individual only) */}
+            {currentStep === 2 && data.accountType === 'individual' && (
+              <div className="space-y-6 animate-slide-up">
+                <div className="text-center mb-6">
+                  <div className="w-16 h-16 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                    <Camera className="w-8 h-8 text-white" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-slate-900 mb-2">Add your photo</h2>
+                  <p className="text-slate-600">Make your card more personal (optional)</p>
+                </div>
+                
+                <div className="flex flex-col items-center space-y-4">
+                  <Avatar className="w-32 h-32">
+                    <AvatarImage src={data.avatar_url} alt="Profile" />
+                    <AvatarFallback className="text-2xl">
+                      <User className="w-16 h-16" />
+                    </AvatarFallback>
+                  </Avatar>
+                  
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => document.getElementById('avatar-upload')?.click()}
+                      className="gap-2"
+                    >
+                      <Upload className="w-4 h-4" />
+                      Upload Photo
+                    </Button>
+                    <input
+                      id="avatar-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarUpload}
+                      className="hidden"
+                    />
+                  </div>
+                  
+                  {data.avatar_url && (
+                    <p className="text-xs text-green-600">✓ Profile photo set</p>
+                  )}
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentStep(1)}
+                    className="flex-1"
+                  >
+                    <ChevronLeft className="w-4 h-4 mr-2" />
+                    Back
+                  </Button>
+                  <Button
+                    onClick={() => setCurrentStep(3)}
+                    className="flex-1"
+                  >
+                    Next
+                    <ChevronRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Company & Website (Individual only) */}
+            {currentStep === 3 && data.accountType === 'individual' && (
+              <div className="space-y-6 animate-slide-up">
+                <div className="text-center mb-6">
+                  <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                    <Mail className="w-8 h-8 text-white" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-slate-900 mb-2">Company & Website</h2>
+                  <p className="text-slate-600">Where do you work? (optional)</p>
+                </div>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="company">Company Name</Label>
+                    <Input
+                      id="company"
+                      value={data.company}
+                      onChange={(e) => setData({ ...data, company: e.target.value })}
+                      placeholder="Acme Inc."
+                      className="h-12"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="website">Website</Label>
+                    <Input
+                      id="website"
+                      value={data.website}
+                      onChange={(e) => setData({ ...data, website: e.target.value })}
+                      placeholder="https://example.com"
+                      className="h-12"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentStep(2)}
+                    className="flex-1"
+                  >
+                    <ChevronLeft className="w-4 h-4 mr-2" />
+                    Back
+                  </Button>
+                  <Button
+                    onClick={() => setCurrentStep(4)}
+                    className="flex-1"
+                  >
+                    Next
+                    <ChevronRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 4: Job Title (Individual only) */}
+            {currentStep === 4 && data.accountType === 'individual' && (
+              <div className="space-y-6 animate-slide-up">
+                <div className="text-center mb-6">
+                  <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                    <Briefcase className="w-8 h-8 text-white" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-slate-900 mb-2">What do you do?</h2>
+                  <p className="text-slate-600">Your professional title (optional)</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="job_title">Job Title</Label>
+                  <Input
+                    id="job_title"
+                    value={data.job_title}
+                    onChange={(e) => setData({ ...data, job_title: e.target.value })}
+                    placeholder="e.g., Software Engineer, Designer, Entrepreneur"
+                    className="h-12"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentStep(3)}
+                    className="flex-1"
+                  >
+                    <ChevronLeft className="w-4 h-4 mr-2" />
+                    Back
+                  </Button>
+                  <Button
+                    onClick={() => setCurrentStep(5)}
+                    className="flex-1"
+                  >
+                    Next
+                    <ChevronRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 5: Bio (Individual only) */}
+            {currentStep === 5 && data.accountType === 'individual' && (
+              <div className="space-y-6 animate-slide-up">
+                <div className="text-center mb-6">
+                  <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                    <FileText className="w-8 h-8 text-white" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-slate-900 mb-2">Tell us about yourself</h2>
+                  <p className="text-slate-600">A short bio for your card (optional)</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="bio">Bio</Label>
+                  <Textarea
+                    id="bio"
+                    value={data.bio}
+                    onChange={(e) => setData({ ...data, bio: e.target.value })}
+                    placeholder="Share a bit about yourself, your work, or what you're passionate about..."
+                    className="min-h-32"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentStep(4)}
+                    className="flex-1"
+                  >
+                    <ChevronLeft className="w-4 h-4 mr-2" />
+                    Back
+                  </Button>
+                  <Button
+                    onClick={handleComplete}
+                    disabled={loading}
+                    className="flex-1"
+                  >
+                    Create My Profile
                     <ChevronRight className="w-4 h-4 ml-2" />
                   </Button>
                 </div>

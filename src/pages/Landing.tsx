@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Navigation } from '@/components/navigation';
 import { HeroButton } from '@/components/ui/hero-button';
+import { MorphText } from '@/components/MorphText';
 import { Sparkles, Zap, Share2, Smartphone, Users, BarChart3, Shield, Palette, QrCode, Globe, CreditCard, Layers, ArrowRight, Play, ChevronRight, Star, Award, Check, Eye, MousePointer2, Wifi, X } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 export const Landing: React.FC = () => {
@@ -111,11 +112,15 @@ export const Landing: React.FC = () => {
 
               <h1 className="text-6xl md:text-7xl lg:text-8xl font-bold leading-tight tracking-tight animate-slide-up">
                 <span className="bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900 bg-clip-text text-transparent">
-                  Your Identity,
+                  Your <MorphText 
+                    words={['Visiting', 'Business', 'ID', 'Personal']} 
+                    baseText=""
+                    className="bg-gradient-to-r from-violet-600 via-purple-600 to-pink-600 bg-clip-text text-transparent"
+                  /> Card
                 </span>
                 <br />
                 <span className="bg-gradient-to-r from-violet-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                  Digitally Crafted
+                  for the modern age
                 </span>
               </h1>
 

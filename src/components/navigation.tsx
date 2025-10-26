@@ -1,13 +1,41 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { HeroButton } from '@/components/ui/hero-button';
-import { Menu, X, CreditCard } from 'lucide-react';
+import { Menu, X, CreditCard, ArrowLeft, Home } from 'lucide-react';
+
 export const Navigation: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const handleBackClick = () => {
+    if (user) {
+      // Check if there's history to go back
+      if (window.history.length > 1) {
+        navigate(-1);
+      } else {
+        navigate('/editor');
+      }
+    } else {
+      navigate('/auth');
+    }
+  };
+
   return <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-glass-border">
       <div className="container mx-auto px-4 bg-slate-50">
         <div className="flex items-center justify-between h-16">
+          {/* Back Button */}
+          <button
+            onClick={handleBackClick}
+            className="flex items-center gap-2 text-foreground-muted hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span className="hidden sm:inline">Back</span>
+          </button>
+
           {/* Logo */}
-          <div className="flex items-center space-x-2">
+          <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center space-x-2">
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
               <CreditCard className="w-5 h-5 text-primary-foreground" />
             </div>

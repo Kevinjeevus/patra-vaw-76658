@@ -243,6 +243,15 @@ export const Settings: React.FC = () => {
     navigate('/');
   };
 
+  const handleRestartTour = () => {
+    localStorage.removeItem('patra-tour-completed');
+    toast({
+      title: "Tour Reset",
+      description: "The tour will show when you next visit the editor"
+    });
+    navigate('/editor');
+  };
+
   const getAccountAge = () => {
     if (!profile?.created_at) return 'N/A';
     

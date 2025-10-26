@@ -6,6 +6,12 @@ export const useTour = (shouldStart: boolean) => {
   useEffect(() => {
     if (!shouldStart) return;
 
+    // Check if tour has been completed
+    const tourCompleted = localStorage.getItem('patra-tour-completed');
+    if (tourCompleted === 'true') {
+      return; // Don't start tour if already completed
+    }
+
     const driverObj = driver({
       showProgress: true,
       showButtons: ['next', 'previous', 'close'],
