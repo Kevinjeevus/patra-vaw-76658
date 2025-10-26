@@ -111,7 +111,7 @@ export const Landing: React.FC = () => {
               </div>
 
               <h1 className="text-6xl md:text-7xl lg:text-8xl font-bold leading-tight tracking-tight animate-slide-up">
-                <span className="bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900 bg-clip-text text-transparent">
+                <span className="text-slate-900">
                   Your <MorphText 
                     words={['Visiting', 'Business', 'ID', 'Personal']} 
                     baseText=""
@@ -119,7 +119,7 @@ export const Landing: React.FC = () => {
                   /> Card
                 </span>
                 <br />
-                <span className="bg-gradient-to-r from-violet-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                <span className="text-slate-900">
                   for the modern age
                 </span>
               </h1>

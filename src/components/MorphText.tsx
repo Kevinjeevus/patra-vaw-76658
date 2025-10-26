@@ -17,7 +17,7 @@ export const MorphText: React.FC<MorphTextProps> = ({ words, baseText, className
     const interval = setInterval(() => {
       setIsMorphing(true);
       morphToNext();
-    }, 3000);
+    }, 4000); // Slower animation interval
 
     return () => clearInterval(interval);
   }, [currentWordIndex]);
@@ -28,8 +28,8 @@ export const MorphText: React.FC<MorphTextProps> = ({ words, baseText, className
     const nextWord = words[nextWordIndex];
     const maxLength = Math.max(currentWord.length, nextWord.length);
     let frame = 0;
-    const frameDuration = 30;
-    const morphFrames = 20;
+    const frameDuration = 50; // Slower frame duration
+    const morphFrames = 30; // More frames for smoother, slower animation
 
     const morphInterval = setInterval(() => {
       if (frame >= morphFrames) {
@@ -71,7 +71,7 @@ export const MorphText: React.FC<MorphTextProps> = ({ words, baseText, className
   return (
     <>
       {baseText}
-      <span className={className}>{displayText}</span>
+      <span className={`${className} ${isMorphing ? 'text-green-500' : ''} transition-colors duration-300`}>{displayText}</span>
     </>
   );
 };

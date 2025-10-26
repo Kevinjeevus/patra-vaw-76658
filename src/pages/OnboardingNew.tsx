@@ -211,44 +211,76 @@ export const OnboardingNew: React.FC = () => {
 
       if (profileFetchError) throw profileFetchError;
 
-      // Check if digital card exists, if not create one with auto-generated username
-      const { data: existingCard } = await supabase
+      // Generate username function with better collision handling
+      const generateUsername = async (baseUsername: string): Promise<string> => {
+        let username = baseUsername.toLowerCase().replace(/[^a-z0-9]/g, '');
+        
+        // Ensure username is not empty
+        if (!username || username.length === 0) {
+          username = 'user';
+        }
+        
+        // Check if username exists
+        const { data: existingCard } = await supabase
+          .from('digital_cards')
+          .select('vanity_url')
+          .eq('vanity_url', username)
+          .single();
+        
+        // If exists, add random number
+        if (existingCard) {
+          const randomNum = Math.floor(1000 + Math.random() * 9000); // 4-digit number
+          username = `${username}${randomNum}`;
+        }
+        
+        return username;
+      };
+
+      // Always generate and create username for new users
+      const { data: existingCard, error: cardCheckError } = await supabase
         .from('digital_cards')
-        .select('vanity_url')
+        .select('id, vanity_url')
         .eq('owner_user_id', user.id)
-        .single();
+        .maybeSingle();
+
+      let vanityUrl = '';
 
       if (!existingCard) {
-        // Generate username from email or name
-        const generateUsername = async (baseUsername: string): Promise<string> => {
-          let username = baseUsername.toLowerCase().replace(/[^a-z0-9]/g, '');
-          
-          const { data: existingCard } = await supabase
-            .from('digital_cards')
-            .select('vanity_url')
-            .eq('vanity_url', username)
-            .single();
-          
-          if (existingCard) {
-            const randomNum = Math.floor(Math.random() * 9999);
-            username = `${username}${randomNum}`;
-          }
-          
-          return username;
-        };
-
+        // Generate username from display name, email, or default
         const baseUsername = data.display_name
           ? data.display_name.split(' ')[0]
-          : user.email?.split('@')[0] || 'user';
+          : user.email?.split('@')[0] || `user${Math.floor(1000 + Math.random() * 9000)}`;
         
-        const username = await generateUsername(baseUsername);
+        vanityUrl = await generateUsername(baseUsername);
         
-        await supabase.from('digital_cards').insert({
+        const { error: insertError } = await supabase.from('digital_cards').insert({
           owner_user_id: user.id,
-          title: data.display_name || user.email?.split('@')[0] || 'User',
-          vanity_url: username,
-          content_json: {}
+          title: data.display_name || user.email?.split('@')[0] || 'My Card',
+          vanity_url: vanityUrl,
+          content_json: {
+            name: data.display_name || '',
+            email: data.email || '',
+            phone: data.phone || '',
+            jobTitle: data.job_title || '',
+            bio: data.bio || '',
+            company: data.company || '',
+            website: data.website || '',
+            avatar: data.avatar_url || '',
+            showAvatar: !!data.avatar_url,
+            showName: true,
+            showJobTitle: !!data.job_title,
+            showPhone: !!data.phone,
+            showEmail: true,
+            showBio: !!data.bio,
+            showQRCode: true,
+            showCompany: !!data.company,
+            showWebsite: !!data.website,
+          }
         });
+
+        if (insertError) throw insertError;
+      } else {
+        vanityUrl = existingCard.vanity_url;
       }
 
       const updateData: any = {
@@ -292,62 +324,66 @@ export const OnboardingNew: React.FC = () => {
 
       if (profileError) throw profileError;
 
-      // Update digital card with complete data for individual accounts
-      if (data.accountType === 'individual') {
-        const { data: existingCard } = await supabase
+      // Update digital card with all data
+      const { data: finalCard, error: cardFetchError } = await supabase
+        .from('digital_cards')
+        .select('id, vanity_url')
+        .eq('owner_user_id', user.id)
+        .single();
+
+      if (cardFetchError) throw cardFetchError;
+
+      if (finalCard) {
+        const { error: cardUpdateError } = await supabase
           .from('digital_cards')
-          .select('id, vanity_url')
-          .eq('owner_user_id', user.id)
-          .single();
+          .update({
+            title: data.display_name || 'My Card',
+            content_json: {
+              name: data.display_name || '',
+              email: data.email || '',
+              phone: data.phone || '',
+              jobTitle: data.job_title || '',
+              bio: data.bio || '',
+              company: data.company || '',
+              website: data.website || '',
+              avatar: data.avatar_url || '',
+              showAvatar: !!data.avatar_url,
+              showName: true,
+              showJobTitle: !!data.job_title,
+              showPhone: !!data.phone,
+              showEmail: true,
+              showBio: !!data.bio,
+              showQRCode: true,
+              showCompany: !!data.company,
+              showWebsite: !!data.website,
+            }
+          })
+          .eq('id', finalCard.id);
 
-        if (existingCard) {
-          const { error: cardError } = await supabase
-            .from('digital_cards')
-            .update({
-              title: data.display_name || 'My Card',
-              content_json: {
-                name: data.display_name,
-                email: data.email,
-                phone: data.phone,
-                jobTitle: data.job_title,
-                bio: data.bio,
-                company: data.company,
-                website: data.website,
-                avatar: data.avatar_url,
-                showAvatar: !!data.avatar_url,
-                showName: true,
-                showJobTitle: !!data.job_title,
-                showPhone: !!data.phone,
-                showEmail: true,
-                showBio: !!data.bio,
-                showQRCode: true,
-                showCompany: !!data.company,
-                showWebsite: !!data.website,
-              }
-            })
-            .eq('id', existingCard.id);
+        if (cardUpdateError) throw cardUpdateError;
 
-          if (cardError) throw cardError;
+        toast({
+          title: "Welcome to Patra!",
+          description: `Your profile has been created successfully.`,
+        });
 
-          toast({
-            title: "Welcome to Patra!",
-            description: `Your profile has been created successfully.`,
-          });
+        // Mark tour as should show
+        localStorage.removeItem('patra-tour-completed');
 
-          // Mark tour as should show
-          localStorage.removeItem('patra-tour-completed');
-
-          navigate(`/${existingCard.vanity_url}?card`);
-          return;
+        // Navigate to card for individual, dashboard for company
+        if (data.accountType === 'individual') {
+          navigate(`/${finalCard.vanity_url}?card`);
+        } else {
+          navigate('/dashboard');
         }
+        return;
       }
 
+      // Fallback if something went wrong
       toast({
         title: "Welcome to Patra!",
         description: `Your ${data.accountType} account has been set up successfully.`,
       });
-
-      // Redirect based on account type
       navigate(data.accountType === 'company' ? '/dashboard' : '/editor');
     } catch (error: any) {
       console.error('Error completing onboarding:', error);
