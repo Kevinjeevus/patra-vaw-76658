@@ -162,36 +162,127 @@ export const Editor: React.FC = () => {
       ...prev,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
     }));
+    
+    // Load existing profile and card data
+    loadExistingData();
   }, []);
+
+  const loadExistingData = async () => {
+    if (!user) return;
+
+    try {
+      // Load profile data
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('display_name, phone, bio, job_title, avatar_url, company_name')
+        .eq('user_id', user.id)
+        .single();
+
+      // Load digital card data
+      const { data: card } = await supabase
+        .from('digital_cards')
+        .select('content_json')
+        .eq('owner_user_id', user.id)
+        .maybeSingle();
+
+      if (profile || card) {
+        const cardContent = card?.content_json as any || {};
+        
+        setCardData(prev => ({
+          ...prev,
+          fullName: profile?.display_name || prev.fullName,
+          email: user.email || prev.email,
+          phone: profile?.phone || cardContent.phone || prev.phone,
+          jobTitle: profile?.job_title || cardContent.jobTitle || prev.jobTitle,
+          company: profile?.company_name || cardContent.company || prev.company,
+          about: profile?.bio || cardContent.bio || prev.about,
+          // Load other card content if available
+          socialLinks: cardContent.socialLinks || prev.socialLinks,
+          paymentLinks: cardContent.paymentLinks || prev.paymentLinks,
+          customLinks: cardContent.customLinks || prev.customLinks,
+          interests: cardContent.interests || prev.interests,
+          photos: cardContent.photos || prev.photos,
+          languages: cardContent.languages || prev.languages,
+          dob: cardContent.dob || prev.dob,
+          location: cardContent.location || prev.location,
+          pronunciation: cardContent.pronunciation || prev.pronunciation,
+          pronoun: cardContent.pronoun || prev.pronoun,
+          contactForm: cardContent.contactForm || prev.contactForm,
+          calendar: cardContent.calendar || prev.calendar,
+          backgroundColor: cardContent.backgroundColor || prev.backgroundColor,
+          textColor: cardContent.textColor || prev.textColor,
+          accentColor: cardContent.accentColor || prev.accentColor,
+        }));
+
+        toast({
+          title: "Data loaded",
+          description: "Your existing profile has been loaded.",
+        });
+      }
+    } catch (error: any) {
+      console.error('Error loading data:', error);
+    }
+  };
 
   const handleSave = async () => {
     if (!user) return;
 
     setSaving(true);
     try {
-      const { error } = await supabase
+      // Check if card already exists
+      const { data: existingCard } = await supabase
         .from('digital_cards')
-        .insert({
-          owner_user_id: user.id,
-          title: cardData.fullName || 'My Digital Card',
-          content_json: cardData as any,
-          is_active: true,
-          is_approved: false,
-        });
+        .select('id')
+        .eq('owner_user_id', user.id)
+        .maybeSingle();
 
-      if (error) throw error;
+      if (existingCard) {
+        // Update existing card
+        const { error } = await supabase
+          .from('digital_cards')
+          .update({
+            title: cardData.fullName || 'My Digital Card',
+            content_json: cardData as any,
+          })
+          .eq('id', existingCard.id);
+
+        if (error) throw error;
+      } else {
+        // Create new card
+        const { error } = await supabase
+          .from('digital_cards')
+          .insert({
+            owner_user_id: user.id,
+            title: cardData.fullName || 'My Digital Card',
+            content_json: cardData as any,
+            is_active: true,
+            is_approved: false,
+          });
+
+        if (error) throw error;
+      }
+
+      // Also update profile with basic info
+      await supabase
+        .from('profiles')
+        .update({
+          display_name: cardData.fullName || null,
+          phone: cardData.phone || null,
+          bio: cardData.about || null,
+          job_title: cardData.jobTitle || null,
+          company_name: cardData.company || null,
+        })
+        .eq('user_id', user.id);
 
       toast({
         title: "Card Saved!",
-        description: "Your digital business card has been created successfully.",
+        description: "Your digital business card has been updated successfully.",
       });
-
-      navigate('/editor');
     } catch (error: any) {
       console.error('Error saving card:', error);
       toast({
         title: "Error",
-        description: "Failed to save card. Please try again.",
+        description: error.message || "Failed to save card. Please try again.",
         variant: "destructive"
       });
     } finally {

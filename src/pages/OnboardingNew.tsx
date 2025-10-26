@@ -240,12 +240,14 @@ export const OnboardingNew: React.FC = () => {
 
       const updateData: any = {
         display_name: data.display_name,
+        email: data.email,
         phone: data.phone || null,
         age: data.age ? parseInt(data.age) : null,
         account_type: data.accountType,
         location_coordinates: data.locationCoords ? `(${data.locationCoords.lat},${data.locationCoords.lng})` : null,
         device_info: data.deviceInfo,
         onboarding_completed: true,
+        avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
       };
 
       // Company-specific fields

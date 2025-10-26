@@ -9,17 +9,17 @@ import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { 
-  User, Mail, Phone, FileText, Check, Sparkles, 
-  Brain, Wand2, Shield, CheckCircle2, ChevronRight, ChevronLeft
+  User, Mail, Briefcase, FileText, Check, Sparkles, 
+  Brain, Wand2, Shield, CheckCircle2, ChevronRight, ChevronLeft, Upload, Camera
 } from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 interface ProfileData {
-  display_name: string;
-  email: string;
-  phone: string;
   bio: string;
   job_title: string;
   avatar_url: string;
+  website: string;
+  company: string;
 }
 
 const creationSteps = [
@@ -38,23 +38,23 @@ export const ProfileCreation: React.FC = () => {
   const [username, setUsername] = useState('');
   
   const [profileData, setProfileData] = useState<ProfileData>({
-    display_name: user?.user_metadata?.full_name || user?.user_metadata?.name || '',
-    email: user?.email || '',
-    phone: user?.user_metadata?.phone || '',
     bio: '',
     job_title: '',
-    avatar_url: user?.user_metadata?.avatar_url || user?.user_metadata?.picture || ''
+    avatar_url: user?.user_metadata?.avatar_url || user?.user_metadata?.picture || '',
+    website: '',
+    company: '',
   });
 
   useEffect(() => {
-    if (user?.email) {
-      setProfileData(prev => ({
-        ...prev,
-        email: user.email!,
-        display_name: prev.display_name || user.user_metadata?.full_name || user.user_metadata?.name || '',
-        phone: prev.phone || user.user_metadata?.phone || '',
-        avatar_url: prev.avatar_url || user.user_metadata?.avatar_url || user.user_metadata?.picture || ''
-      }));
+    if (user) {
+      // Fetch Google profile picture if available
+      const googleAvatar = user.user_metadata?.avatar_url || user.user_metadata?.picture;
+      if (googleAvatar) {
+        setProfileData(prev => ({
+          ...prev,
+          avatar_url: googleAvatar
+        }));
+      }
       fetchUsername();
     }
   }, [user]);
@@ -120,47 +120,57 @@ export const ProfileCreation: React.FC = () => {
     if (!user) return;
 
     try {
-      // Update profile
+      // Get existing profile data
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('display_name, phone')
+        .eq('user_id', user.id)
+        .single();
+
+      // Update profile with new data
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
-          display_name: profileData.display_name,
-          phone: profileData.phone || null,
           bio: profileData.bio || null,
           job_title: profileData.job_title || null,
           avatar_url: profileData.avatar_url || null,
+          company_name: profileData.company || null,
         })
         .eq('user_id', user.id);
 
       if (profileError) throw profileError;
 
-      // Create or update digital card
+      // Get or create digital card
       const { data: existingCard } = await supabase
         .from('digital_cards')
-        .select('id, vanity_url')
+        .select('id, vanity_url, content_json')
         .eq('owner_user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (existingCard) {
-        // Update existing card
+        // Update existing card with complete data
         const { error: cardError } = await supabase
           .from('digital_cards')
           .update({
-            title: profileData.display_name,
+            title: existingProfile?.display_name || 'My Card',
             content_json: {
-              name: profileData.display_name,
-              email: profileData.email,
-              phone: profileData.phone,
+              name: existingProfile?.display_name,
+              email: user.email,
+              phone: existingProfile?.phone,
               jobTitle: profileData.job_title,
               bio: profileData.bio,
+              company: profileData.company,
+              website: profileData.website,
               avatar: profileData.avatar_url,
-              showAvatar: true,
+              showAvatar: !!profileData.avatar_url,
               showName: true,
               showJobTitle: !!profileData.job_title,
-              showPhone: !!profileData.phone,
+              showPhone: !!existingProfile?.phone,
               showEmail: true,
               showBio: !!profileData.bio,
-              showQRCode: true
+              showQRCode: true,
+              showCompany: !!profileData.company,
+              showWebsite: !!profileData.website,
             }
           })
           .eq('id', existingCard.id);
@@ -172,13 +182,19 @@ export const ProfileCreation: React.FC = () => {
           description: "Your digital card is ready to share."
         });
 
-        navigate(`/${existingCard.vanity_url}`);
+        navigate(`/${existingCard.vanity_url}?card`);
+      } else {
+        toast({
+          title: "Error",
+          description: "Card not found. Please try again.",
+          variant: "destructive"
+        });
       }
     } catch (error: any) {
       console.error('Error creating profile:', error);
       toast({
         title: "Error",
-        description: "Failed to create profile. Please try again.",
+        description: error.message || "Failed to create profile. Please try again.",
         variant: "destructive"
       });
       setShowCreationAnimation(false);
@@ -186,8 +202,43 @@ export const ProfileCreation: React.FC = () => {
   };
 
   const isStepValid = () => {
-    if (currentStep === 0) return profileData.display_name.trim() !== '';
+    // All steps are optional except having at least some data
     return true;
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}-${Math.random()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      setProfileData({ ...profileData, avatar_url: publicUrl });
+      
+      toast({
+        title: "Avatar uploaded!",
+        description: "Your profile picture has been updated."
+      });
+    } catch (error: any) {
+      console.error('Error uploading avatar:', error);
+      toast({
+        title: "Upload failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
   };
 
   // Creation Animation
@@ -293,27 +344,49 @@ export const ProfileCreation: React.FC = () => {
               </div>
             </div>
 
-            {/* Step 0: Name */}
+            {/* Step 0: Avatar */}
             {currentStep === 0 && (
               <div className="space-y-6 animate-slide-up">
                 <div className="text-center mb-6">
                   <div className="w-16 h-16 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-                    <User className="w-8 h-8 text-white" />
+                    <Camera className="w-8 h-8 text-white" />
                   </div>
-                  <h2 className="text-2xl font-bold text-slate-900 mb-2">What's your name?</h2>
-                  <p className="text-slate-600">This will be displayed on your card</p>
+                  <h2 className="text-2xl font-bold text-slate-900 mb-2">Add your photo</h2>
+                  <p className="text-slate-600">Make your card more personal</p>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="display_name">Full Name *</Label>
-                  <Input
-                    id="display_name"
-                    value={profileData.display_name}
-                    onChange={(e) => setProfileData({ ...profileData, display_name: e.target.value })}
-                    placeholder="John Doe"
-                    className="h-14 text-lg"
-                    autoFocus
-                  />
+                
+                <div className="flex flex-col items-center space-y-4">
+                  <Avatar className="w-32 h-32">
+                    <AvatarImage src={profileData.avatar_url} alt="Profile" />
+                    <AvatarFallback className="text-2xl">
+                      <User className="w-16 h-16" />
+                    </AvatarFallback>
+                  </Avatar>
+                  
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => document.getElementById('avatar-upload')?.click()}
+                      className="gap-2"
+                    >
+                      <Upload className="w-4 h-4" />
+                      Upload Photo
+                    </Button>
+                    <input
+                      id="avatar-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarUpload}
+                      className="hidden"
+                    />
+                  </div>
+                  
+                  {profileData.avatar_url && (
+                    <p className="text-xs text-green-600">✓ Profile photo set</p>
+                  )}
                 </div>
+
                 {username && (
                   <div className="p-4 bg-violet-50 border border-violet-200 rounded-lg">
                     <p className="text-sm text-slate-600">Your profile URL:</p>
@@ -323,33 +396,34 @@ export const ProfileCreation: React.FC = () => {
               </div>
             )}
 
-            {/* Step 1: Contact */}
+            {/* Step 1: Company & Website */}
             {currentStep === 1 && (
               <div className="space-y-6 animate-slide-up">
                 <div className="text-center mb-6">
                   <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
                     <Mail className="w-8 h-8 text-white" />
                   </div>
-                  <h2 className="text-2xl font-bold text-slate-900 mb-2">Contact Information</h2>
-                  <p className="text-slate-600">How can people reach you?</p>
+                  <h2 className="text-2xl font-bold text-slate-900 mb-2">Company & Website</h2>
+                  <p className="text-slate-600">Where do you work?</p>
                 </div>
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="company">Company Name</Label>
                     <Input
-                      id="email"
-                      value={profileData.email}
-                      disabled
-                      className="h-12 bg-muted"
+                      id="company"
+                      value={profileData.company}
+                      onChange={(e) => setProfileData({ ...profileData, company: e.target.value })}
+                      placeholder="Acme Inc."
+                      className="h-12"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Phone Number</Label>
+                    <Label htmlFor="website">Website</Label>
                     <Input
-                      id="phone"
-                      value={profileData.phone}
-                      onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
-                      placeholder="+1 (555) 123-4567"
+                      id="website"
+                      value={profileData.website}
+                      onChange={(e) => setProfileData({ ...profileData, website: e.target.value })}
+                      placeholder="https://example.com"
                       className="h-12"
                     />
                   </div>
@@ -362,7 +436,7 @@ export const ProfileCreation: React.FC = () => {
               <div className="space-y-6 animate-slide-up">
                 <div className="text-center mb-6">
                   <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-                    <Phone className="w-8 h-8 text-white" />
+                    <Briefcase className="w-8 h-8 text-white" />
                   </div>
                   <h2 className="text-2xl font-bold text-slate-900 mb-2">What do you do?</h2>
                   <p className="text-slate-600">Your professional title</p>
@@ -416,21 +490,29 @@ export const ProfileCreation: React.FC = () => {
 
                 <div className="space-y-4">
                   <div className="p-4 bg-slate-50 rounded-lg space-y-3">
-                    <div>
-                      <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">Name</p>
-                      <p className="text-base font-medium text-slate-900">{profileData.display_name || '-'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">Email</p>
-                      <p className="text-base font-medium text-slate-900">{profileData.email}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">Phone</p>
-                      <p className="text-base font-medium text-slate-900">{profileData.phone || 'Not provided'}</p>
-                    </div>
+                    {profileData.avatar_url && (
+                      <div className="flex items-center gap-3">
+                        <Avatar className="w-16 h-16">
+                          <AvatarImage src={profileData.avatar_url} alt="Profile" />
+                          <AvatarFallback><User className="w-8 h-8" /></AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">Avatar</p>
+                          <p className="text-sm text-green-600">✓ Set</p>
+                        </div>
+                      </div>
+                    )}
                     <div>
                       <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">Job Title</p>
                       <p className="text-base font-medium text-slate-900">{profileData.job_title || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">Company</p>
+                      <p className="text-base font-medium text-slate-900">{profileData.company || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">Website</p>
+                      <p className="text-base font-medium text-slate-900">{profileData.website || 'Not provided'}</p>
                     </div>
                     <div>
                       <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">About</p>
