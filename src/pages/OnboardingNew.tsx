@@ -206,18 +206,6 @@ export const OnboardingNew: React.FC = () => {
     if (!user) return;
 
     try {
-      // Save to localStorage for recovery
-      localStorage.setItem('patra-onboarding-data', JSON.stringify(data));
-
-      // Get profile ID first
-      const { data: profileData, error: profileFetchError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
-
-      if (profileFetchError) throw profileFetchError;
-
       // Generate username function - 4-5 alphanumeric characters
       const generateUsername = async (): Promise<string> => {
         const generateRandomUsername = () => {
@@ -259,38 +247,68 @@ export const OnboardingNew: React.FC = () => {
           : '';
 
       // Check for existing card
-      const { data: existingCard, error: cardCheckError } = await supabase
+      const { data: existingCard } = await supabase
         .from('digital_cards')
         .select('id, vanity_url')
         .eq('owner_user_id', user.id)
         .maybeSingle();
 
       let vanityUrl = '';
+      let cardId = '';
 
-      if (!existingCard) {
+      if (!existingCard || !existingCard.vanity_url) {
         // Generate username
         vanityUrl = await generateUsername();
         
-        const { error: insertError } = await supabase.from('digital_cards').insert({
-          owner_user_id: user.id,
-          title: data.display_name || user.email?.split('@')[0] || 'My Card',
-          vanity_url: vanityUrl,
-          content_json: {
-            fullName: data.display_name || '',
-            email: data.email || '',
-            phone: data.phone || '',
-            jobTitle: data.job_title || '',
-            bio: data.bio || '',
-            company: data.company || '',
-            avatarUrl: finalAvatarUrl,
-          },
-        });
+        if (!existingCard) {
+          // Create new card
+          const { data: newCard, error: insertError } = await supabase
+            .from('digital_cards')
+            .insert({
+              owner_user_id: user.id,
+              title: data.display_name || user.email?.split('@')[0] || 'My Card',
+              vanity_url: vanityUrl,
+              content_json: {
+                name: data.display_name || '',
+                email: user.email || '',
+                phone: data.phone || '',
+                jobTitle: data.job_title || '',
+                bio: data.bio || '',
+                company: data.company || '',
+                website: data.website || '',
+                avatar: finalAvatarUrl,
+                showAvatar: !!finalAvatarUrl,
+                showName: !!data.display_name,
+                showJobTitle: !!data.job_title,
+                showPhone: !!data.phone,
+                showEmail: true,
+                showBio: !!data.bio,
+                showQRCode: true,
+                showCompany: !!data.company,
+                showWebsite: !!data.website,
+              },
+            })
+            .select('id')
+            .single();
 
-        if (insertError) throw insertError;
+          if (insertError) throw insertError;
+          cardId = newCard.id;
+        } else {
+          // Update existing card with vanity_url
+          const { error: updateError } = await supabase
+            .from('digital_cards')
+            .update({ vanity_url: vanityUrl })
+            .eq('id', existingCard.id);
+          
+          if (updateError) throw updateError;
+          cardId = existingCard.id;
+        }
       } else {
         vanityUrl = existingCard.vanity_url;
+        cardId = existingCard.id;
       }
 
+      // Update profile with all onboarding data
       const updateData: any = {
         display_name: data.display_name || null,
         phone: data.phone || null,
@@ -305,26 +323,6 @@ export const OnboardingNew: React.FC = () => {
         company_name: data.company || null,
       };
 
-      // Company-specific fields
-      if (data.accountType === 'company') {
-        const inviteCode = await supabase.rpc('generate_invite_code');
-        
-        updateData.company_name = data.company_name;
-        updateData.company_domain = data.company_domain || null;
-        updateData.invite_code = inviteCode.data;
-        updateData.terms_accepted_at = new Date().toISOString();
-        updateData.payment_due_date = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(); // 2 hours from now
-        
-        // Create verification payment record
-        await supabase.from('company_payments').insert({
-          company_profile_id: profileData.id,
-          payment_type: 'verification',
-          amount: 20,
-          status: 'pending',
-          due_date: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
-        });
-      }
-
       const { error: profileError } = await supabase
         .from('profiles')
         .update(updateData)
@@ -332,72 +330,58 @@ export const OnboardingNew: React.FC = () => {
 
       if (profileError) throw profileError;
 
-      // Update digital card with all data
-      const { data: finalCard, error: cardFetchError } = await supabase
+      // Update digital card with complete data
+      const { error: cardUpdateError } = await supabase
         .from('digital_cards')
-        .select('id, vanity_url')
-        .eq('owner_user_id', user.id)
-        .single();
+        .update({
+          title: data.display_name || 'My Card',
+          vanity_url: vanityUrl,
+          content_json: {
+            name: data.display_name || '',
+            email: user.email || '',
+            phone: data.phone || '',
+            jobTitle: data.job_title || '',
+            bio: data.bio || '',
+            company: data.company || '',
+            website: data.website || '',
+            avatar: finalAvatarUrl,
+            showAvatar: !!finalAvatarUrl,
+            showName: !!data.display_name,
+            showJobTitle: !!data.job_title,
+            showPhone: !!data.phone,
+            showEmail: true,
+            showBio: !!data.bio,
+            showQRCode: true,
+            showCompany: !!data.company,
+            showWebsite: !!data.website,
+          }
+        })
+        .eq('id', cardId);
 
-      if (cardFetchError) throw cardFetchError;
+      if (cardUpdateError) throw cardUpdateError;
 
-      if (finalCard) {
-        const { error: cardUpdateError } = await supabase
-          .from('digital_cards')
-          .update({
-            title: data.display_name || 'My Card',
-            content_json: {
-              name: data.display_name || '',
-              email: data.email || '',
-              phone: data.phone || '',
-              jobTitle: data.job_title || '',
-              bio: data.bio || '',
-              company: data.company || '',
-              website: data.website || '',
-              avatar: finalAvatarUrl,
-              showAvatar: !!finalAvatarUrl,
-              showName: true,
-              showJobTitle: !!data.job_title,
-              showPhone: !!data.phone,
-              showEmail: true,
-              showBio: !!data.bio,
-              showQRCode: true,
-              showCompany: !!data.company,
-              showWebsite: !!data.website,
-            }
-          })
-          .eq('id', finalCard.id);
+      // Save to localStorage for potential recovery
+      localStorage.setItem('patra-onboarding-data', JSON.stringify({
+        ...data,
+        vanityUrl,
+        finalAvatarUrl
+      }));
 
-        if (cardUpdateError) throw cardUpdateError;
-
-        toast({
-          title: "Welcome to Patra!",
-          description: `Your profile has been created successfully.`,
-        });
-
-        // Mark tour as should show
-        localStorage.removeItem('patra-tour-completed');
-
-        // Navigate to card for individual, dashboard for company
-        if (data.accountType === 'individual') {
-          navigate(`/${finalCard.vanity_url}?card`);
-        } else {
-          navigate('/dashboard');
-        }
-        return;
-      }
-
-      // Fallback if something went wrong
       toast({
         title: "Welcome to Patra!",
-        description: `Your ${data.accountType} account has been set up successfully.`,
+        description: `Your profile has been created successfully.`,
       });
-      navigate(data.accountType === 'company' ? '/dashboard' : '/editor');
+
+      // Mark tour as should show
+      localStorage.removeItem('patra-tour-completed');
+
+      // Navigate to card page with card parameter
+      navigate(`/${vanityUrl}?card`, { replace: true });
     } catch (error: any) {
       console.error('Error completing onboarding:', error);
       toast({
         title: "Error",
-        description: "Failed to complete onboarding. Please try again.",
+        description: error.message || "Failed to complete onboarding. Please try again.",
         variant: "destructive"
       });
       setShowAILoading(false);
@@ -568,21 +552,21 @@ export const OnboardingNew: React.FC = () => {
                     </p>
                   </button>
 
-                  <button
-                    onClick={() => handleAccountTypeSelect('company')}
-                    className="group relative p-6 rounded-2xl border-2 border-slate-200 hover:border-blue-500 bg-white hover:bg-blue-50/50 transition-all duration-200 text-left"
-                  >
-                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <div className="group relative p-6 rounded-2xl border-2 border-slate-300 bg-slate-50 opacity-60 cursor-not-allowed text-left">
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-orange-600 text-white px-4 py-1 rounded-full text-xs font-bold shadow-lg z-10">
+                      Under Development
+                    </div>
+                    <div className="w-16 h-16 bg-gradient-to-br from-slate-400 to-slate-500 rounded-2xl flex items-center justify-center mb-4">
                       <Building2 className="w-8 h-8 text-white" />
                     </div>
-                    <h3 className="text-xl font-bold text-slate-900 mb-2">Company</h3>
-                    <p className="text-sm text-slate-600">
+                    <h3 className="text-xl font-bold text-slate-600 mb-2">Company</h3>
+                    <p className="text-sm text-slate-500">
                       For organizations managing employee cards
                     </p>
-                    <div className="mt-3 text-xs text-orange-600 font-medium">
+                    <div className="mt-3 text-xs text-slate-500 font-medium">
                       Requires verification (₹20)
                     </div>
-                  </button>
+                  </div>
                 </div>
               </div>
             )}

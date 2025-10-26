@@ -9,7 +9,11 @@ interface ProtectedRouteProps {
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { user, loading } = useAuth();
-  const [profileExists, setProfileExists] = useState<boolean | null>(null);
+  const [profileCheck, setProfileCheck] = useState<{
+    exists: boolean;
+    needsOnboarding: boolean;
+  } | null>(null);
+  const location = window.location;
 
   useEffect(() => {
     const checkProfile = async () => {
@@ -17,20 +21,23 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
         try {
           const { data, error } = await supabase
             .from('profiles')
-            .select('id')
+            .select('id, onboarding_completed')
             .eq('user_id', user.id)
             .maybeSingle();
 
           if (error) {
             console.error('Error checking profile:', error);
-            setProfileExists(false);
+            setProfileCheck({ exists: false, needsOnboarding: false });
             return;
           }
 
-          setProfileExists(!!data);
+          setProfileCheck({
+            exists: !!data,
+            needsOnboarding: !data?.onboarding_completed
+          });
         } catch (error) {
           console.error('Error in profile check:', error);
-          setProfileExists(false);
+          setProfileCheck({ exists: false, needsOnboarding: false });
         }
       }
     };
@@ -38,7 +45,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     checkProfile();
   }, [user]);
 
-  if (loading || (user && profileExists === null)) {
+  if (loading || (user && profileCheck === null)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
@@ -46,8 +53,18 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     );
   }
 
-  if (!user || profileExists === false) {
+  if (!user || !profileCheck?.exists) {
     return <Navigate to="/auth" replace />;
+  }
+
+  // Redirect to onboarding if not completed (unless already on onboarding page)
+  if (profileCheck.needsOnboarding && !location.pathname.includes('/onboarding')) {
+    return <Navigate to="/onboarding" replace />;
+  }
+
+  // Redirect from onboarding if already completed
+  if (!profileCheck.needsOnboarding && location.pathname.includes('/onboarding')) {
+    return <Navigate to="/editor" replace />;
   }
 
   return <>{children}</>;

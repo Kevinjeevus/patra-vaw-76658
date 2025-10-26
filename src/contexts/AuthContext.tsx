@@ -76,43 +76,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, fullName?: string) => {
     try {
-      const redirectUrl = `${window.location.origin}/`;
-      
-      // Generate random username - ALWAYS create one (4-5 alphanumeric characters)
-      const generateUsername = async (): Promise<string> => {
-        const generateRandomUsername = () => {
-          const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-          const length = Math.random() > 0.5 ? 4 : 5; // Randomly choose 4 or 5 characters
-          let username = '';
-          for (let i = 0; i < length; i++) {
-            username += chars.charAt(Math.floor(Math.random() * chars.length));
-          }
-          return username;
-        };
-        
-        let username = generateRandomUsername();
-        
-        // Check for collisions and regenerate if exists
-        let attempts = 0;
-        while (attempts < 10) {
-          const { data: existingCard } = await supabase
-            .from('digital_cards')
-            .select('vanity_url')
-            .eq('vanity_url', username)
-            .maybeSingle();
-          
-          if (!existingCard) {
-            break;
-          }
-          
-          username = generateRandomUsername();
-          attempts++;
-        }
-        
-        return username;
-      };
-      
-      const username = await generateUsername();
+      const redirectUrl = `${window.location.origin}/onboarding`;
       
       const { error, data } = await supabase.auth.signUp({
         email,
@@ -120,21 +84,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         options: {
           emailRedirectTo: redirectUrl,
           data: {
-            full_name: fullName,
-            username: username
+            full_name: fullName
           }
         }
       });
-      
-      // Create digital card with vanity_url immediately
-      if (data.user && !error) {
-        await supabase.from('digital_cards').insert({
-          owner_user_id: data.user.id,
-          title: fullName || email.split('@')[0] || 'My Card',
-          vanity_url: username,
-          content_json: {}
-        });
-      }
       
       return { error };
     } catch (error: any) {
