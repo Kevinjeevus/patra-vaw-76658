@@ -173,8 +173,10 @@ export const Landing: React.FC = () => {
                   <div className="absolute inset-0 bg-slate-300/30 rounded-3xl blur-sm transform translate-y-4 translate-x-2"></div>
                   <div className="absolute inset-0 bg-slate-200/30 rounded-3xl blur-sm transform translate-y-2 translate-x-1"></div>
                   
-                  {/* Card Design 1: Gradient Modern */}
-                  <div className={`relative ${cardDesigns[0].classes} rounded-3xl shadow-2xl p-6 sm:p-10 aspect-[16/10] sm:aspect-[1.6/1] overflow-hidden transform transition-all duration-500 ${activeCard === 0 ? 'opacity-100 scale-100' : 'opacity-0 scale-95 absolute inset-0'}`}>
+                  {/* Card Container - All cards absolutely positioned */}
+                  <div className="relative w-full aspect-[16/10] sm:aspect-[1.6/1]">
+                    {/* Card Design 1: Gradient Modern */}
+                    <div className={`absolute inset-0 ${cardDesigns[0].classes} rounded-3xl shadow-2xl p-6 sm:p-10 overflow-hidden transform transition-all duration-500 ${activeCard === 0 ? 'opacity-100 scale-100 z-10' : 'opacity-0 scale-95 z-0'}`}>
                     {/* Noise Texture */}
                     <div className="absolute inset-0 opacity-10" style={{
                       backgroundImage: 'url("data:image/svg+xml,%3Csvg width="100" height="100" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noise"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" /%3E%3C/filter%3E%3Crect width="100" height="100" filter="url(%23noise)" opacity="0.4"/%3E%3C/svg%3E")'
@@ -224,8 +226,8 @@ export const Landing: React.FC = () => {
                     <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent pointer-events-none"></div>
                   </div>
 
-                  {/* Card Design 2: Glassmorphism Dark */}
-                  <div className={`relative ${cardDesigns[1].classes} rounded-3xl shadow-2xl p-6 sm:p-10 aspect-[16/10] sm:aspect-[1.6/1] overflow-hidden transform transition-all duration-500 ${activeCard === 1 ? 'opacity-100 scale-100' : 'opacity-0 scale-95 absolute inset-0'}`}>
+                    {/* Card Design 2: Glassmorphism Dark */}
+                    <div className={`absolute inset-0 ${cardDesigns[1].classes} rounded-3xl shadow-2xl p-6 sm:p-10 overflow-hidden transform transition-all duration-500 ${activeCard === 1 ? 'opacity-100 scale-100 z-10' : 'opacity-0 scale-95 z-0'}`}>
                     {/* Animated Background Mesh */}
                     <div className="absolute inset-0 opacity-30">
                       <div className="absolute top-0 left-0 w-32 h-32 sm:w-48 sm:h-48 bg-emerald-500 rounded-full blur-3xl animate-pulse"></div>
@@ -280,8 +282,8 @@ export const Landing: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Card Design 3: Pattern Minimal */}
-                  <div className={`relative ${cardDesigns[2].classes} rounded-3xl shadow-2xl p-6 sm:p-10 aspect-[16/10] sm:aspect-[1.6/1] overflow-hidden transform transition-all duration-500 ${activeCard === 2 ? 'opacity-100 scale-100' : 'opacity-0 scale-95 absolute inset-0'}`}>
+                    {/* Card Design 3: Pattern Minimal */}
+                    <div className={`absolute inset-0 ${cardDesigns[2].classes} rounded-3xl shadow-2xl p-6 sm:p-10 overflow-hidden transform transition-all duration-500 ${activeCard === 2 ? 'opacity-100 scale-100 z-10' : 'opacity-0 scale-95 z-0'}`}>
                     {/* Decorative Pattern */}
                     <div className="absolute inset-0 opacity-5" style={{
                       backgroundImage: `
@@ -350,6 +352,7 @@ export const Landing: React.FC = () => {
                         <p className="text-xs text-slate-500 text-center">Scan to connect</p>
                       </div>
                     </div>
+                  </div>
                   </div>
                 </div>
               </div>
