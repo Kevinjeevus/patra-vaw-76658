@@ -18,7 +18,6 @@ import {
   LogOut, 
   Trash2, 
   RefreshCcw,
-  Lock,
   ExternalLink,
   Bug,
   MessageSquare,
@@ -55,7 +54,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   DropdownMenu,
@@ -81,14 +79,14 @@ export const Settings: React.FC = () => {
   const [fullName, setFullName] = useState('');
   const [accountType, setAccountType] = useState<'personal' | 'professional'>('personal');
   const [inviteId, setInviteId] = useState('');
-  const [passKeyEnabled, setPassKeyEnabled] = useState(false);
   const [copiedApiKey, setCopiedApiKey] = useState(false);
   const [timezone, setTimezone] = useState('UTC');
   const [deleteUsername, setDeleteUsername] = useState('');
   const [resetUsername, setResetUsername] = useState('');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
-  const [activeSection, setActiveSection] = useState('profile');
+  const [activeSection, setActiveSection] = useState('account');
+  const [developerExpanded, setDeveloperExpanded] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -266,9 +264,7 @@ export const Settings: React.FC = () => {
   };
 
   const navigationItems = [
-    { id: 'profile', label: 'Profile', icon: User },
     { id: 'account', label: 'Account', icon: Building2 },
-    { id: 'security', label: 'Security', icon: Shield },
     { id: 'developer', label: 'Developer', icon: Code },
     { id: 'support', label: 'Support', icon: HelpCircle, submenu: [
       { id: 'bug', label: 'Report Bug', path: '/settings/bug', icon: Bug },
@@ -276,6 +272,7 @@ export const Settings: React.FC = () => {
       { id: 'feature', label: 'Request Feature', path: '/settings/feature', icon: Lightbulb },
       { id: 'support', label: 'Get Support', path: '/settings/support', icon: HelpCircle },
     ]},
+    { id: 'security', label: 'Security', icon: Shield },
   ];
 
   const scrollToSection = (sectionId: string) => {
@@ -451,9 +448,14 @@ export const Settings: React.FC = () => {
 
           {/* Main Content - Continuous Scroll */}
           <main className="space-y-8">
-            {/* Profile Section */}
-            <section id="section-profile" className="scroll-mt-24">
+            {/* Account Section */}
+            <section id="section-account" className="scroll-mt-24">
               <div className="space-y-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Building2 className="w-6 h-6 text-primary" />
+                  <h2 className="text-2xl font-bold">Account</h2>
+                </div>
+                
                 {/* Profile Header Card */}
                 <Card className="border-border/50 shadow-lg shadow-black/5 overflow-hidden">
                   <div className="h-24 sm:h-32 bg-gradient-to-r from-primary via-primary/80 to-primary/60" />
@@ -576,17 +578,8 @@ export const Settings: React.FC = () => {
                     </Button>
                   </CardContent>
                 </Card>
-              </div>
-            </section>
-
-            {/* Account Section */}
-            <section id="section-account" className="scroll-mt-24">
-              <div className="space-y-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <Building2 className="w-6 h-6 text-primary" />
-                  <h2 className="text-2xl font-bold">Account</h2>
-                </div>
                 
+                {/* Account Type */}
                 <Card className="border-border/50 shadow-lg shadow-black/5">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -630,314 +623,155 @@ export const Settings: React.FC = () => {
                       </div>
                     </div>
 
-                    <Separator />
-
-                    <div className="space-y-4">
-                      <Label htmlFor="inviteId" className="text-base font-semibold">Company Integration</Label>
-                      <div className="p-4 bg-muted/50 rounded-xl space-y-3">
-                        <p className="text-sm text-muted-foreground">
-                          Link your account to a company card by entering the invite ID provided by your administrator
-                        </p>
-                        <div className="flex flex-col sm:flex-row gap-2">
-                          <Input
-                            id="inviteId"
-                            value={inviteId}
-                            onChange={(e) => setInviteId(e.target.value)}
-                            placeholder="Enter invite ID"
-                            className="flex-1"
-                          />
-                          <Button disabled={!inviteId.trim()} className="w-full sm:w-auto">
-                            Link Company
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </section>
-
-            {/* Security Section */}
-            <section id="section-security" className="scroll-mt-24">
-              <div className="space-y-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <Shield className="w-6 h-6 text-primary" />
-                  <h2 className="text-2xl font-bold">Security</h2>
-                </div>
-                
-                <Card className="border-border/50 shadow-lg shadow-black/5">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Shield className="w-5 h-5 text-primary" />
-                      Security Settings
-                    </CardTitle>
-                    <CardDescription>
-                      Protect your account with advanced security features
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="p-6 bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl border border-primary/20">
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                        <div className="flex items-start gap-4 flex-1">
-                          <div className="h-12 w-12 rounded-xl bg-primary/20 flex items-center justify-center shrink-0">
-                            <Lock className="w-6 h-6 text-primary" />
-                          </div>
-                          <div className="space-y-1">
-                            <h3 className="font-semibold">Biometric Authentication</h3>
+                    {accountType === 'professional' && (
+                      <>
+                        <Separator />
+                        <div className="space-y-4">
+                          <Label htmlFor="inviteId" className="text-base font-semibold">Company Integration</Label>
+                          <div className="p-4 bg-muted/50 rounded-xl space-y-3">
                             <p className="text-sm text-muted-foreground">
-                              Use your device's biometric features to secure your account
+                              Link your account to a company card by entering the invite ID provided by your administrator
                             </p>
+                            <div className="flex flex-col sm:flex-row gap-2">
+                              <Input
+                                id="inviteId"
+                                value={inviteId}
+                                onChange={(e) => setInviteId(e.target.value)}
+                                placeholder="Enter invite ID"
+                                className="flex-1"
+                              />
+                              <Button disabled={!inviteId.trim()} className="w-full sm:w-auto">
+                                Link Company
+                              </Button>
+                            </div>
                           </div>
                         </div>
-                        <Switch
-                          checked={passKeyEnabled}
-                          onCheckedChange={setPassKeyEnabled}
-                          className="shrink-0"
-                        />
-                      </div>
-                    </div>
-
-                    <Separator />
-
-                    {/* GDPR Compliance */}
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2">
-                        <ShieldCheck className="w-5 h-5 text-primary" />
-                        <h3 className="font-semibold">Privacy & Data Rights</h3>
-                      </div>
-                      <div className="grid sm:grid-cols-2 gap-3">
-                        <Button variant="outline" className="justify-start h-auto py-4 hover:bg-primary/5">
-                          <div className="flex items-start gap-3 text-left">
-                            <Download className="w-5 h-5 shrink-0 mt-0.5" />
-                            <div>
-                              <p className="font-medium">Download Data</p>
-                              <p className="text-xs text-muted-foreground">Export all your information</p>
-                            </div>
-                          </div>
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          className="justify-start h-auto py-4 hover:bg-primary/5"
-                          onClick={() => navigate('/docs')}
-                        >
-                          <div className="flex items-start gap-3 text-left">
-                            <Eye className="w-5 h-5 shrink-0 mt-0.5" />
-                            <div>
-                              <p className="font-medium">Privacy Dashboard</p>
-                              <p className="text-xs text-muted-foreground">Manage your preferences</p>
-                            </div>
-                          </div>
-                        </Button>
-                      </div>
-                    </div>
-
-                    <Separator />
-
-                    {/* Danger Zone */}
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-destructive animate-pulse" />
-                        <h3 className="font-semibold text-destructive">Danger Zone</h3>
-                      </div>
-                      <div className="space-y-3">
-                        <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="outline" className="w-full justify-start h-auto py-4 border-destructive/20 hover:bg-destructive/5 hover:border-destructive/50">
-                              <div className="flex items-start gap-3 text-left">
-                                <RefreshCcw className="w-5 h-5 shrink-0 mt-0.5 text-destructive" />
-                                <div>
-                                  <p className="font-medium text-destructive">Reset Profile</p>
-                                  <p className="text-xs text-muted-foreground">Delete all cards and start fresh</p>
-                                </div>
-                              </div>
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Reset Profile</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This will delete all your cards and start from scratch. This action cannot be undone.
-                                <br /><br />
-                                To confirm, please type your username: <strong>{profile?.display_name}</strong>
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <Input
-                              value={resetUsername}
-                              onChange={(e) => setResetUsername(e.target.value)}
-                              placeholder="Enter your username"
-                            />
-                            <AlertDialogFooter>
-                              <AlertDialogCancel onClick={() => setResetUsername('')}>Cancel</AlertDialogCancel>
-                              <AlertDialogAction 
-                                onClick={handleResetProfile} 
-                                disabled={resetUsername !== profile?.display_name || loading}
-                                className="bg-destructive text-destructive-foreground"
-                              >
-                                {loading ? 'Resetting...' : 'Reset Profile'}
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-
-                        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="outline" className="w-full justify-start h-auto py-4 border-destructive/20 hover:bg-destructive/5 hover:border-destructive/50">
-                              <div className="flex items-start gap-3 text-left">
-                                <Trash2 className="w-5 h-5 shrink-0 mt-0.5 text-destructive" />
-                                <div>
-                                  <p className="font-medium text-destructive">Delete Account</p>
-                                  <p className="text-xs text-muted-foreground">Permanently remove all your data</p>
-                                </div>
-                              </div>
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Account</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This will permanently delete your account. Your email, phone number, and name will be retained for 30 days. This action cannot be undone.
-                                <br /><br />
-                                To confirm, please type your username: <strong>{profile?.display_name}</strong>
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <Input
-                              value={deleteUsername}
-                              onChange={(e) => setDeleteUsername(e.target.value)}
-                              placeholder="Enter your username"
-                            />
-                            <AlertDialogFooter>
-                              <AlertDialogCancel onClick={() => setDeleteUsername('')}>Cancel</AlertDialogCancel>
-                              <AlertDialogAction 
-                                onClick={handleDeleteAccount} 
-                                disabled={deleteUsername !== profile?.display_name || loading}
-                                className="bg-destructive text-destructive-foreground"
-                              >
-                                {loading ? 'Deleting...' : 'Delete Account'}
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </div>
+                      </>
+                    )}
                   </CardContent>
                 </Card>
               </div>
             </section>
 
-            {/* Developer Section */}
+            {/* Developer Section - Collapsible */}
             <section id="section-developer" className="scroll-mt-24">
               <div className="space-y-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <Code className="w-6 h-6 text-primary" />
-                  <h2 className="text-2xl font-bold">Developer</h2>
-                </div>
-                
-                {/* OG Meta Editor */}
-                {user && <OGMetaEditor userId={user.id} />}
-                
                 <Card className="border-border/50 shadow-lg shadow-black/5">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Code className="w-5 h-5 text-primary" />
-                      Developer Tools
-                    </CardTitle>
+                  <CardHeader 
+                    className="cursor-pointer hover:bg-muted/50 transition-colors rounded-t-xl" 
+                    onClick={() => setDeveloperExpanded(!developerExpanded)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Code className="w-5 h-5 text-primary" />
+                        <CardTitle>Developer Tools</CardTitle>
+                      </div>
+                      <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${developerExpanded ? 'rotate-180' : ''}`} />
+                    </div>
                     <CardDescription>
                       Integrate Patra with your applications using our API
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="p-6 bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl border border-primary/20 space-y-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="space-y-1 flex-1 min-w-0">
-                          <Label className="text-sm font-medium">API Key</Label>
-                          <code className="block text-xs text-muted-foreground font-mono break-all">
-                            pk_test_xxxxxxxxxxxxxxxxxxxxx
-                          </code>
+                  {developerExpanded && (
+                    <CardContent className="space-y-6">
+                      {/* OG Meta Editor */}
+                      {user && <OGMetaEditor userId={user.id} />}
+                      
+                      <Separator />
+
+                      <div className="p-6 bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl border border-primary/20 space-y-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="space-y-1 flex-1 min-w-0">
+                            <Label className="text-sm font-medium">API Key</Label>
+                            <code className="block text-xs text-muted-foreground font-mono break-all">
+                              pk_test_xxxxxxxxxxxxxxxxxxxxx
+                            </code>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={copyApiKey}
+                            className="shrink-0"
+                          >
+                            {copiedApiKey ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                          </Button>
                         </div>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={copyApiKey}
-                          className="shrink-0"
-                        >
-                          {copiedApiKey ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                        </Button>
+                        <p className="text-sm text-muted-foreground">
+                          Keep your API key secure. Never share it publicly or commit it to version control.
+                        </p>
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        Keep your API key secure. Never share it publicly or commit it to version control.
-                      </p>
-                    </div>
 
-                    <Separator />
+                      <Separator />
 
-                    <div className="space-y-3">
-                      <Label className="text-base font-semibold">Developer Resources</Label>
-                      <div className="grid gap-3">
-                        <Button
-                          onClick={() => navigate('/api-docs')}
-                          variant="outline"
-                          className="justify-between h-auto py-4 hover:bg-primary/5 hover:border-primary/50"
-                        >
-                          <div className="flex items-center gap-3 text-left">
-                            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                              <Code className="w-5 h-5 text-primary" />
+                      <div className="space-y-3">
+                        <Label className="text-base font-semibold">Developer Resources</Label>
+                        <div className="grid gap-3">
+                          <Button
+                            onClick={() => navigate('/api-docs')}
+                            variant="outline"
+                            className="justify-between h-auto py-4 hover:bg-primary/5 hover:border-primary/50"
+                          >
+                            <div className="flex items-center gap-3 text-left">
+                              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                                <Code className="w-5 h-5 text-primary" />
+                              </div>
+                              <div>
+                                <p className="font-medium">API Documentation</p>
+                                <p className="text-xs text-muted-foreground">Explore endpoints and examples</p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="font-medium">API Documentation</p>
-                              <p className="text-xs text-muted-foreground">Explore endpoints and examples</p>
-                            </div>
-                          </div>
-                          <ExternalLink className="w-4 h-4 shrink-0" />
-                        </Button>
+                            <ExternalLink className="w-4 h-4 shrink-0" />
+                          </Button>
 
-                        <Button
-                          onClick={() => window.open('https://docs.patra.me', '_blank')}
-                          variant="outline"
-                          className="justify-between h-auto py-4 hover:bg-primary/5 hover:border-primary/50"
-                        >
-                          <div className="flex items-center gap-3 text-left">
-                            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                              <BookOpen className="w-5 h-5 text-primary" />
+                          <Button
+                            onClick={() => window.open('https://docs.patra.me', '_blank')}
+                            variant="outline"
+                            className="justify-between h-auto py-4 hover:bg-primary/5 hover:border-primary/50"
+                          >
+                            <div className="flex items-center gap-3 text-left">
+                              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                                <BookOpen className="w-5 h-5 text-primary" />
+                              </div>
+                              <div>
+                                <p className="font-medium">SDK Documentation</p>
+                                <p className="text-xs text-muted-foreground">SDKs for popular languages</p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="font-medium">SDK Documentation</p>
-                              <p className="text-xs text-muted-foreground">SDKs for popular languages</p>
-                            </div>
-                          </div>
-                          <ExternalLink className="w-4 h-4 shrink-0" />
-                        </Button>
+                            <ExternalLink className="w-4 h-4 shrink-0" />
+                          </Button>
 
-                        <Button
-                          onClick={() => window.open('https://github.com/patra', '_blank')}
-                          variant="outline"
-                          className="justify-between h-auto py-4 hover:bg-primary/5 hover:border-primary/50"
-                        >
-                          <div className="flex items-center gap-3 text-left">
-                            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                              <Code className="w-5 h-5 text-primary" />
+                          <Button
+                            onClick={() => window.open('https://github.com/patra', '_blank')}
+                            variant="outline"
+                            className="justify-between h-auto py-4 hover:bg-primary/5 hover:border-primary/50"
+                          >
+                            <div className="flex items-center gap-3 text-left">
+                              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                                <Code className="w-5 h-5 text-primary" />
+                              </div>
+                              <div>
+                                <p className="font-medium">Code Examples</p>
+                                <p className="text-xs text-muted-foreground">Sample projects on GitHub</p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="font-medium">Code Examples</p>
-                              <p className="text-xs text-muted-foreground">Sample projects on GitHub</p>
-                            </div>
-                          </div>
-                          <ExternalLink className="w-4 h-4 shrink-0" />
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="p-4 bg-muted/50 rounded-xl">
-                      <div className="flex items-start gap-3">
-                        <Lightbulb className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                        <div className="space-y-1">
-                          <p className="text-sm font-medium">Need help getting started?</p>
-                          <p className="text-xs text-muted-foreground">
-                            Check out our quick start guide or join our developer community for support.
-                          </p>
+                            <ExternalLink className="w-4 h-4 shrink-0" />
+                          </Button>
                         </div>
                       </div>
-                    </div>
-                  </CardContent>
+
+                      <div className="p-4 bg-muted/50 rounded-xl">
+                        <div className="flex items-start gap-3">
+                          <Lightbulb className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                          <div className="space-y-1">
+                            <p className="text-sm font-medium">Need help getting started?</p>
+                            <p className="text-xs text-muted-foreground">
+                              Check out our quick start guide or join our developer community for support.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  )}
                 </Card>
               </div>
             </section>
@@ -1145,48 +979,149 @@ export const Settings: React.FC = () => {
               </div>
             </section>
 
-            {/* Footer */}
-            <footer className="mt-12 pb-8">
-              <Card className="border-border/50 bg-muted/30">
-                <CardContent className="p-6">
-                  <div className="flex flex-col items-center justify-center text-center space-y-4">
-                    <div className="flex items-center gap-2">
-                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <SettingsIcon className="w-4 h-4 text-primary" />
+            {/* Security Section - Moved to Bottom */}
+            <section id="section-security" className="scroll-mt-24">
+              <div className="space-y-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Shield className="w-6 h-6 text-primary" />
+                  <h2 className="text-2xl font-bold">Security</h2>
+                </div>
+                
+                <Card className="border-border/50 shadow-lg shadow-black/5">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Shield className="w-5 h-5 text-primary" />
+                      Security Settings
+                    </CardTitle>
+                    <CardDescription>
+                      Protect your account with advanced security features
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* GDPR Compliance */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck className="w-5 h-5 text-primary" />
+                        <h3 className="font-semibold">Privacy & Data Rights</h3>
                       </div>
-                      <span className="font-semibold">Patra Settings</span>
+                      <div className="grid sm:grid-cols-2 gap-3">
+                        <Button variant="outline" className="justify-start h-auto py-4 hover:bg-primary/5">
+                          <div className="flex items-start gap-3 text-left">
+                            <Download className="w-5 h-5 shrink-0 mt-0.5" />
+                            <div>
+                              <p className="font-medium">Download Data</p>
+                              <p className="text-xs text-muted-foreground">Export all your information</p>
+                            </div>
+                          </div>
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          className="justify-start h-auto py-4 hover:bg-primary/5"
+                          onClick={() => navigate('/docs')}
+                        >
+                          <div className="flex items-start gap-3 text-left">
+                            <Eye className="w-5 h-5 shrink-0 mt-0.5" />
+                            <div>
+                              <p className="font-medium">Privacy Dashboard</p>
+                              <p className="text-xs text-muted-foreground">Manage your preferences</p>
+                            </div>
+                          </div>
+                        </Button>
+                      </div>
                     </div>
-                    
-                    <p className="text-sm text-muted-foreground max-w-md">
-                      Manage your account, security, and preferences all in one place.
-                    </p>
 
-                    <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-muted-foreground pt-4 border-t border-border/50 w-full">
-                      <span>© 2025 Patra</span>
-                      <span>•</span>
-                      <button className="hover:text-foreground transition-colors">Privacy</button>
-                      <span>•</span>
-                      <button className="hover:text-foreground transition-colors">Terms</button>
-                      <span>•</span>
-                      <button 
-                        className="hover:text-foreground transition-colors"
-                        onClick={() => navigate('/docs')}
-                      >
-                        Documentation
-                      </button>
-                      <span>•</span>
-                      <button 
-                        className="hover:text-foreground transition-colors flex items-center gap-1"
-                        onClick={() => window.open('https://status.patra.me', '_blank')}
-                      >
-                        Status
-                        <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
-                      </button>
+                    <Separator />
+
+                    {/* Danger Zone */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-2 rounded-full bg-destructive animate-pulse" />
+                        <h3 className="font-semibold text-destructive">Danger Zone</h3>
+                      </div>
+                      <div className="space-y-3">
+                        <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="outline" className="w-full justify-start h-auto py-4 border-destructive/20 hover:bg-destructive/5 hover:border-destructive/50">
+                              <div className="flex items-start gap-3 text-left">
+                                <RefreshCcw className="w-5 h-5 shrink-0 mt-0.5 text-destructive" />
+                                <div>
+                                  <p className="font-medium text-destructive">Reset Profile</p>
+                                  <p className="text-xs text-muted-foreground">Delete all cards and start fresh</p>
+                                </div>
+                              </div>
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Reset Profile</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will delete all your cards and start from scratch. This action cannot be undone.
+                                <br /><br />
+                                To confirm, please type your username: <strong>{profile?.display_name}</strong>
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <Input
+                              value={resetUsername}
+                              onChange={(e) => setResetUsername(e.target.value)}
+                              placeholder="Enter your username"
+                            />
+                            <AlertDialogFooter>
+                              <AlertDialogCancel onClick={() => setResetUsername('')}>Cancel</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={handleResetProfile} 
+                                disabled={resetUsername !== profile?.display_name || loading}
+                                className="bg-destructive text-destructive-foreground"
+                              >
+                                {loading ? 'Resetting...' : 'Reset Profile'}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+
+                        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="outline" className="w-full justify-start h-auto py-4 border-destructive/20 hover:bg-destructive/5 hover:border-destructive/50">
+                              <div className="flex items-start gap-3 text-left">
+                                <Trash2 className="w-5 h-5 shrink-0 mt-0.5 text-destructive" />
+                                <div>
+                                  <p className="font-medium text-destructive">Delete Account</p>
+                                  <p className="text-xs text-muted-foreground">Permanently remove all your data</p>
+                                </div>
+                              </div>
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Account</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will permanently delete your account. Your email, phone number, and name will be retained for 30 days. This action cannot be undone.
+                                <br /><br />
+                                To confirm, please type your username: <strong>{profile?.display_name}</strong>
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <Input
+                              value={deleteUsername}
+                              onChange={(e) => setDeleteUsername(e.target.value)}
+                              placeholder="Enter your username"
+                            />
+                            <AlertDialogFooter>
+                              <AlertDialogCancel onClick={() => setDeleteUsername('')}>Cancel</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={handleDeleteAccount} 
+                                disabled={deleteUsername !== profile?.display_name || loading}
+                                className="bg-destructive text-destructive-foreground"
+                              >
+                                {loading ? 'Deleting...' : 'Delete Account'}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </footer>
+                  </CardContent>
+                </Card>
+              </div>
+            </section>
           </main>
         </div>
       </div>
