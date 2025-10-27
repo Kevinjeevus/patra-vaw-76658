@@ -471,6 +471,8 @@ export const MyCard: React.FC = () => {
           </button>
         </div>
 
+        {/* Extra spacing to make page scrollable */}
+        <div className="h-screen"></div>
         
       </main>
 
