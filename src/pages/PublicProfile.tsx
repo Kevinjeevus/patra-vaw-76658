@@ -320,10 +320,10 @@ export const PublicProfile: React.FC = () => {
               <CreditCard className="mr-2 h-4 w-4" />
               Card
             </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate('/card-editor')}>
+            {/* <Button variant="outline" size="sm" onClick={() => navigate('/card-editor')}>
               <CreditCard className="mr-2 h-4 w-4" />
               Edit Card
-            </Button>
+            </Button> */}
             <Button variant="outline" size="sm" onClick={handleDownloadVCard}>
               <Download className="mr-2 h-4 w-4" />
               Save Contact
