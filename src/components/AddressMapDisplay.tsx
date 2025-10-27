@@ -5,13 +5,17 @@ import 'leaflet/dist/leaflet.css';
 
 const mapStyles = `
   .leaflet-control-attribution,
-  .leaflet-control-attribution a {
+  .leaflet-control-attribution a,
+  .leaflet-control-zoom {
     display: none !important;
   }
   
-  /* Ensure Leaflet marker images load correctly */
-  .leaflet-default-icon-path {
-    background-image: url(https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png);
+  /* Hide ALL marker layers */
+  .leaflet-marker-pane,
+  .leaflet-shadow-pane,
+  .leaflet-marker-icon,
+  .leaflet-marker-shadow {
+    display: none !important;
   }
 `;
 
@@ -34,7 +38,6 @@ export const AddressMapDisplay: React.FC<AddressMapDisplayProps> = ({
 }) => {
   const mapRef = useRef<L.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const markerRef = useRef<L.Marker | null>(null);
 
   if (!address && !latitude && !longitude && !mapUrl) return null;
 
@@ -51,62 +54,34 @@ export const AddressMapDisplay: React.FC<AddressMapDisplayProps> = ({
   useEffect(() => {
     if (!showMap || !hasCoordinates || !mapContainerRef.current) return;
 
-    // Only initialize once
     if (!mapRef.current) {
-      // Create the map
       const map = L.map(mapContainerRef.current, {
         center: [latitude!, longitude!],
         zoom: 15,
-        zoomControl: true,
+        zoomControl: false,
         attributionControl: false,
         dragging: true,
         scrollWheelZoom: true,
         touchZoom: true,
-        doubleClickZoom: true
+        doubleClickZoom: true,
+        keyboard: true
       });
 
-      // Add tile layer
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         minZoom: 3
       }).addTo(map);
 
       mapRef.current = map;
-
-      // Create custom icon using Leaflet's default marker
-      const customIcon = L.icon({
-        iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-        iconSize: [25, 41],
-        iconAnchor: [12, 41],
-        popupAnchor: [1, -34],
-        shadowSize: [41, 41]
-      });
-
-      // Add marker at EXACT coordinates - this binds it to the map, not the screen
-      markerRef.current = L.marker([latitude!, longitude!], { 
-        icon: customIcon 
-      }).addTo(map);
-      
-      // Add popup with address
-      if (address) {
-        markerRef.current.bindPopup(`
-          <div style="font-family: system-ui, -apple-system, sans-serif; padding: 4px;">
-            <strong style="display: block; margin-bottom: 4px;">Location</strong>
-            <span style="font-size: 13px;">${address}</span>
-          </div>
-        `);
-      }
     }
 
     return () => {
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
-        markerRef.current = null;
       }
     };
-  }, [showMap, hasCoordinates, latitude, longitude, address]);
+  }, [showMap, hasCoordinates, latitude, longitude]);
 
   return (
     <div className={`space-y-3 ${className}`}>
@@ -133,7 +108,7 @@ export const AddressMapDisplay: React.FC<AddressMapDisplayProps> = ({
       </div>
 
       {showMap && hasCoordinates && (
-        <div className="relative w-full h-64 rounded-lg overflow-hidden border border-border/50 bg-gray-100">
+        <div className="w-full h-64 rounded-lg overflow-hidden border border-border/50 bg-gray-100">
           <div ref={mapContainerRef} className="w-full h-full" />
         </div>
       )}
