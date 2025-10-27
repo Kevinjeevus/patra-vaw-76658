@@ -3,23 +3,15 @@ import { MapPin } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-// Fix for default marker icons in Leaflet
-import icon from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
-
-const DefaultIcon = L.icon({
-  iconUrl: icon,
-  shadowUrl: iconShadow,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41]
-});
-
-L.Marker.prototype.options.icon = DefaultIcon;
-
 const mapStyles = `
   .leaflet-control-attribution,
   .leaflet-control-attribution a {
     display: none !important;
+  }
+  
+  /* Ensure Leaflet marker images load correctly */
+  .leaflet-default-icon-path {
+    background-image: url(https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png);
   }
 `;
 
@@ -59,7 +51,9 @@ export const AddressMapDisplay: React.FC<AddressMapDisplayProps> = ({
   useEffect(() => {
     if (!showMap || !hasCoordinates || !mapContainerRef.current) return;
 
+    // Only initialize once
     if (!mapRef.current) {
+      // Create the map
       const map = L.map(mapContainerRef.current, {
         center: [latitude!, longitude!],
         zoom: 15,
@@ -71,6 +65,7 @@ export const AddressMapDisplay: React.FC<AddressMapDisplayProps> = ({
         doubleClickZoom: true
       });
 
+      // Add tile layer
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         minZoom: 3
@@ -78,10 +73,22 @@ export const AddressMapDisplay: React.FC<AddressMapDisplayProps> = ({
 
       mapRef.current = map;
 
-      // Add default Leaflet marker at the coordinates
-      markerRef.current = L.marker([latitude!, longitude!]).addTo(map);
+      // Create custom icon using Leaflet's default marker
+      const customIcon = L.icon({
+        iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+      });
+
+      // Add marker at EXACT coordinates - this binds it to the map, not the screen
+      markerRef.current = L.marker([latitude!, longitude!], { 
+        icon: customIcon 
+      }).addTo(map);
       
-      // Add popup with address if available
+      // Add popup with address
       if (address) {
         markerRef.current.bindPopup(`
           <div style="font-family: system-ui, -apple-system, sans-serif; padding: 4px;">
