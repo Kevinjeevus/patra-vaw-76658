@@ -181,12 +181,12 @@ export const MyCard: React.FC = () => {
       </div>;
   }
   if (!cardData) {
-    return <div className="min-h-screen bg-[#fafafa] relative overflow-hidden">
+    return <div className="min-h-screen bg-[#fafafa] relative overflow-hidden scrollbar-thin">
         <div className="absolute inset-0 opacity-30" style={{
         backgroundImage: 'radial-gradient(circle, #d1d5db 1px, transparent 1px)',
         backgroundSize: '20px 20px'
       }}></div>
-        <div className="relative flex items-center justify-center min-h-screen p-4">
+        <div className="relative flex items-center justify-center min-h-screen p-4 scrollbar-thin">
           <div className="text-center max-w-md">
             <h1 className="text-6xl font-bold mb-4 text-slate-900">404</h1>
             <p className="text-xl text-slate-600 mb-6">Card not found</p>
@@ -199,7 +199,7 @@ export const MyCard: React.FC = () => {
       </div>;
   }
   const cardUrl = `${window.location.origin}/${username}`;
-  return <div className="min-h-screen bg-[#fafafa] relative overflow-hidden">
+  return <div className="min-h-screen bg-[#fafafa] relative overflow-hidden scrollbar-thin">
       {/* Micro-dotted canvas background */}
       <div className="absolute inset-0 opacity-30" style={{
       backgroundImage: 'radial-gradient(circle, #d1d5db 1px, transparent 1px)',
