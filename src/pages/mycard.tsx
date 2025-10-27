@@ -47,15 +47,25 @@ export const MyCard: React.FC = () => {
     const fetchProfile = async () => {
       if (!username) return;
       try {
-        const {
-          data: card,
-          error
-        } = await supabase.from('digital_cards').select('*').eq('vanity_url', username).eq('is_active', true).eq('is_approved', true).single();
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+
+        const { data: card, error } = await supabase
+          .from('digital_cards')
+          .select('*')
+          .eq('vanity_url', username)
+          .eq('is_active', true)
+          .maybeSingle();
+
         if (error || !card) {
           setLoading(false);
           return;
         }
 
+        const isOwner = currentUser && card.owner_user_id === currentUser.id;
+        if (!card.is_approved && !isOwner) {
+          setLoading(false);
+          return;
+        }
         setOgDescription(card.og_description);
 
         // Generate OG description if it doesn't exist or is older than 30 days
