@@ -23,8 +23,24 @@ interface CardConfig {
   showCompany: boolean;
   showJobTitle: boolean;
   fontSize: number;
+  fontFamily: string;
   borderRadius: number;
 }
+
+const defaultConfig: CardConfig = {
+  cardWidth: 400,
+  cardHeight: 250,
+  avatarSize: 96,
+  avatarPosition: 'left',
+  showQRCode: false,
+  showEmail: true,
+  showPhone: true,
+  showCompany: true,
+  showJobTitle: true,
+  fontSize: 16,
+  fontFamily: 'Inter',
+  borderRadius: 12,
+};
 
 export const CardEditor: React.FC = () => {
   const navigate = useNavigate();
@@ -32,19 +48,7 @@ export const CardEditor: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [cardData, setCardData] = useState<any>(null);
-  const [cardConfig, setCardConfig] = useState<CardConfig>({
-    cardWidth: 400,
-    cardHeight: 250,
-    avatarSize: 96,
-    avatarPosition: 'left',
-    showQRCode: true,
-    showEmail: true,
-    showPhone: true,
-    showCompany: true,
-    showJobTitle: true,
-    fontSize: 16,
-    borderRadius: 12,
-  });
+  const [cardConfig, setCardConfig] = useState<CardConfig>(defaultConfig);
 
   useEffect(() => {
     if (user) {
@@ -119,6 +123,14 @@ export const CardEditor: React.FC = () => {
     }
   };
 
+  const handleReset = () => {
+    setCardConfig(defaultConfig);
+    toast({
+      title: 'Reset',
+      description: 'Card configuration reset to default.',
+    });
+  };
+
   const renderCardPreview = () => {
     if (!cardData) return null;
     
@@ -171,7 +183,7 @@ export const CardEditor: React.FC = () => {
             <div className="flex-1 min-w-0">
               <h2 
                 className="font-bold text-white mb-1 truncate"
-                style={{ fontSize: `${cardConfig.fontSize + 4}px` }}
+                style={{ fontSize: `${cardConfig.fontSize + 4}px`, fontFamily: cardConfig.fontFamily }}
               >
                 {content.fullName || 'Your Name'}
               </h2>
@@ -179,7 +191,7 @@ export const CardEditor: React.FC = () => {
               {cardConfig.showJobTitle && content.jobTitle && (
                 <p 
                   className="text-white/80 mb-0.5 truncate"
-                  style={{ fontSize: `${cardConfig.fontSize - 2}px` }}
+                  style={{ fontSize: `${cardConfig.fontSize - 2}px`, fontFamily: cardConfig.fontFamily }}
                 >
                   {content.jobTitle}
                 </p>
@@ -188,7 +200,7 @@ export const CardEditor: React.FC = () => {
               {cardConfig.showCompany && content.company && (
                 <p 
                   className="text-white/60 mb-3 truncate"
-                  style={{ fontSize: `${cardConfig.fontSize - 4}px` }}
+                  style={{ fontSize: `${cardConfig.fontSize - 4}px`, fontFamily: cardConfig.fontFamily }}
                 >
                   {content.company}
                 </p>
@@ -198,7 +210,7 @@ export const CardEditor: React.FC = () => {
                 {cardConfig.showEmail && content.email && (
                   <div 
                     className="flex items-center gap-2 text-white/90"
-                    style={{ fontSize: `${cardConfig.fontSize - 4}px` }}
+                    style={{ fontSize: `${cardConfig.fontSize - 4}px`, fontFamily: cardConfig.fontFamily }}
                   >
                     <span className="truncate">{content.email}</span>
                   </div>
@@ -207,7 +219,7 @@ export const CardEditor: React.FC = () => {
                 {cardConfig.showPhone && content.phone && (
                   <div 
                     className="flex items-center gap-2 text-white/90"
-                    style={{ fontSize: `${cardConfig.fontSize - 4}px` }}
+                    style={{ fontSize: `${cardConfig.fontSize - 4}px`, fontFamily: cardConfig.fontFamily }}
                   >
                     <span className="truncate">{content.phone}</span>
                   </div>
@@ -263,6 +275,12 @@ export const CardEditor: React.FC = () => {
             </div>
             
             <div className="flex gap-2">
+              <Button 
+                variant="outline"
+                onClick={handleReset}
+              >
+                Reset
+              </Button>
               <Button 
                 variant="outline"
                 onClick={() => navigate(`/${cardData?.vanity_url}?card`)}
@@ -413,6 +431,26 @@ export const CardEditor: React.FC = () => {
 
               <TabsContent value="style" className="space-y-6">
                 <Card className="p-6 space-y-6">
+                  <div>
+                    <Label>Font Family</Label>
+                    <select
+                      value={cardConfig.fontFamily}
+                      onChange={(e) => setCardConfig({ ...cardConfig, fontFamily: e.target.value })}
+                      className="w-full mt-2 h-10 rounded-md border border-input bg-background px-3 py-2"
+                    >
+                      <option value="Inter">Inter</option>
+                      <option value="Arial">Arial</option>
+                      <option value="Georgia">Georgia</option>
+                      <option value="Times New Roman">Times New Roman</option>
+                      <option value="Courier New">Courier New</option>
+                      <option value="Verdana">Verdana</option>
+                      <option value="Helvetica">Helvetica</option>
+                      <option value="Playfair Display">Playfair Display</option>
+                      <option value="Roboto">Roboto</option>
+                      <option value="Montserrat">Montserrat</option>
+                    </select>
+                  </div>
+
                   <div>
                     <Label>Font Size: {cardConfig.fontSize}px</Label>
                     <Slider

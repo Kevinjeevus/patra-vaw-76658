@@ -14,6 +14,7 @@ import { OnboardingNew } from "./pages/OnboardingNew";
 import { Analytics } from "./pages/Analytics";
 import { EditorNew } from "./pages/EditorNew";
 import { CardEditorNew } from "./pages/CardEditorNew";
+import { CardTemplates } from "./pages/CardTemplates";
 import { PublicProfile } from "./pages/PublicProfile";
 import { MyCard } from "./pages/mycard";
 import { EmailSignature } from "./pages/EmailSignature";
@@ -87,6 +88,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <CardEditorNew />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/card-templates"
+              element={
+                <ProtectedRoute>
+                  <CardTemplates />
                 </ProtectedRoute>
               }
             />

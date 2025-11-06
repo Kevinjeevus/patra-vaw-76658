@@ -30,6 +30,7 @@ interface CardConfig {
   showCompany: boolean;
   showJobTitle: boolean;
   fontSize: number;
+  fontFamily: string;
   borderRadius: number;
   backgroundColor: string;
   backgroundPattern: 'none' | 'dots' | 'grid' | 'waves';
@@ -75,16 +76,18 @@ export const CardEditorNew: React.FC = () => {
   const [cardData, setCardData] = useState<any>(null);
   const [selectedElement, setSelectedElement] = useState<string | null>(null);
   const [cardSide, setCardSide] = useState<'front' | 'back'>('front');
+  const [isLocked, setIsLocked] = useState(false);
   const [cardConfig, setCardConfig] = useState<CardConfig>({
     cardWidth: 400,
     cardHeight: 250,
     avatarSize: 96,
-    showQRCode: true,
+    showQRCode: false,
     showEmail: true,
     showPhone: true,
     showCompany: true,
     showJobTitle: true,
     fontSize: 16,
+    fontFamily: 'Inter',
     borderRadius: 12,
     backgroundColor: '#1e293b',
     backgroundPattern: 'none',
@@ -176,6 +179,8 @@ export const CardEditorNew: React.FC = () => {
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
+    if (isLocked) return;
+    
     const { active, delta } = event;
     const elementId = active.id as string;
     
@@ -267,7 +272,7 @@ export const CardEditorNew: React.FC = () => {
       ...base,
       backgroundColor: cardConfig.backgroundColor,
       backgroundImage: cardConfig.backgroundPattern !== 'none' ? patterns[cardConfig.backgroundPattern] : undefined,
-      backgroundSize: cardConfig.backgroundPattern === 'grid' ? '20px 20px' : undefined,
+      backgroundSize: cardConfig.backgroundPattern === 'dots' ? '20px 20px' : cardConfig.backgroundPattern === 'grid' ? '20px 20px' : undefined,
     };
   };
 
@@ -346,7 +351,7 @@ export const CardEditorNew: React.FC = () => {
             >
               <h2 
                 className="font-bold text-white truncate max-w-[200px]"
-                style={{ fontSize: `${cardConfig.fontSize + 4}px` }}
+                style={{ fontSize: `${cardConfig.fontSize + 4}px`, fontFamily: cardConfig.fontFamily }}
               >
                 {content.fullName || 'Your Name'}
               </h2>
@@ -362,7 +367,7 @@ export const CardEditorNew: React.FC = () => {
               >
                 <p 
                   className="text-white/80 truncate max-w-[200px]"
-                  style={{ fontSize: `${cardConfig.fontSize - 2}px` }}
+                  style={{ fontSize: `${cardConfig.fontSize - 2}px`, fontFamily: cardConfig.fontFamily }}
                 >
                   {content.jobTitle}
                 </p>
@@ -379,7 +384,7 @@ export const CardEditorNew: React.FC = () => {
               >
                 <p 
                   className="text-white/60 truncate max-w-[200px]"
-                  style={{ fontSize: `${cardConfig.fontSize - 4}px` }}
+                  style={{ fontSize: `${cardConfig.fontSize - 4}px`, fontFamily: cardConfig.fontFamily }}
                 >
                   {content.company}
                 </p>
@@ -396,7 +401,7 @@ export const CardEditorNew: React.FC = () => {
               >
                 <div 
                   className="text-white/90 truncate max-w-[200px]"
-                  style={{ fontSize: `${cardConfig.fontSize - 4}px` }}
+                  style={{ fontSize: `${cardConfig.fontSize - 4}px`, fontFamily: cardConfig.fontFamily }}
                 >
                   {content.email}
                 </div>
@@ -413,7 +418,7 @@ export const CardEditorNew: React.FC = () => {
               >
                 <div 
                   className="text-white/90 truncate max-w-[200px]"
-                  style={{ fontSize: `${cardConfig.fontSize - 4}px` }}
+                  style={{ fontSize: `${cardConfig.fontSize - 4}px`, fontFamily: cardConfig.fontFamily }}
                 >
                   {content.phone}
                 </div>
@@ -583,44 +588,61 @@ export const CardEditorNew: React.FC = () => {
 
               <TabsContent value="content" className="space-y-4">
                 <Card className="p-6 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label>Show QR Code</Label>
+                  <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                    <Label className="font-medium">Lock Elements</Label>
                     <Switch
-                      checked={cardConfig.showQRCode}
-                      onCheckedChange={(checked) => setCardConfig({ ...cardConfig, showQRCode: checked })}
+                      checked={isLocked}
+                      onCheckedChange={setIsLocked}
                     />
                   </div>
+                  <p className="text-xs text-muted-foreground">
+                    {isLocked ? 'Elements are locked and cannot be moved' : 'Elements can be dragged to reposition'}
+                  </p>
 
-                  <div className="flex items-center justify-between">
-                    <Label>Show Email</Label>
-                    <Switch
-                      checked={cardConfig.showEmail}
-                      onCheckedChange={(checked) => setCardConfig({ ...cardConfig, showEmail: checked })}
-                    />
-                  </div>
+                  <div className="border-t pt-4 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Label>Show QR Code {cardSide === 'front' && '(Front)'}</Label>
+                      <Switch
+                        checked={cardConfig.showQRCode}
+                        onCheckedChange={(checked) => setCardConfig({ ...cardConfig, showQRCode: checked })}
+                      />
+                    </div>
 
-                  <div className="flex items-center justify-between">
-                    <Label>Show Phone</Label>
-                    <Switch
-                      checked={cardConfig.showPhone}
-                      onCheckedChange={(checked) => setCardConfig({ ...cardConfig, showPhone: checked })}
-                    />
-                  </div>
+                    {cardSide === 'front' && (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <Label>Show Email</Label>
+                          <Switch
+                            checked={cardConfig.showEmail}
+                            onCheckedChange={(checked) => setCardConfig({ ...cardConfig, showEmail: checked })}
+                          />
+                        </div>
 
-                  <div className="flex items-center justify-between">
-                    <Label>Show Company</Label>
-                    <Switch
-                      checked={cardConfig.showCompany}
-                      onCheckedChange={(checked) => setCardConfig({ ...cardConfig, showCompany: checked })}
-                    />
-                  </div>
+                        <div className="flex items-center justify-between">
+                          <Label>Show Phone</Label>
+                          <Switch
+                            checked={cardConfig.showPhone}
+                            onCheckedChange={(checked) => setCardConfig({ ...cardConfig, showPhone: checked })}
+                          />
+                        </div>
 
-                  <div className="flex items-center justify-between">
-                    <Label>Show Job Title</Label>
-                    <Switch
-                      checked={cardConfig.showJobTitle}
-                      onCheckedChange={(checked) => setCardConfig({ ...cardConfig, showJobTitle: checked })}
-                    />
+                        <div className="flex items-center justify-between">
+                          <Label>Show Company</Label>
+                          <Switch
+                            checked={cardConfig.showCompany}
+                            onCheckedChange={(checked) => setCardConfig({ ...cardConfig, showCompany: checked })}
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <Label>Show Job Title</Label>
+                          <Switch
+                            checked={cardConfig.showJobTitle}
+                            onCheckedChange={(checked) => setCardConfig({ ...cardConfig, showJobTitle: checked })}
+                          />
+                        </div>
+                      </>
+                    )}
                   </div>
                 </Card>
               </TabsContent>
@@ -788,6 +810,26 @@ export const CardEditorNew: React.FC = () => {
                       </div>
                     </>
                   )}
+
+                  <div>
+                    <Label>Font Family</Label>
+                    <select
+                      value={cardConfig.fontFamily}
+                      onChange={(e) => setCardConfig({ ...cardConfig, fontFamily: e.target.value })}
+                      className="w-full mt-2 h-10 rounded-md border border-input bg-background px-3 py-2"
+                    >
+                      <option value="Inter">Inter</option>
+                      <option value="Arial">Arial</option>
+                      <option value="Georgia">Georgia</option>
+                      <option value="Times New Roman">Times New Roman</option>
+                      <option value="Courier New">Courier New</option>
+                      <option value="Verdana">Verdana</option>
+                      <option value="Helvetica">Helvetica</option>
+                      <option value="Playfair Display">Playfair Display</option>
+                      <option value="Roboto">Roboto</option>
+                      <option value="Montserrat">Montserrat</option>
+                    </select>
+                  </div>
 
                   <div>
                     <Label>Font Size: {cardConfig.fontSize}px</Label>
