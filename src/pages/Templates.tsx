@@ -3,29 +3,173 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Check, Crown, Palette, Layout, Sparkles, ExternalLink } from 'lucide-react';
-import { defaultCardTemplates, defaultProfileTemplates, CardTemplate } from '@/types/template';
+import { Input } from '@/components/ui/input';
+import { ArrowLeft, Search, Image as ImageIcon } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+
+interface BackgroundTemplate {
+  id: string;
+  name: string;
+  imageUrl: string;
+  tags: string[];
+}
+
+const backgroundTemplates: BackgroundTemplate[] = [
+  {
+    id: 'abstract-1',
+    name: 'Abstract Purple Gradient',
+    imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&h=500&fit=crop',
+    tags: ['abstract', 'purple', 'gradient', 'modern'],
+  },
+  {
+    id: 'abstract-2',
+    name: 'Blue Wave Pattern',
+    imageUrl: 'https://images.unsplash.com/photo-1557672172-298e090bd0f1?w=800&h=500&fit=crop',
+    tags: ['abstract', 'blue', 'waves', 'pattern'],
+  },
+  {
+    id: 'abstract-3',
+    name: 'Golden Liquid',
+    imageUrl: 'https://images.unsplash.com/photo-1618556450994-a6a128ef0d9d?w=800&h=500&fit=crop',
+    tags: ['abstract', 'gold', 'luxury', 'elegant'],
+  },
+  {
+    id: 'nature-1',
+    name: 'Ocean Blue',
+    imageUrl: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&h=500&fit=crop',
+    tags: ['nature', 'ocean', 'blue', 'calm'],
+  },
+  {
+    id: 'nature-2',
+    name: 'Forest Green',
+    imageUrl: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&h=500&fit=crop',
+    tags: ['nature', 'forest', 'green', 'peaceful'],
+  },
+  {
+    id: 'gradient-1',
+    name: 'Sunset Gradient',
+    imageUrl: 'https://images.unsplash.com/photo-1557682250-33bd709cbe85?w=800&h=500&fit=crop',
+    tags: ['gradient', 'sunset', 'orange', 'pink'],
+  },
+  {
+    id: 'gradient-2',
+    name: 'Neon Lights',
+    imageUrl: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&h=500&fit=crop',
+    tags: ['gradient', 'neon', 'colorful', 'modern'],
+  },
+  {
+    id: 'tech-1',
+    name: 'Circuit Board',
+    imageUrl: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&h=500&fit=crop',
+    tags: ['tech', 'modern', 'professional', 'blue'],
+  },
+  {
+    id: 'tech-2',
+    name: 'Digital Matrix',
+    imageUrl: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&h=500&fit=crop',
+    tags: ['tech', 'digital', 'modern', 'green'],
+  },
+  {
+    id: 'minimal-1',
+    name: 'White Marble',
+    imageUrl: 'https://images.unsplash.com/photo-1615799998603-7c6270a45196?w=800&h=500&fit=crop',
+    tags: ['minimal', 'marble', 'elegant', 'white'],
+  },
+  {
+    id: 'minimal-2',
+    name: 'Black Concrete',
+    imageUrl: 'https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?w=800&h=500&fit=crop',
+    tags: ['minimal', 'concrete', 'professional', 'dark'],
+  },
+  {
+    id: 'professional-1',
+    name: 'Corporate Blue',
+    imageUrl: 'https://images.unsplash.com/photo-1557683316-973673baf926?w=800&h=500&fit=crop',
+    tags: ['professional', 'corporate', 'blue', 'clean'],
+  },
+  {
+    id: 'professional-2',
+    name: 'Business Gray',
+    imageUrl: 'https://images.unsplash.com/photo-1557682224-5b8590cd9ec5?w=800&h=500&fit=crop',
+    tags: ['professional', 'business', 'gray', 'modern'],
+  },
+  {
+    id: 'creative-1',
+    name: 'Colorful Paint',
+    imageUrl: 'https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=800&h=500&fit=crop',
+    tags: ['creative', 'colorful', 'artistic', 'vibrant'],
+  },
+  {
+    id: 'creative-2',
+    name: 'Watercolor Art',
+    imageUrl: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=800&h=500&fit=crop',
+    tags: ['creative', 'watercolor', 'artistic', 'soft'],
+  },
+  {
+    id: 'dark-1',
+    name: 'Dark Space',
+    imageUrl: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=800&h=500&fit=crop',
+    tags: ['dark', 'space', 'elegant', 'mysterious'],
+  },
+  {
+    id: 'luxury-1',
+    name: 'Rose Gold',
+    imageUrl: 'https://images.unsplash.com/photo-1557682268-e3955ed5d83f?w=800&h=500&fit=crop',
+    tags: ['luxury', 'rose-gold', 'elegant', 'premium'],
+  },
+  {
+    id: 'vibrant-1',
+    name: 'Rainbow Spectrum',
+    imageUrl: 'https://images.unsplash.com/photo-1557682224-5b8590cd9ec5?w=800&h=500&fit=crop',
+    tags: ['vibrant', 'rainbow', 'colorful', 'energetic'],
+  },
+];
 
 
 export const Templates: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
-  const [userCard, setUserCard] = useState<any>(null);
-  const [loadingCard, setLoadingCard] = useState(true);
-  const [applying, setApplying] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<BackgroundTemplate | null>(null);
+  const [applyTarget, setApplyTarget] = useState<'card' | 'profile' | 'both' | null>(null);
+  const [cardData, setCardData] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredTemplates, setFilteredTemplates] = useState(backgroundTemplates);
+  const [showApplyDialog, setShowApplyDialog] = useState(false);
 
   useEffect(() => {
     if (user) {
-      fetchUserCard();
+      fetchCardData();
     }
   }, [user]);
 
-  const fetchUserCard = async () => {
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      const filtered = backgroundTemplates.filter(template =>
+        template.name.toLowerCase().includes(query) ||
+        template.tags.some(tag => tag.toLowerCase().includes(query))
+      );
+      setFilteredTemplates(filtered);
+    } else {
+      setFilteredTemplates(backgroundTemplates);
+    }
+  }, [searchQuery]);
+
+  const fetchCardData = async () => {
     try {
       const { data, error } = await supabase
         .from('digital_cards')
@@ -34,163 +178,98 @@ export const Templates: React.FC = () => {
         .single();
 
       if (error) throw error;
-      setUserCard(data);
+      
+      if (data) {
+        setCardData(data);
+      }
     } catch (error) {
       console.error('Error fetching card:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load card data.',
+        variant: 'destructive',
+      });
     } finally {
-      setLoadingCard(false);
+      setLoading(false);
     }
   };
 
-  const handleSelectTemplate = (template: CardTemplate) => {
-    if (template.isPremium) {
-      toast({
-        title: "Premium Template",
-        description: "This template will be available in a future update.",
-        variant: "default"
-      });
-      return;
-    }
+  const handleSelectTemplate = (template: BackgroundTemplate) => {
+    setSelectedTemplate(template);
+    setShowApplyDialog(true);
+  };
+
+  const handleApplyTemplate = async (target: 'card' | 'profile' | 'both') => {
+    if (!selectedTemplate || !cardData) return;
     
-    setSelectedTemplate(template.id);
-    toast({
-      title: "Template Selected",
-      description: `${template.name} template will be applied when you go to the editor.`,
-    });
-  };
-
-  const handleApplyTemplate = async () => {
-    if (!selectedTemplate) {
-      toast({
-        title: "No Template Selected",
-        description: "Please select a template to apply.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to apply templates.",
-        variant: "destructive"
-      });
-      navigate('/auth');
-      return;
-    }
-
-    setApplying(true);
+    setSaving(true);
+    setApplyTarget(target);
     
     try {
-      // Find the selected template
-      const allTemplates = [...defaultCardTemplates, ...defaultProfileTemplates];
-      const template = allTemplates.find(t => t.id === selectedTemplate);
+      const currentContent = cardData.content_json || {};
+      const currentConfig = currentContent.cardConfig || {};
       
-      if (!template) {
-        throw new Error('Template not found');
-      }
+      let updatedContent = { ...currentContent };
 
-      // Wait 1 second for better UX
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Apply template to user's card - remove existing theme when template is applied
-      if (userCard) {
-        const currentContent = userCard.content_json || {};
-        const { theme, ...contentWithoutTheme } = currentContent;
-        
-        const updatedContentJson = {
-          ...contentWithoutTheme,
-          customCSS: template.style.customCSS || '',
-          bannerType: template.style.backgroundColor ? 'color' : template.style.backgroundPattern ? 'pattern' : undefined,
-          bannerValue: template.style.backgroundColor || template.style.backgroundPattern || undefined,
+      // Apply to card background
+      if (target === 'card' || target === 'both') {
+        updatedContent.cardConfig = {
+          ...currentConfig,
+          backgroundImage: selectedTemplate.imageUrl,
+          backBackgroundImage: selectedTemplate.imageUrl,
+          backgroundColor: '#1e293b', // Fallback
+          backgroundPattern: 'none',
         };
-
-        const { error } = await supabase
-          .from('digital_cards')
-          .update({
-            content_json: updatedContentJson,
-            template_id: selectedTemplate,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', userCard.id);
-
-        if (error) throw error;
-
-        toast({
-          title: "Template Applied! ✨",
-          description: `${template.name} template has been applied to your card.`,
-        });
-
-        // Clear selection and stay on templates page
-        localStorage.removeItem('selectedTemplate');
-        setSelectedTemplate(null);
-        fetchUserCard(); // Refresh the preview
       }
+
+      // Apply to profile banner
+      if (target === 'profile' || target === 'both') {
+        updatedContent.bannerType = 'image';
+        updatedContent.bannerValue = selectedTemplate.imageUrl;
+      }
+
+      const { error } = await supabase
+        .from('digital_cards')
+        .update({
+          content_json: updatedContent,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', cardData.id);
+
+      if (error) throw error;
+
+      const targetText = target === 'both' ? 'card and profile' : target;
+      toast({
+        title: 'Template Applied!',
+        description: `"${selectedTemplate.name}" has been applied to your ${targetText}.`,
+      });
+
+      await fetchCardData();
+      setShowApplyDialog(false);
+      setSelectedTemplate(null);
     } catch (error: any) {
       console.error('Error applying template:', error);
       toast({
-        title: "Application Failed",
-        description: error.message || "Failed to apply template. Please try again.",
-        variant: "destructive"
+        title: 'Error',
+        description: error.message || 'Failed to apply template.',
+        variant: 'destructive',
       });
     } finally {
-      setApplying(false);
+      setSaving(false);
+      setApplyTarget(null);
     }
   };
 
-  const TemplateCard = ({ template }: { template: CardTemplate }) => {
-    const isSelected = selectedTemplate === template.id;
-    
+  if (loading) {
     return (
-      <Card 
-        className={`p-4 cursor-pointer transition-all hover:shadow-lg ${
-          isSelected ? 'ring-2 ring-primary' : ''
-        }`}
-        onClick={() => handleSelectTemplate(template)}
-      >
-        <div className="relative aspect-video bg-muted rounded-lg mb-4 overflow-hidden">
-          {/* Template Thumbnail */}
-          <img 
-            src={template.thumbnail} 
-            alt={template.name}
-            className="w-full h-full object-cover"
-          />
-          
-          {isSelected && (
-            <div className="absolute top-2 right-2 bg-primary rounded-full p-1">
-              <Check className="w-4 h-4 text-primary-foreground" />
-            </div>
-          )}
-          
-          {template.isPremium && (
-            <Badge className="absolute top-2 left-2 bg-gradient-to-r from-yellow-500 to-orange-500">
-              <Crown className="w-3 h-3 mr-1" />
-              Premium
-            </Badge>
-          )}
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading templates...</p>
         </div>
-        
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-lg">{template.name}</h3>
-            <Badge variant="outline">{template.style.layout}</Badge>
-          </div>
-          
-          <p className="text-sm text-muted-foreground line-clamp-2">
-            {template.description}
-          </p>
-          
-          <div className="flex flex-wrap gap-1">
-            {template.features.map((feature, index) => (
-              <Badge key={index} variant="secondary" className="text-xs">
-                {feature}
-              </Badge>
-            ))}
-          </div>
-        </div>
-      </Card>
+      </div>
     );
-  };
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -204,165 +283,158 @@ export const Templates: React.FC = () => {
               </Button>
               <div>
                 <h1 className="text-2xl font-bold flex items-center gap-2">
-                  <Palette className="w-6 h-6" />
-                  Template Gallery
+                  <ImageIcon className="w-6 h-6" />
+                  Background Templates
                 </h1>
                 <p className="text-sm text-muted-foreground">
-                  Choose a stunning design for your digital card
+                  Choose a stunning background for your card and profile
                 </p>
               </div>
-            </div>
-            
-            <div className="flex gap-2">
-              <Button 
-                variant="outline"
-                onClick={() => navigate(`/${userCard?.vanity_url || 'mycard'}`)}
-                disabled={!userCard}
-              >
-                <ExternalLink className="w-4 h-4 mr-2" />
-                View Profile
-              </Button>
-              <Button 
-                onClick={handleApplyTemplate}
-                disabled={!selectedTemplate || applying}
-                size="lg"
-              >
-                {applying ? 'Applying...' : 'Apply Template'}
-              </Button>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Content */}
-      <main className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="card" className="space-y-6">
-          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2">
-            <TabsTrigger value="card">
-              <CreditCard className="w-4 h-4 mr-2" />
-              Card Templates
-            </TabsTrigger>
-            <TabsTrigger value="profile">
-              <Layout className="w-4 h-4 mr-2" />
-              Profile Templates
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="card" className="space-y-6">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold mb-2">Card Templates</h2>
-              <p className="text-muted-foreground max-w-2xl mx-auto mb-4">
-                Templates change the visual design and layout of your digital card. Your content (name, contact info, links) stays the same - only the styling changes. Choose a template that matches your professional style.
-              </p>
-              <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 max-w-2xl mx-auto mb-6">
-                <h3 className="font-semibold text-sm mb-2 flex items-center justify-center gap-2">
-                  <Sparkles className="w-4 h-4 text-primary" />
-                  What happens when you apply a template?
-                </h3>
-                <ul className="text-sm text-muted-foreground space-y-1 text-left max-w-md mx-auto">
-                  <li>✓ Your design updates instantly with new colors and layout</li>
-                  <li>✓ All your content (contact info, links, photos) remains unchanged</li>
-                  <li>✓ You can switch templates anytime without losing data</li>
-                  <li>✓ Preview your card before making it public</li>
-                </ul>
-              </div>
-              <div className="flex justify-center gap-2 mt-4">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => navigate('/card-editor')}
-                >
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Edit Card
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => navigate('/editor')}
-                >
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Edit Content
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => navigate(`/${userCard?.vanity_url || 'mycard'}?card`)}
-                  disabled={!userCard}
-                >
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  View Card
-                </Button>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {defaultCardTemplates.map((template) => (
-                <TemplateCard key={template.id} template={template} />
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="profile" className="space-y-6">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold mb-2">Profile Templates</h2>
-              <p className="text-muted-foreground max-w-2xl mx-auto mb-4">
-                Profile templates offer comprehensive layouts for showcasing your full professional presence. These templates include advanced sections like galleries, testimonials, and achievements.
-              </p>
-              <div className="bg-accent/10 border border-accent/20 rounded-lg p-4 max-w-2xl mx-auto mb-6">
-                <h3 className="font-semibold text-sm mb-2 flex items-center justify-center gap-2">
-                  <Layout className="w-4 h-4 text-accent" />
-                  Profile vs Card Templates
-                </h3>
-                <ul className="text-sm text-muted-foreground space-y-1 text-left max-w-md mx-auto">
-                  <li><strong>Card Templates:</strong> Compact, business card-style layouts</li>
-                  <li><strong>Profile Templates:</strong> Full-page layouts with advanced features</li>
-                  <li>Both use your same content - just different presentations</li>
-                </ul>
-              </div>
-              <div className="flex justify-center gap-2 mt-4">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => navigate('/editor')}
-                >
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Edit Profile
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => navigate(`/${userCard?.vanity_url || 'mycard'}`)}
-                  disabled={!userCard}
-                >
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  View Profile
-                </Button>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {defaultProfileTemplates.map((template) => (
-                <TemplateCard key={template.id} template={template} />
-              ))}
-            </div>
-          </TabsContent>
-        </Tabs>
-
-        {/* Community Section */}
-        <div className="mt-16 p-8 bg-gradient-to-r from-primary/10 to-accent/10 rounded-lg text-center">
-          <Sparkles className="w-12 h-12 mx-auto mb-4 text-primary" />
-          <h3 className="text-2xl font-bold mb-2">Community Templates Coming Soon</h3>
+      {/* Main Content */}
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-6">
           <p className="text-muted-foreground mb-4">
-            In the future, you'll be able to create and share your own templates with the community!
+            Select a background image to apply to your card, profile, or both. Each template can be easily searched by tags.
           </p>
-          <Button variant="outline" disabled>
-            <Palette className="w-4 h-4 mr-2" />
-            Create Your Own Template
-          </Button>
+          
+          {/* Search Bar */}
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search by name or tags (e.g., 'blue', 'professional')..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
         </div>
-      </main>
+
+        {filteredTemplates.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">No templates found matching "{searchQuery}"</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredTemplates.map((template) => (
+              <Card
+                key={template.id}
+                className="overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-105"
+                onClick={() => handleSelectTemplate(template)}
+              >
+                {/* Template Preview */}
+                <div
+                  className="h-48 bg-cover bg-center relative"
+                  style={{ backgroundImage: `url(${template.imageUrl})` }}
+                />
+
+                {/* Template Info */}
+                <div className="p-4 bg-card">
+                  <h3 className="font-semibold text-base mb-2">{template.name}</h3>
+                  
+                  {/* Tags */}
+                  <div className="flex flex-wrap gap-1">
+                    {template.tags.map((tag) => (
+                      <Badge key={tag} variant="secondary" className="text-xs">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Info Card */}
+        <Card className="mt-8 p-6 bg-muted">
+          <h3 className="font-semibold mb-3">Need more customization?</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Use the Advanced Card Editor to upload your own background image or customize other aspects of your design.
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => navigate('/card-editor')}
+            >
+              Go to Basic Editor
+            </Button>
+            <Button
+              onClick={() => navigate('/card-editor-new')}
+            >
+              Go to Advanced Editor
+            </Button>
+          </div>
+        </Card>
+      </div>
+
+      {/* Apply Dialog */}
+      <AlertDialog open={showApplyDialog} onOpenChange={setShowApplyDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Apply Background Template</AlertDialogTitle>
+            <AlertDialogDescription>
+              Where would you like to apply "{selectedTemplate?.name}"?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          <div className="space-y-3 py-4">
+            <Button
+              variant="outline"
+              className="w-full justify-start h-auto py-4"
+              onClick={() => handleApplyTemplate('card')}
+              disabled={saving}
+            >
+              <div className="text-left">
+                <div className="font-semibold">Card Only</div>
+                <div className="text-xs text-muted-foreground">Apply to digital card background (front & back)</div>
+              </div>
+            </Button>
+            
+            <Button
+              variant="outline"
+              className="w-full justify-start h-auto py-4"
+              onClick={() => handleApplyTemplate('profile')}
+              disabled={saving}
+            >
+              <div className="text-left">
+                <div className="font-semibold">Profile Only</div>
+                <div className="text-xs text-muted-foreground">Apply to profile banner background</div>
+              </div>
+            </Button>
+            
+            <Button
+              variant="default"
+              className="w-full justify-start h-auto py-4"
+              onClick={() => handleApplyTemplate('both')}
+              disabled={saving}
+            >
+              <div className="text-left">
+                <div className="font-semibold">Both Card & Profile</div>
+                <div className="text-xs text-muted-foreground">Apply to both card and profile backgrounds</div>
+              </div>
+            </Button>
+          </div>
+
+          {saving && (
+            <div className="text-center py-2">
+              <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                Applying template to {applyTarget === 'both' ? 'card and profile' : applyTarget}...
+              </div>
+            </div>
+          )}
+
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={saving}>Cancel</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
-
-import { CreditCard } from 'lucide-react';
