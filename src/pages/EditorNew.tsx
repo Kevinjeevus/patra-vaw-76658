@@ -1323,517 +1323,315 @@ export const EditorNew: React.FC = () => {
         );
 
       case 'achievements':
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold mb-2">Achievements</h2>
-              <p className="text-muted-foreground text-sm mb-6">
-                Add your certifications and achievements
-              </p>
-            </div>
+        return <AchievementsEditor cardData={cardData} setCardData={setCardData} />;
 
-            {/* Add/Edit Achievement Form */}
-            <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/30">
-              <div>
-                <Label htmlFor="achievement-title">Achievement Title *</Label>
-                <Input
-                  id="achievement-title"
-                  value={newAchievement.title}
-                  onChange={(e) => setNewAchievement({ ...newAchievement, title: e.target.value })}
-                  placeholder="e.g., AWS Certified Solutions Architect"
-                />
-              </div>
+      case 'testimonials':
+        return <TestimonialsEditor cardData={cardData} setCardData={setCardData} />;
 
-              <div>
-                <Label htmlFor="achievement-issuer">Issuer *</Label>
-                <Input
-                  id="achievement-issuer"
-                  value={newAchievement.issuer}
-                  onChange={(e) => setNewAchievement({ ...newAchievement, issuer: e.target.value })}
-                  placeholder="e.g., Amazon Web Services"
-                />
-              </div>
+      case 'interests':
+        return <InterestsEditor cardData={cardData} setCardData={setCardData} />;
 
-              <div>
-                <Label htmlFor="achievement-date">Date *</Label>
-                <Input
-                  id="achievement-date"
-                  type="date"
-                  value={newAchievement.date}
-                  onChange={(e) => setNewAchievement({ ...newAchievement, date: e.target.value })}
-                />
-              </div>
+      case 'location':
+        return <LocationEditor cardData={cardData} setCardData={setCardData} />;
 
-              <div>
-                <Label htmlFor="achievement-url">Verification URL (Optional)</Label>
-                <Input
-                  id="achievement-url"
-                  type="url"
-                  value={newAchievement.url}
-                  onChange={(e) => setNewAchievement({ ...newAchievement, url: e.target.value })}
-                  placeholder="https://..."
-                />
-              </div>
+      case 'aiprofile':
+        return <AiProfileEditor cardData={cardData} setCardData={setCardData} aiEnabled={aiEnabled} handleAIToggle={handleAIToggle} />;
 
-              <Button
-                onClick={() => {
-                  if (!newAchievement.title || !newAchievement.issuer || !newAchievement.date) {
-                    toast({
-                      title: "Error",
-                      description: "Please fill in all required fields",
-                      variant: "destructive"
-                    });
-                    return;
-                  }
-
-                  if (editingAchievementIndex !== null) {
-                    const updated = [...cardData.achievements];
-                    updated[editingAchievementIndex] = newAchievement;
-                    setCardData({ ...cardData, achievements: updated });
-                    setEditingAchievementIndex(null);
-                  } else {
-                    setCardData({ ...cardData, achievements: [...cardData.achievements, newAchievement] });
-                  }
-
-                  setNewAchievement({ title: '', issuer: '', date: '', url: '' });
-                  toast({
-                    title: "Success!",
-                    description: editingAchievementIndex !== null ? "Achievement updated" : "Achievement added",
-                  });
-                }}
-                className="w-full"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                {editingAchievementIndex !== null ? 'Update Achievement' : 'Add Achievement'}
-              </Button>
-
-              {editingAchievementIndex !== null && (
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setEditingAchievementIndex(null);
-                    setNewAchievement({ title: '', issuer: '', date: '', url: '' });
-                    {/* Enable AI Toggle */ }
-                    <div className="p-4 border border-border rounded-lg bg-card">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-semibold">Enable Your AI</h3>
-                          <p className="text-sm text-muted-foreground">Allow visitors to chat with your AI clone</p>
-                        </div>
-                        <Switch
-                          checked={aiEnabled}
-                          onCheckedChange={handleAIToggle}
-                        />
-                      </div>
-                    </div>
-
-                    {
-                      aiEnabled && (
-                        <div className="p-4 border border-green-500/20 rounded-lg bg-green-500/5">
-                          <p className="text-sm flex items-center gap-2">
-                            <Check className="w-4 h-4 text-green-600" />
-                            <span>AI is enabled! Visitors can now chat with your AI at <code className="text-xs bg-muted px-1 rounded">/{cardData.vanityUrl}/ai</code></span>
-                          </p>
-                        </div>
-                      )
-                    }
-
-                    <hr className="my-6" />
-
-                    {/* Collapsible AI Profile Builder */ }
-                    <div>
-                      <button
-                        onClick={() => setAiProfileExpanded(!aiProfileExpanded)}
-                        className="w-full flex items-center justify-between p-4 border border-border rounded-lg bg-card hover:bg-accent/50 transition-colors"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Share2 className="w-5 h-5 text-primary" />
-                          <h3 className="font-semibold">AI Profile Builder</h3>
-                        </div>
-                        <ChevronLeft className={`w-5 h-5 transition-transform ${aiProfileExpanded ? '-rotate-90' : 'rotate-0'}`} />
-                      </button>
-
-                      {aiProfileExpanded && (
-                        <div className="mt-4 space-y-6 animate-fade-in">
-                          <div className="p-6 border border-border rounded-lg bg-gradient-to-br from-primary/5 to-primary/10">
-                            <p className="text-sm text-muted-foreground mb-4">
-                              Generate a custom AI prompt that tells chatbots like ChatGPT, Claude, Gemini, and Perplexity exactly who you are. This helps AI assistants provide more personalized and relevant responses.
-                            </p>
-                            <div className="space-y-3">
-                              <div className="flex items-start gap-2 text-sm">
-                                <Check className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                                <span>Tailored AI responses based on your background and expertise</span>
-                              </div>
-                              <div className="flex items-start gap-2 text-sm">
-                                <Check className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                                <span>No need to repeat yourself in every conversation</span>
-                              </div>
-                              <div className="flex items-start gap-2 text-sm">
-                                <Check className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                                <span>Better recommendations aligned with your interests</span>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Generated AI Prompt */}
-                          <div className="space-y-4 p-4 border border-border rounded-lg bg-card">
-                            <div className="flex items-center justify-between">
-                              <h3 className="font-semibold text-sm">Your AI Profile Prompt</h3>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  const aiPrompt = `I'm ${cardData.fullName || 'a user'}, ${cardData.jobTitle || 'professional'}${cardData.company ? ` at ${cardData.company}` : ''}. ${cardData.about || ''}\n\nMy background:\n- Location: ${cardData.location || 'Not specified'}\n- Languages: ${cardData.languages.join(', ') || 'Not specified'}\n- Interests: ${cardData.interests.join(', ') || 'Not specified'}\n\n${cardData.achievements.length > 0 ? `Achievements:\n${cardData.achievements.map(a => `- ${a.title} from ${a.issuer} (${a.date})`).join('\n')}\n\n` : ''}When assisting me, please consider my background, expertise, and interests to provide personalized and relevant responses. You can view my full profile at: patra.me/${cardData.vanityUrl || 'username'}`;
-
-                                  navigator.clipboard.writeText(aiPrompt);
-                                  toast({
-                                    title: "Copied!",
-                                    description: "AI profile prompt copied to clipboard. Paste it into any AI chatbot!",
-                                  });
-                                }}
-                              >
-                                <Copy className="w-4 h-4 mr-2" />
-                                Copy Prompt
-                              </Button>
-                            </div>
-                            <div className="bg-muted p-4 rounded-lg text-sm overflow-auto scrollbar-thin max-h-96 whitespace-pre-wrap">
-                              {`I'm ${cardData.fullName || 'a user'}, ${cardData.jobTitle || 'professional'}${cardData.company ? ` at ${cardData.company}` : ''}. ${cardData.about || ''}
-
-My background:
-- Location: ${cardData.location || 'Not specified'}
-- Languages: ${cardData.languages.join(', ') || 'Not specified'}
-- Interests: ${cardData.interests.join(', ') || 'Not specified'}
-
-${cardData.achievements.length > 0 ? `Achievements:
-${cardData.achievements.map(a => `- ${a.title} from ${a.issuer} (${a.date})`).join('\n')}
-
-` : ''}When assisting me, please consider my background, expertise, and interests to provide personalized and relevant responses. You can view my full profile at: patra.me/${cardData.vanityUrl || 'username'}`}
-                            </div>
-                          </div>
-
-                          {/* How to Use */}
-                          <div className="p-4 bg-muted/30 border border-border rounded-lg">
-                            <h4 className="font-semibold text-sm mb-3">How to use:</h4>
-                            <ol className="space-y-2 text-sm text-muted-foreground">
-                              <li className="flex gap-2">
-                                <span className="font-semibold text-foreground">1.</span>
-                                <span>Click "Copy Prompt" above to copy your AI profile to clipboard</span>
-                              </li>
-                              <li className="flex gap-2">
-                                <span className="font-semibold text-foreground">2.</span>
-                                <span>Open your preferred AI chatbot (ChatGPT, Claude, Gemini, Perplexity)</span>
-                              </li>
-                              <li className="flex gap-2">
-                                <span className="font-semibold text-foreground">3.</span>
-                                <span>Paste the prompt at the start of your conversation</span>
-                              </li>
-                              <li className="flex gap-2">
-                                <span className="font-semibold text-foreground">4.</span>
-                                <span>Enjoy personalized AI responses tailored to your profile!</span>
-                              </li>
-                            </ol>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-          </div >
-            );
-
-            default:
-            return null;
+      default:
+        return null;
     }
   };
 
-            return (
-            <div className="min-h-screen bg-background flex flex-col">
-              {/* Video Intro Dialog */}
-              {showVideoIntro && <VideoIntro onClose={() => {
-                setShowVideoIntro(false);
-                // Start tour after video closes
-                const hasCompletedTour = localStorage.getItem('patra-tour-completed') === 'true';
-                if (!hasCompletedTour) {
-                  setShouldStartTour(true);
-                }
-              }} />}
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Video Intro Dialog */}
+      {showVideoIntro && <VideoIntro onClose={() => {
+        setShowVideoIntro(false);
+        // Start tour after video closes
+        const hasCompletedTour = localStorage.getItem('patra-tour-completed') === 'true';
+        if (!hasCompletedTour) {
+          setShouldStartTour(true);
+        }
+      }} />}
 
-              {/* Header */}
-              <header className="border-b border-border bg-card sticky top-0 z-50 overflow-x-auto">
-                <div className="px-4 h-16 flex items-center justify-between min-w-max">
-                  <div className="flex items-center space-x-3">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setSidebarOpen(!sidebarOpen)}
-                      className="h-8 w-8"
-                    >
-                      <Menu className="w-5 h-5" />
-                    </Button>
-                    <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                      <CreditCard className="w-5 h-5 text-primary-foreground" />
-                    </div>
-                    <h1 className="text-xl font-semibold hidden sm:block">Patra</h1>
-                  </div>
+      {/* Header */}
+      <header className="border-b border-border bg-card sticky top-0 z-50 overflow-x-auto">
+        <div className="px-4 h-16 flex items-center justify-between min-w-max">
+          <div className="flex items-center space-x-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="h-8 w-8"
+            >
+              <Menu className="w-5 h-5" />
+            </Button>
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+              <CreditCard className="w-5 h-5 text-primary-foreground" />
+            </div>
+            <h1 className="text-xl font-semibold hidden sm:block">Patra</h1>
+          </div>
 
-                  <div className="flex items-center gap-2">
-                    {isMobile && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={toggleMobilePreview}
-                        className="gap-2"
-                      >
-                        <Smartphone className="w-4 h-4" />
-                        {showMobilePreview ? 'Edit' : 'Preview'}
-                      </Button>
-                    )}
+          <div className="flex items-center gap-2">
+            {isMobile && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={toggleMobilePreview}
+                className="gap-2"
+              >
+                <Smartphone className="w-4 h-4" />
+                {showMobilePreview ? 'Edit' : 'Preview'}
+              </Button>
+            )}
 
-                    {!isMobile && (
-                      <Button data-tour="save" onClick={() => handleSave()} disabled={loading} size="sm">
-                        <Save className="w-4 h-4 mr-2" />
-                        {loading ? 'Saving...' : 'Save'}
-                      </Button>
-                    )}
+            {!isMobile && (
+              <Button data-tour="save" onClick={() => handleSave()} disabled={loading} size="sm">
+                <Save className="w-4 h-4 mr-2" />
+                {loading ? 'Saving...' : 'Save'}
+              </Button>
+            )}
 
-                    <Avatar
-                      className="h-9 w-9 cursor-pointer ring-2 ring-primary/20 hover:ring-primary/40 transition-all"
-                      onClick={() => navigate('/settings')}
-                    >
-                      <AvatarImage src={cardData.avatarUrl} alt={cardData.fullName} />
-                      <AvatarFallback>{cardData.fullName?.charAt(0) || 'U'}</AvatarFallback>
-                    </Avatar>
-                  </div>
-                </div>
-              </header>
+            <Avatar
+              className="h-9 w-9 cursor-pointer ring-2 ring-primary/20 hover:ring-primary/40 transition-all"
+              onClick={() => navigate('/settings')}
+            >
+              <AvatarImage src={cardData.avatarUrl} alt={cardData.fullName} />
+              <AvatarFallback>{cardData.fullName?.charAt(0) || 'U'}</AvatarFallback>
+            </Avatar>
+          </div>
+        </div>
+      </header>
 
-              {/* Main */}
-              <div className="flex-1 flex overflow-hidden scrollbar-thin">
-                <div className="flex flex-1 overflow-hidden relative scrollbar-thin">
-                  {/* Sidebar */}
-                  <aside
-                    className={`
+      {/* Main */}
+      <div className="flex-1 flex overflow-hidden scrollbar-thin">
+        <div className="flex flex-1 overflow-hidden relative scrollbar-thin">
+          {/* Sidebar */}
+          <aside
+            className={`
               transition-all duration-300 border-r border-border bg-card flex flex-col flex-shrink-0 
               scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent
               ${isMobile
-                        ? (sidebarOpen ? 'w-full absolute inset-y-0 left-0 z-30' : 'hidden')
-                        : (sidebarOpen ? 'w-full max-w-[450px] absolute inset-y-0 left-0 z-30' : 'hidden')
-                      }
+                ? (sidebarOpen ? 'w-full absolute inset-y-0 left-0 z-30' : 'hidden')
+                : (sidebarOpen ? 'w-full max-w-[450px] absolute inset-y-0 left-0 z-30' : 'hidden')
+              }
             `}
-                    style={{
-                      overflowY: sidebarOpen ? 'auto' : 'hidden',
-                      maxHeight: 'calc(100vh - 4rem)'
-                    }}
+            style={{
+              overflowY: sidebarOpen ? 'auto' : 'hidden',
+              maxHeight: 'calc(100vh - 4rem)'
+            }}
+          >
+
+            <div className={`p-4 border-b border-border ${!sidebarOpen && !isMobile ? 'hidden' : ''}`}>
+              <div className="flex items-center justify-between">
+                <h2 className={`font-semibold text-sm text-muted-foreground ${isMobile ? 'hidden' : ''}`}>
+                  Sections
+                </h2>
+                {!isMobile && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setSidebarOpen(!sidebarOpen)}
+                    className="h-6 w-6"
                   >
+                    <X className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
 
-                    <div className={`p-4 border-b border-border ${!sidebarOpen && !isMobile ? 'hidden' : ''}`}>
-                      <div className="flex items-center justify-between">
-                        <h2 className={`font-semibold text-sm text-muted-foreground ${isMobile ? 'hidden' : ''}`}>
-                          Sections
-                        </h2>
-                        {!isMobile && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setSidebarOpen(!sidebarOpen)}
-                            className="h-6 w-6"
-                          >
-                            <X className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-
-                    <nav className="flex-1 p-2 space-y-1 overflow-y-auto scrollbar-thin">
-                      {navItems.map((item) => {
-                        const Icon = item.icon;
-                        const isAIProfile = item.id === 'aiprofile';
-                        return (
-                          <button
-                            key={item.id}
-                            data-tour={item.id}
-                            onClick={() => handleSectionChange(item.id)}
-                            className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-colors text-left relative ${activeSection === item.id
-                              ? 'bg-primary text-primary-foreground'
-                              : 'hover:bg-muted'
-                              } ${isAIProfile && aiEnabled ? 'overflow-hidden' : ''}`}
-                          >
-                            {/* Silver glow effect for AI Profile when enabled */}
-                            {isAIProfile && aiEnabled && (
-                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" />
-                            )}
-                            <Icon className="w-5 h-5 flex-shrink-0 relative z-10" />
-                            <span className="font-medium text-sm relative z-10">
-                              {item.label}
-                            </span>
-                          </button>
-                        );
-                      })}
-
-                      {/* Divider/Spacer before redirection buttons */}
-                      {sidebarOpen && cardData.vanityUrl && (
-                        <div className="relative py-3 flex items-center justify-center">
-                          <hr className="absolute inset-x-0 border-border" />
-                          <div className="relative h-10" />
-                        </div>
-                      )}
-
-                      {/* Card, Analytics and Profile buttons */}
-                      {sidebarOpen && cardData.vanityUrl && (
-                        <>
-                          <button
-                            onClick={() => window.open(`/${cardData.vanityUrl}?card`, '_blank')}
-                            className="w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-colors text-left hover:bg-muted"
-                          >
-                            <CreditCard className="w-5 h-5 flex-shrink-0" />
-                            <span className="font-medium text-sm">Card</span>
-                          </button>
-
-                          <button
-                            onClick={() => window.open('/analytics', '_blank')}
-                            className="w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-colors text-left hover:bg-muted"
-                          >
-                            <ExternalLink className="w-5 h-5 flex-shrink-0" />
-                            <span className="font-medium text-sm">Analytics</span>
-                          </button>
-
-                          <button
-                            onClick={() => window.open(`/${cardData.vanityUrl}`, '_blank')}
-                            className="w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-colors text-left hover:bg-muted"
-                          >
-                            <Eye className="w-5 h-5 flex-shrink-0" />
-                            <span className="font-medium text-sm">Profile</span>
-                          </button>
-
-                          {/* Card URL display with copy button */}
-                          <div className="px-3 py-2">
-                            <div className="flex items-center gap-2 p-2 border border-border rounded-lg bg-muted/30">
-                              <span className="text-sm flex-1 truncate font-mono">
-                                patra.me/{cardData.vanityUrl}
-                              </span>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 flex-shrink-0"
-                                onClick={handleCopyUrl}
-                                title="Copy URL"
-                              >
-                                {copiedUrl ? (
-                                  <Check className="w-4 h-4 text-green-600" />
-                                ) : (
-                                  <Copy className="w-4 h-4" />
-                                )}
-                              </Button>
-                            </div>
-                          </div>
-                        </>
-                      )}
-                    </nav>
-
-                  </aside>
-
-                  {/* Input Panel */}
-                  <main
-                    className={`overflow-y-auto p-4 md:p-6 transition-all duration-300 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent bg-card border-r border-border
-              ${isMobile
-                        ? (showMobilePreview ? 'hidden' : 'w-full')
-                        : (inputPanelOpen ? 'w-full max-w-[450px] absolute inset-y-0 left-0 z-20' : 'hidden')
-                      }`}
-                    style={{ maxHeight: 'calc(100vh - 4rem)' }}
+            <nav className="flex-1 p-2 space-y-1 overflow-y-auto scrollbar-thin">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isAIProfile = item.id === 'aiprofile';
+                return (
+                  <button
+                    key={item.id}
+                    data-tour={item.id}
+                    onClick={() => handleSectionChange(item.id)}
+                    className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-colors text-left relative ${activeSection === item.id
+                      ? 'bg-primary text-primary-foreground'
+                      : 'hover:bg-muted'
+                      } ${isAIProfile && aiEnabled ? 'overflow-hidden' : ''}`}
                   >
-                    {/* Back button */}
-                    <div className="flex items-center gap-2 mb-4">
+                    {/* Silver glow effect for AI Profile when enabled */}
+                    {isAIProfile && aiEnabled && (
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" />
+                    )}
+                    <Icon className="w-5 h-5 flex-shrink-0 relative z-10" />
+                    <span className="font-medium text-sm relative z-10">
+                      {item.label}
+                    </span>
+                  </button>
+                );
+              })}
+
+              {/* Divider/Spacer before redirection buttons */}
+              {sidebarOpen && cardData.vanityUrl && (
+                <div className="relative py-3 flex items-center justify-center">
+                  <hr className="absolute inset-x-0 border-border" />
+                  <div className="relative h-10" />
+                </div>
+              )}
+
+              {/* Card, Analytics and Profile buttons */}
+              {sidebarOpen && cardData.vanityUrl && (
+                <>
+                  <button
+                    onClick={() => window.open(`/${cardData.vanityUrl}?card`, '_blank')}
+                    className="w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-colors text-left hover:bg-muted"
+                  >
+                    <CreditCard className="w-5 h-5 flex-shrink-0" />
+                    <span className="font-medium text-sm">Card</span>
+                  </button>
+
+                  <button
+                    onClick={() => window.open('/analytics', '_blank')}
+                    className="w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-colors text-left hover:bg-muted"
+                  >
+                    <ExternalLink className="w-5 h-5 flex-shrink-0" />
+                    <span className="font-medium text-sm">Analytics</span>
+                  </button>
+
+                  <button
+                    onClick={() => window.open(`/${cardData.vanityUrl}`, '_blank')}
+                    className="w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-colors text-left hover:bg-muted"
+                  >
+                    <Eye className="w-5 h-5 flex-shrink-0" />
+                    <span className="font-medium text-sm">Profile</span>
+                  </button>
+
+                  {/* Card URL display with copy button */}
+                  <div className="px-3 py-2">
+                    <div className="flex items-center gap-2 p-2 border border-border rounded-lg bg-muted/30">
+                      <span className="text-sm flex-1 truncate font-mono">
+                        patra.me/{cardData.vanityUrl}
+                      </span>
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={handleBackToSidebar}
-                        className="h-8 w-8"
+                        className="h-8 w-8 flex-shrink-0"
+                        onClick={handleCopyUrl}
+                        title="Copy URL"
                       >
-                        <ArrowLeft className="w-5 h-5" />
+                        {copiedUrl ? (
+                          <Check className="w-4 h-4 text-green-600" />
+                        ) : (
+                          <Copy className="w-4 h-4" />
+                        )}
                       </Button>
-                      <h2 className="text-lg font-semibold capitalize">{activeSection}</h2>
                     </div>
-                    {renderSection()}
-                  </main>
-                </div>
-
-                {/* Preview Column - Desktop/Tablet */}
-                {!isMobile && (
-                  <aside
-                    data-tour="preview"
-                    className={`flex-1 border-l border-border overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent ${cardData.theme === 'modern' ? 'bg-gradient-to-br from-gray-900 to-gray-800' :
-                      cardData.theme === 'vibrant' ? 'bg-gradient-to-br from-purple-400 to-pink-600' :
-                        cardData.theme === 'professional' ? 'bg-gradient-to-br from-slate-100 to-gray-200' :
-                          cardData.theme === 'minimal' ? 'bg-background' :
-                            'bg-muted/30'
-                      }`}
-                    style={{ maxHeight: 'calc(100vh - 4rem)' }}
-                  >
-                    <div className="max-w-md mx-auto">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="text-sm font-medium text-muted-foreground">Live Preview</div>
-                      </div>
-                      <CardPreviewNew cardData={{ ...cardData, aiEnabled }} onOpenPayment={() => setShowPaymentDialog(true)} showAIButton={true} />
-                    </div>
-                  </aside>
-                )}
-
-                {/* Preview Column - Mobile */}
-                {isMobile && showMobilePreview && (
-                  <div className={`fixed inset-0 top-16 z-40 overflow-y-auto scrollbar-thin p-4 transition-transform duration-300 ${cardData.theme === 'modern' ? 'bg-gradient-to-br from-gray-900 to-gray-800' :
-                    cardData.theme === 'vibrant' ? 'bg-gradient-to-br from-purple-400 to-pink-600' :
-                      cardData.theme === 'professional' ? 'bg-gradient-to-br from-slate-100 to-gray-200' :
-                        cardData.theme === 'minimal' ? 'bg-background' :
-                          'bg-background'
-                    }`}>
-                    <CardPreviewNew cardData={{ ...cardData, aiEnabled }} onOpenPayment={() => setShowPaymentDialog(true)} showAIButton={true} />
                   </div>
-                )}
-              </div>
-
-              {/* AI Consent Dialog */}
-              <Dialog open={showAIConsent} onOpenChange={setShowAIConsent}>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Enable AI Assistant</DialogTitle>
-                    <DialogDescription>
-                      By enabling this feature, you consent to train an AI assistant with your profile data.
-                      This AI will represent you in conversations with visitors on your profile page.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="py-4 space-y-3">
-                    <p className="text-sm">The AI will use:</p>
-                    <ul className="text-sm space-y-2 list-disc list-inside text-muted-foreground">
-                      <li>Your name, job title, and bio</li>
-                      <li>Your skills, interests, and achievements</li>
-                      <li>Your social links and contact information</li>
-                      <li>Any testimonials and media you've added</li>
-                    </ul>
-                    <p className="text-sm text-muted-foreground mt-4">
-                      Visitors will be able to chat with your AI clone to learn more about you and your work.
-                    </p>
-                  </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setShowAIConsent(false)}>
-                      Cancel
-                    </Button>
-                    <Button onClick={handleAIConsentAccept}>
-                      I Consent, Enable AI
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-
-              {/* Mobile Save Button */}
-              {isMobile && !showMobilePreview && (
-                <div className="sticky bottom-0 left-0 right-0 p-4 bg-card border-t border-border z-20">
-                  <Button onClick={() => handleSave()} disabled={loading} className="w-full">
-                    <Save className="w-4 h-4 mr-2" />
-                    {loading ? 'Saving...' : 'Save Changes'}
-                  </Button>
-                </div>
+                </>
               )}
+            </nav>
+
+          </aside>
+
+          {/* Input Panel */}
+          <main
+            className={`overflow-y-auto p-4 md:p-6 transition-all duration-300 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent bg-card border-r border-border
+              ${isMobile
+                ? (showMobilePreview ? 'hidden' : 'w-full')
+                : (inputPanelOpen ? 'w-full max-w-[450px] absolute inset-y-0 left-0 z-20' : 'hidden')
+              }`}
+            style={{ maxHeight: 'calc(100vh - 4rem)' }}
+          >
+            {/* Back button */}
+            <div className="flex items-center gap-2 mb-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleBackToSidebar}
+                className="h-8 w-8"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              <h2 className="text-lg font-semibold capitalize">{activeSection}</h2>
             </div>
-            );
+            {renderSection()}
+          </main>
+        </div>
+
+        {/* Preview Column - Desktop/Tablet */}
+        {!isMobile && (
+          <aside
+            data-tour="preview"
+            className={`flex-1 border-l border-border overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent ${cardData.theme === 'modern' ? 'bg-gradient-to-br from-gray-900 to-gray-800' :
+              cardData.theme === 'vibrant' ? 'bg-gradient-to-br from-purple-400 to-pink-600' :
+                cardData.theme === 'professional' ? 'bg-gradient-to-br from-slate-100 to-gray-200' :
+                  cardData.theme === 'minimal' ? 'bg-background' :
+                    'bg-muted/30'
+              }`}
+            style={{ maxHeight: 'calc(100vh - 4rem)' }}
+          >
+            <div className="max-w-md mx-auto">
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-sm font-medium text-muted-foreground">Live Preview</div>
+              </div>
+              <CardPreviewNew cardData={{ ...cardData, aiEnabled }} onOpenPayment={() => setShowPaymentDialog(true)} showAIButton={true} />
+            </div>
+          </aside>
+        )}
+
+        {/* Preview Column - Mobile */}
+        {isMobile && showMobilePreview && (
+          <div className={`fixed inset-0 top-16 z-40 overflow-y-auto scrollbar-thin p-4 transition-transform duration-300 ${cardData.theme === 'modern' ? 'bg-gradient-to-br from-gray-900 to-gray-800' :
+            cardData.theme === 'vibrant' ? 'bg-gradient-to-br from-purple-400 to-pink-600' :
+              cardData.theme === 'professional' ? 'bg-gradient-to-br from-slate-100 to-gray-200' :
+                cardData.theme === 'minimal' ? 'bg-background' :
+                  'bg-background'
+            }`}>
+            <CardPreviewNew cardData={{ ...cardData, aiEnabled }} onOpenPayment={() => setShowPaymentDialog(true)} showAIButton={true} />
+          </div>
+        )}
+      </div>
+
+      {/* AI Consent Dialog */}
+      <Dialog open={showAIConsent} onOpenChange={setShowAIConsent}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Enable AI Assistant</DialogTitle>
+            <DialogDescription>
+              By enabling this feature, you consent to train an AI assistant with your profile data.
+              This AI will represent you in conversations with visitors on your profile page.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-3">
+            <p className="text-sm">The AI will use:</p>
+            <ul className="text-sm space-y-2 list-disc list-inside text-muted-foreground">
+              <li>Your name, job title, and bio</li>
+              <li>Your skills, interests, and achievements</li>
+              <li>Your social links and contact information</li>
+              <li>Any testimonials and media you've added</li>
+            </ul>
+            <p className="text-sm text-muted-foreground mt-4">
+              Visitors will be able to chat with your AI clone to learn more about you and your work.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAIConsent(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAIConsentAccept}>
+              I Consent, Enable AI
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Mobile Save Button */}
+      {isMobile && !showMobilePreview && (
+        <div className="sticky bottom-0 left-0 right-0 p-4 bg-card border-t border-border z-20">
+          <Button onClick={() => handleSave()} disabled={loading} className="w-full">
+            <Save className="w-4 h-4 mr-2" />
+            {loading ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </div>
+      )}
+    </div>
+  );
 };
 
-            export default EditorNew;
+export default EditorNew;
 
