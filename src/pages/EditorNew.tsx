@@ -3,12 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useTour } from '@/hooks/useTour';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -21,69 +16,24 @@ import {
   Heart,
   ImageIcon,
   Palette,
-  Plus,
   X,
-  Upload,
   ExternalLink,
-  Settings,
   CreditCard,
   Menu,
   Smartphone,
-  ChevronLeft,
-  LogOut,
   Copy,
   Check,
   ArrowLeft,
-  Trash2,
-  Edit,
   Eye,
-  EyeOff,
   Award,
   MessageSquare,
-  Video,
-  Volume2,
-  GripVertical,
   UserCircle,
   Code,
-  Share2,
   LayoutGrid,
-  Mail,
-  Globe,
   MapPin,
-  Navigation
 } from 'lucide-react';
 import { CardPreviewNew } from '@/components/card-preview-new';
 import { useIsMobile } from '@/hooks/use-mobile';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-import {
-  FaGithub, FaLinkedin, FaTwitter, FaInstagram, FaFacebook, FaYoutube,
-  FaTiktok, FaDiscord, FaWhatsapp, FaTelegram, FaReddit, FaMedium,
-  FaDribbble, FaBehance, FaPinterest, FaTwitch, FaPaypal,
-  FaCashRegister, FaPatreon, FaBitcoin, FaEthereum
-} from "react-icons/fa";
-import { SiLitecoin, SiDogecoin } from "react-icons/si";
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { SortableItem } from '@/components/editor/SortableItem';
 import { VideoIntro } from '@/components/VideoIntro';
 import { ProfileInfoEditor } from '@/components/editor/ProfileInfoEditor';
 import { SocialLinksEditor } from '@/components/editor/SocialLinksEditor';
@@ -96,8 +46,9 @@ import { TestimonialsEditor } from '@/components/editor/TestimonialsEditor';
 import { InterestsEditor } from '@/components/editor/InterestsEditor';
 import { LocationEditor } from '@/components/editor/LocationEditor';
 import { AiProfileEditor } from '@/components/editor/AiProfileEditor';
-import { CardData, CustomLink, Achievement, Testimonial } from '@/components/editor/types';
-import { socialPlatforms, paymentPlatforms, cardThemes, CARD_DEFINITIONS } from '@/components/editor/constants';
+import { BasicInfoEditor } from '@/components/editor/BasicInfoEditor';
+import { CustomLinksEditor } from '@/components/editor/CustomLinksEditor';
+import { CardData } from '@/components/editor/types';
 
 const navItems = [
   { id: 'avatar', label: 'Avatar', icon: UserCircle },
@@ -115,7 +66,6 @@ const navItems = [
   { id: 'aiprofile', label: 'AI Profile', icon: Code },
 ];
 
-
 export const EditorNew: React.FC = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -123,7 +73,7 @@ export const EditorNew: React.FC = () => {
   const [loading, setSaving] = useState(false);
   const [activeSection, setActiveSection] = useState('avatar');
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [inputPanelOpen, setInputPanelOpen] = useState(false); // NEW STATE
+  const [inputPanelOpen, setInputPanelOpen] = useState(false);
   const [showMobilePreview, setShowMobilePreview] = useState(false);
   const [cardData, setCardData] = useState<CardData>({
     fullName: '',
@@ -176,57 +126,10 @@ export const EditorNew: React.FC = () => {
   const [aiEnabled, setAiEnabled] = useState(false);
   const [aiProfileExpanded, setAiProfileExpanded] = useState(false);
 
-  const [newLanguage, setNewLanguage] = useState('');
-  const [newInterest, setNewInterest] = useState('');
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [urlAvailable, setUrlAvailable] = useState<boolean | null>(null);
-  const [checkingUrl, setCheckingUrl] = useState(false);
-  const [urlRestrictionReason, setUrlRestrictionReason] = useState<string | null>(null);
   const [copiedUrl, setCopiedUrl] = useState(false);
-
-  // Custom link states
-  const [newCustomLink, setNewCustomLink] = useState<CustomLink>({
-    title: '',
-    url: '',
-    description: '',
-    previewImage: '',
-    groupId: ''
-  });
-  const [showLinkPreview, setShowLinkPreview] = useState(true);
-  const [editingLinkIndex, setEditingLinkIndex] = useState<number | null>(null);
-  const [uploadingLinkImage, setUploadingLinkImage] = useState(false);
-  const [fetchingLinkPreview, setFetchingLinkPreview] = useState(false);
-
-  // Link group states
-  const [newGroupName, setNewGroupName] = useState('');
-  const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
-
-  // Achievement states
-  const [newAchievement, setNewAchievement] = useState<Achievement>({ title: '', issuer: '', date: '', url: '' });
-  const [editingAchievementIndex, setEditingAchievementIndex] = useState<number | null>(null);
-
-  // Testimonial states
-  const [newTestimonial, setNewTestimonial] = useState<Testimonial>({ name: '', role: '', content: '', avatar: '', socialUrl: '' });
-  const [editingTestimonialIndex, setEditingTestimonialIndex] = useState<number | null>(null);
-  const [uploadingTestimonialAvatar, setUploadingTestimonialAvatar] = useState(false);
-
-  // Media states
-  const [uploadingMedia, setUploadingMedia] = useState(false);
-
-  // Photo states
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const [newPhotoCaption, setNewPhotoCaption] = useState('');
 
   // Video intro state
   const [showVideoIntro, setShowVideoIntro] = useState(false);
-
-  // Drag and drop sensors
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
 
   // Auto-save every 30 seconds
   useEffect(() => {
@@ -538,31 +441,6 @@ export const EditorNew: React.FC = () => {
 
       if (error) throw error;
 
-      // Build location_coordinates point if both lat/lng are provided and valid
-      let locationPoint: string | null = null;
-      if (
-        cardData.latitude !== null && cardData.latitude !== undefined &&
-        cardData.longitude !== null && cardData.longitude !== undefined
-      ) {
-        const lat = Number(cardData.latitude);
-        const lng = Number(cardData.longitude);
-        if (!Number.isNaN(lat) && !Number.isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
-          locationPoint = `(${lat},${lng})`;
-        }
-      }
-
-      // Also update address fields in profiles table
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          address: cardData.address || null,
-          show_address_map: cardData.showAddressMap || false,
-          location_coordinates: locationPoint
-        })
-        .eq('user_id', user.id);
-
-      if (profileError) throw profileError;
-
       if (!silent) {
         toast({
           title: "Success!",
@@ -581,64 +459,6 @@ export const EditorNew: React.FC = () => {
     }
   };
 
-  const checkUrlAvailability = async (url: string) => {
-    if (!url || !user) {
-      setUrlAvailable(null);
-      setUrlRestrictionReason(null);
-      return;
-    }
-
-    setCheckingUrl(true);
-    try {
-      // First check if the username is restricted
-      const { data: restrictedData, error: restrictedError } = await supabase
-        .from('restricted_usernames')
-        .select('username, reason')
-        .ilike('username', url)
-        .maybeSingle();
-
-      if (restrictedError && restrictedError.code !== 'PGRST116') {
-        console.error('Error checking restricted usernames:', restrictedError);
-      }
-
-      if (restrictedData) {
-        setUrlAvailable(false);
-        setUrlRestrictionReason(restrictedData.reason || 'This username is restricted');
-        return;
-      }
-
-      // Then check if the URL is already taken
-      const { data, error } = await supabase
-        .from('digital_cards')
-        .select('id, owner_user_id')
-        .eq('vanity_url', url)
-        .maybeSingle();
-
-      if (error && error.code !== 'PGRST116') throw error;
-
-      // URL is available if no record exists OR if the record belongs to current user
-      const isAvailable = !data || data.owner_user_id === user.id;
-      setUrlAvailable(isAvailable);
-      setUrlRestrictionReason(null);
-    } catch (error) {
-      console.error('Error checking URL:', error);
-      setUrlAvailable(null);
-      setUrlRestrictionReason(null);
-    } finally {
-      setCheckingUrl(false);
-    }
-  };
-
-  useEffect(() => {
-    const debounce = setTimeout(() => {
-      if (cardData.vanityUrl) {
-        checkUrlAvailability(cardData.vanityUrl);
-      }
-    }, 500);
-
-    return () => clearTimeout(debounce);
-  }, [cardData.vanityUrl, user]);
-
   const handleCopyUrl = () => {
     const url = `patra.me/${cardData.vanityUrl}`;
     navigator.clipboard.writeText(url);
@@ -650,677 +470,25 @@ export const EditorNew: React.FC = () => {
     setTimeout(() => setCopiedUrl(false), 2000);
   };
 
-  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !user) return;
-
-    setUploadingAvatar(true);
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/${Math.random()}.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(fileName, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(fileName);
-
-      setCardData({ ...cardData, avatarUrl: publicUrl });
-
-      toast({
-        title: "Avatar uploaded!",
-        description: "Your avatar has been updated successfully.",
-      });
-    } catch (error: any) {
-      console.error('Error uploading avatar:', error);
-      toast({
-        title: "Upload failed",
-        description: error.message,
-        variant: "destructive"
-      });
-    } finally {
-      setUploadingAvatar(false);
-    }
-  };
-
-  const addLanguage = () => {
-    if (newLanguage.trim()) {
-      setCardData({ ...cardData, languages: [...cardData.languages, newLanguage.trim()] });
-      setNewLanguage('');
-    }
-  };
-
-  const removeLanguage = (lang: string) => {
-    setCardData({ ...cardData, languages: cardData.languages.filter(l => l !== lang) });
-  };
-
-  const addInterest = () => {
-    if (newInterest.trim()) {
-      setCardData({ ...cardData, interests: [...cardData.interests, newInterest.trim()] });
-      setNewInterest('');
-    }
-  };
-
-  const removeInterest = (interest: string) => {
-    setCardData({ ...cardData, interests: cardData.interests.filter(i => i !== interest) });
-  };
-
-  // Custom link handlers
-  const handleAddCustomLink = () => {
-    if (!newCustomLink.title.trim() || !newCustomLink.url.trim()) {
-      toast({
-        title: "Error",
-        description: "Please provide at least a title and URL",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (editingLinkIndex !== null) {
-      const updated = [...cardData.customLinks];
-      updated[editingLinkIndex] = newCustomLink;
-      setCardData({ ...cardData, customLinks: updated });
-      setEditingLinkIndex(null);
-    } else {
-      setCardData({ ...cardData, customLinks: [...cardData.customLinks, newCustomLink] });
-    }
-
-    setNewCustomLink({ title: '', url: '', description: '', previewImage: '', groupId: '' });
-    toast({
-      title: "Success!",
-      description: editingLinkIndex !== null ? "Link updated" : "Link added",
-    });
-  };
-
-  const addLinkGroup = () => {
-    if (!newGroupName.trim()) return;
-    const newGroup = { id: Date.now().toString(), name: newGroupName };
-    setCardData({ ...cardData, linkGroups: [...(cardData.linkGroups || []), newGroup] });
-    setNewGroupName('');
-    toast({ title: "Group created!", description: `"${newGroupName}" added` });
-  };
-
-  const deleteLinkGroup = (groupId: string) => {
-    setCardData({
-      ...cardData,
-      linkGroups: (cardData.linkGroups || []).filter(g => g.id !== groupId),
-      customLinks: cardData.customLinks.map(link =>
-        link.groupId === groupId ? { ...link, groupId: '' } : link
-      )
-    });
-    toast({ title: "Group deleted" });
-  };
-
-  const handleEditCustomLink = (index: number) => {
-    setNewCustomLink(cardData.customLinks[index]);
-    setEditingLinkIndex(index);
-  };
-
-  const handleDeleteCustomLink = (index: number) => {
-    setCardData({
-      ...cardData,
-      customLinks: cardData.customLinks.filter((_, i) => i !== index)
-    });
-    toast({
-      title: "Link deleted",
-      description: "The custom link has been removed",
-    });
-  };
-
-  // Add this function to fetch link preview metadata
-  const fetchLinkPreview = async (url: string) => {
-    if (!url || !url.startsWith('http')) return;
-
-    setFetchingLinkPreview(true);
-    try {
-      const response = await fetch(`https://api.microlink.io/?url=${encodeURIComponent(url)}`);
-      const data = await response.json();
-
-      if (data.status === 'success' && data.data) {
-        setNewCustomLink(prev => ({
-          ...prev,
-          title: prev.title || data.data.title || '',
-          description: prev.description || data.data.description || '',
-          previewImage: prev.previewImage || data.data.image?.url || data.data.logo?.url || ''
-        }));
-
-        toast({
-          title: "Preview loaded!",
-          description: "Link preview has been automatically filled",
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching link preview:', error);
-      toast({
-        title: "Could not fetch preview",
-        description: "Please add details manually",
-        variant: "destructive"
-      });
-    } finally {
-      setFetchingLinkPreview(false);
-    }
-  };
-
-  // Add debounced URL check for automatic preview
-  useEffect(() => {
-    const debounce = setTimeout(() => {
-      if (newCustomLink.url && newCustomLink.url.startsWith('http') && !newCustomLink.title && editingLinkIndex === null) {
-        fetchLinkPreview(newCustomLink.url);
-      }
-    }, 1500);
-
-    return () => clearTimeout(debounce);
-  }, [newCustomLink.url, newCustomLink.title, editingLinkIndex]);
-
-  const handleLinkImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !user) return;
-
-    setUploadingLinkImage(true);
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/link-previews/${Math.random()}.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(fileName, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(fileName);
-
-      setNewCustomLink({ ...newCustomLink, previewImage: publicUrl });
-
-      toast({
-        title: "Image uploaded!",
-        description: "Preview image has been added.",
-      });
-    } catch (error: any) {
-      console.error('Error uploading image:', error);
-      toast({
-        title: "Upload failed",
-        description: error.message,
-        variant: "destructive"
-      });
-    } finally {
-      setUploadingLinkImage(false);
-    }
-  };
-
   const renderSection = () => {
     switch (activeSection) {
       case 'avatar':
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold mb-2">Profile Picture</h2>
-              <p className="text-muted-foreground text-sm mb-6">
-                Upload your profile picture
-              </p>
-            </div>
+        return <BasicInfoEditor cardData={cardData} setCardData={setCardData} user={user} />;
 
-            <div className="flex flex-col items-center gap-4">
-              <Avatar className="w-32 h-32">
-                <AvatarImage src={cardData.avatarUrl} />
-                <AvatarFallback className="text-3xl">
-                  {cardData.fullName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'UN'}
-                </AvatarFallback>
-              </Avatar>
-
-              <Label htmlFor="avatar-upload" className="cursor-pointer">
-                <Button variant="outline" disabled={uploadingAvatar} asChild>
-                  <span>
-                    <Upload className="w-4 h-4 mr-2" />
-                    {uploadingAvatar ? 'Uploading...' : 'Upload Photo'}
-                  </span>
-                </Button>
-              </Label>
-              <Input
-                id="avatar-upload"
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleAvatarUpload}
-              />
-
-              <p className="text-xs text-muted-foreground text-center">
-                Recommended: Square image, at least 400x400px
-              </p>
-            </div>
-
-            <div className="space-y-4 pt-4">
-              <div>
-                <Label htmlFor="vanity-url">Card URL</Label>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">cardcraft.me/</span>
-                  <Input
-                    id="vanity-url"
-                    value={cardData.vanityUrl}
-                    onChange={(e) => setCardData({ ...cardData, vanityUrl: e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, '') })}
-                    placeholder="your-name"
-                    className={
-                      cardData.vanityUrl && urlAvailable === false
-                        ? 'border-red-500 focus:border-red-500'
-                        : cardData.vanityUrl && urlAvailable === true
-                          ? 'border-green-500 focus:border-green-500'
-                          : ''
-                    }
-                  />
-                </div>
-                {checkingUrl && (
-                  <p className="text-xs text-muted-foreground mt-1">Checking availability...</p>
-                )}
-                {!checkingUrl && cardData.vanityUrl && urlAvailable === false && (
-                  <p className="text-xs text-red-500 font-medium mt-1">
-                    {urlRestrictionReason
-                      ? `✗ "${cardData.vanityUrl}" is restricted: ${urlRestrictionReason}`
-                      : `✗ "${cardData.vanityUrl}" is already taken`
-                    }
-                  </p>
-                )}
-                {!checkingUrl && cardData.vanityUrl && urlAvailable === true && (
-                  <p className="text-xs text-green-600 font-medium mt-1">
-                    ✓ "{cardData.vanityUrl}" is available
-                  </p>
-                )}
-                {!cardData.vanityUrl && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    This will be your unique card URL
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        );
+      case 'about':
+        return <ProfileInfoEditor cardData={cardData} setCardData={setCardData} />;
 
       case 'wallet':
         return <PaymentLinksEditor cardData={cardData} setCardData={setCardData} />;
 
       case 'location':
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold mb-2">Location</h2>
-              <p className="text-muted-foreground text-sm mb-6">
-                Set your address, map, and precise coordinates
-              </p>
-            </div>
-
-            <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/30">
-              <div>
-                <Label htmlFor="address">Full Address</Label>
-                <Input
-                  id="address"
-                  value={cardData.address || ''}
-                  onChange={(e) => setCardData({ ...cardData, address: e.target.value })}
-                  placeholder="Building Number 21, Infocity, Chandaka Industrial Estate, Patia, Odisha, Bhubaneswar, 751024"
-                  className="min-h-[60px]"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Enter your complete business address
-                </p>
-              </div>
-
-              <div className="flex items-center justify-between p-4 bg-card rounded-lg border">
-                <div className="space-y-1">
-                  <Label className="text-sm font-medium">Show map on profile</Label>
-                  <p className="text-xs text-muted-foreground">
-                    Display an interactive map with your location
-                  </p>
-                </div>
-                <Switch
-                  checked={cardData.showAddressMap || false}
-                  onCheckedChange={(checked) => setCardData({ ...cardData, showAddressMap: checked })}
-                  disabled={!cardData.address && !cardData.latitude && !cardData.longitude && !cardData.mapUrl}
-                />
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label className="text-sm font-medium">Location Coordinates (Optional)</Label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      if (!navigator.geolocation) {
-                        toast({ title: 'Not Supported', description: 'Geolocation is not supported by your browser', variant: 'destructive' });
-                        return;
-                      }
-                      navigator.geolocation.getCurrentPosition(
-                        (pos) => {
-                          const lat = Number(pos.coords.latitude.toFixed(6));
-                          const lng = Number(pos.coords.longitude.toFixed(6));
-                          setCardData({ ...cardData, latitude: lat, longitude: lng });
-                          toast({ title: 'Location Fetched', description: 'Device location captured' });
-                        },
-                        (err) => {
-                          toast({ title: 'Error', description: err.message || 'Failed to get your location', variant: 'destructive' });
-                        },
-                        { enableHighAccuracy: true }
-                      );
-                    }}
-                  >
-                    <Navigation className="w-4 h-4 mr-2" />
-                    Use My Location
-                  </Button>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="latitude" className="text-xs text-muted-foreground">Latitude</Label>
-                    <Input
-                      id="latitude"
-                      type="number"
-                      step="any"
-                      value={cardData.latitude ?? ''}
-                      onChange={(e) => setCardData({ ...cardData, latitude: e.target.value === '' ? null : Number(e.target.value) })}
-                      placeholder="e.g., 20.296059"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="longitude" className="text-xs text-muted-foreground">Longitude</Label>
-                    <Input
-                      id="longitude"
-                      type="number"
-                      step="any"
-                      value={cardData.longitude ?? ''}
-                      onChange={(e) => setCardData({ ...cardData, longitude: e.target.value === '' ? null : Number(e.target.value) })}
-                      placeholder="e.g., 85.824539"
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Add precise coordinates if the map shows incorrect location.
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="mapUrl" className="text-sm font-medium">Google Maps URL (Optional)</Label>
-                <Input
-                  id="mapUrl"
-                  type="url"
-                  value={cardData.mapUrl || ''}
-                  onChange={(e) => setCardData({ ...cardData, mapUrl: e.target.value })}
-                  placeholder="https://maps.google.com/?q=..."
-                />
-                <p className="text-xs text-muted-foreground">
-                  Provide a Google Maps link if you prefer a specific place URL.
-                </p>
-              </div>
-
-            </div>
-          </div>
-        );
-
-
+        return <LocationEditor cardData={cardData} setCardData={setCardData} />;
 
       case 'links':
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold mb-2">Custom Links</h2>
-              <p className="text-muted-foreground text-sm mb-6">
-                Add custom links and organize them into groups
-              </p>
-            </div>
-
-            {/* Link Groups Management */}
-            <div className="space-y-3 p-4 border rounded-lg">
-              <h3 className="font-semibold text-sm">Link Groups</h3>
-              <div className="flex gap-2">
-                <Input
-                  value={newGroupName}
-                  onChange={(e) => setNewGroupName(e.target.value)}
-                  placeholder="e.g., Social Media, Products"
-                  onKeyPress={(e) => e.key === 'Enter' && addLinkGroup()}
-                />
-                <Button onClick={addLinkGroup} size="icon" variant="outline">
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {(cardData.linkGroups || []).map(group => (
-                  <Badge key={group.id} variant="secondary" className="gap-1">
-                    {group.name}
-                    <X
-                      className="w-3 h-3 cursor-pointer hover:text-destructive"
-                      onClick={() => deleteLinkGroup(group.id)}
-                    />
-                  </Badge>
-                ))}
-              </div>
-            </div>
-
-            {/* Add/Edit Link Form */}
-            <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/30">
-              <div>
-                <Label htmlFor="link-group">Assign to Group (Optional)</Label>
-                <select
-                  id="link-group"
-                  value={newCustomLink.groupId || ''}
-                  onChange={(e) => setNewCustomLink({ ...newCustomLink, groupId: e.target.value })}
-                  className="w-full p-2 border rounded-md bg-background"
-                >
-                  <option value="">No Group</option>
-                  {(cardData.linkGroups || []).map(group => (
-                    <option key={group.id} value={group.id}>{group.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <Label htmlFor="link-url">URL *</Label>
-                <div className="relative">
-                  <Input
-                    id="link-url"
-                    type="url"
-                    value={newCustomLink.url}
-                    onChange={(e) => setNewCustomLink({ ...newCustomLink, url: e.target.value })}
-                    placeholder="https://example.com"
-                    className="pr-10"
-                  />
-                  {fetchingLinkPreview && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                      <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                    </div>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {fetchingLinkPreview
-                    ? "Fetching preview..."
-                    : "Paste a URL and we'll automatically fetch the preview"
-                  }
-                </p>
-                {newCustomLink.url && !fetchingLinkPreview && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => fetchLinkPreview(newCustomLink.url)}
-                    className="mt-2"
-                    type="button"
-                  >
-                    <Eye className="w-3 h-3 mr-1" />
-                    Refresh Preview
-                  </Button>
-                )}
-              </div>
-
-              <div>
-                <Label htmlFor="link-title">Link Title *</Label>
-                <Input
-                  id="link-title"
-                  value={newCustomLink.title}
-                  onChange={(e) => setNewCustomLink({ ...newCustomLink, title: e.target.value })}
-                  placeholder="e.g., My Portfolio"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="link-description">Description (Optional)</Label>
-                <Textarea
-                  id="link-description"
-                  value={newCustomLink.description}
-                  onChange={(e) => setNewCustomLink({ ...newCustomLink, description: e.target.value })}
-                  placeholder="A brief description about this link"
-                  className="min-h-[80px]"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Preview Image</Label>
-                <div className="flex gap-2">
-                  <Input
-                    value={newCustomLink.previewImage}
-                    onChange={(e) => setNewCustomLink({ ...newCustomLink, previewImage: e.target.value })}
-                    placeholder="Image URL or upload below"
-                  />
-                  <Label htmlFor="link-image-upload" className="cursor-pointer">
-                    <Button variant="outline" disabled={uploadingLinkImage} asChild type="button">
-                      <span>
-                        <Upload className="w-4 h-4 mr-2" />
-                        {uploadingLinkImage ? 'Uploading...' : 'Upload'}
-                      </span>
-                    </Button>
-                  </Label>
-                  <Input
-                    id="link-image-upload"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleLinkImageUpload}
-                  />
-                </div>
-                {newCustomLink.previewImage && (
-                  <div className="relative inline-block mt-2">
-                    <img
-                      src={newCustomLink.previewImage}
-                      alt="Preview"
-                      className="w-full max-w-[200px] h-auto object-cover rounded-md border border-border"
-                    />
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="destructive"
-                      className="absolute top-1 right-1 h-6 w-6"
-                      onClick={() => setNewCustomLink({ ...newCustomLink, previewImage: '' })}
-                    >
-                      <X className="w-3 h-3" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-
-              <Button onClick={handleAddCustomLink} className="w-full" type="button">
-                <Plus className="w-4 h-4 mr-2" />
-                {editingLinkIndex !== null ? 'Update Link' : 'Add Link'}
-              </Button>
-
-              {editingLinkIndex !== null && (
-                <Button
-                  variant="outline"
-                  type="button"
-                  onClick={() => {
-                    setEditingLinkIndex(null);
-                    setNewCustomLink({ title: '', url: '', description: '', previewImage: '', groupId: '' });
-                  }}
-                  className="w-full"
-                >
-                  Cancel Edit
-                </Button>
-              )}
-            </div>
-
-            {/* Existing Links List */}
-            {cardData.customLinks.length > 0 && (
-              <div className="space-y-3">
-                <h3 className="font-semibold text-sm">Your Custom Links</h3>
-                {cardData.customLinks.map((link, index) => (
-                  <div key={index} className="flex items-start gap-3 p-3 border border-border rounded-lg bg-card hover:bg-muted/50 transition-colors">
-                    {link.previewImage && (
-                      <img
-                        src={link.previewImage}
-                        alt={link.title}
-                        className="w-16 h-16 object-cover rounded-md flex-shrink-0"
-                      />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-sm truncate">{link.title}</h4>
-                      <p className="text-xs text-muted-foreground truncate">{link.url}</p>
-                      {link.description && (
-                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{link.description}</p>
-                      )}
-                    </div>
-                    <div className="flex gap-1 flex-shrink-0">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => handleEditCustomLink(index)}
-                        className="h-8 w-8"
-                        type="button"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => handleDeleteCustomLink(index)}
-                        className="h-8 w-8 text-destructive hover:text-destructive"
-                        type="button"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        );
+        return <CustomLinksEditor cardData={cardData} setCardData={setCardData} user={user} />;
 
       case 'interests':
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold mb-2">Interests</h2>
-              <p className="text-muted-foreground text-sm mb-6">
-                Share your interests and hobbies
-              </p>
-            </div>
-
-            <div>
-              <Label>Add Interests</Label>
-              <div className="flex gap-2 mb-4">
-                <Input
-                  value={newInterest}
-                  onChange={(e) => setNewInterest(e.target.value)}
-                  placeholder="e.g., Photography, Travel"
-                  onKeyPress={(e) => e.key === 'Enter' && addInterest()}
-                />
-                <Button onClick={addInterest} size="icon" variant="outline">
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {cardData.interests.map((interest) => (
-                  <Badge key={interest} variant="secondary" className="gap-1">
-                    {interest}
-                    <X
-                      className="w-3 h-3 cursor-pointer hover:text-destructive"
-                      onClick={() => removeInterest(interest)}
-                    />
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          </div>
-        );
+        return <InterestsEditor cardData={cardData} setCardData={setCardData} />;
 
       case 'achievements':
         return <AchievementsEditor cardData={cardData} setCardData={setCardData} />;
@@ -1328,11 +496,17 @@ export const EditorNew: React.FC = () => {
       case 'testimonials':
         return <TestimonialsEditor cardData={cardData} setCardData={setCardData} />;
 
-      case 'interests':
-        return <InterestsEditor cardData={cardData} setCardData={setCardData} />;
+      case 'verified':
+        return <SocialLinksEditor cardData={cardData} setCardData={setCardData} />;
 
-      case 'location':
-        return <LocationEditor cardData={cardData} setCardData={setCardData} />;
+      case 'gallery':
+        return <PhotoGalleryEditor cardData={cardData} setCardData={setCardData} />;
+
+      case 'design':
+        return <ThemeSelector cardData={cardData} setCardData={setCardData} />;
+
+      case 'cardlayout':
+        return <SortableSectionList cardData={cardData} setCardData={setCardData} />;
 
       case 'aiprofile':
         return <AiProfileEditor cardData={cardData} setCardData={setCardData} aiEnabled={aiEnabled} handleAIToggle={handleAIToggle} />;
@@ -1624,7 +798,6 @@ export const EditorNew: React.FC = () => {
       {isMobile && !showMobilePreview && (
         <div className="sticky bottom-0 left-0 right-0 p-4 bg-card border-t border-border z-20">
           <Button onClick={() => handleSave()} disabled={loading} className="w-full">
-            <Save className="w-4 h-4 mr-2" />
             {loading ? 'Saving...' : 'Save Changes'}
           </Button>
         </div>
@@ -1632,6 +805,3 @@ export const EditorNew: React.FC = () => {
     </div>
   );
 };
-
-export default EditorNew;
-

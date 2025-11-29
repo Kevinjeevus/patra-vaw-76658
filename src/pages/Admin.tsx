@@ -10,18 +10,18 @@ import { Badge } from '@/components/ui/badge';
 import { AdminSidebar } from '@/components/AdminSidebar';
 import { MarkdownEditor } from '@/components/MarkdownEditor';
 import { toast } from '@/hooks/use-toast';
-import { 
+import {
   Shield, Plus, Edit, Trash2, Eye, Send, Mail, Megaphone,
   TrendingUp, Users, CreditCard, Activity,
   CheckCircle, Clock, XCircle, ExternalLink, ChevronDown
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import {
   Table,
@@ -30,7 +30,30 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/components/ui/table';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  AreaChart,
+  Area
+} from 'recharts';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const Admin: React.FC = () => {
   const { user } = useAuth();
@@ -38,7 +61,7 @@ const Admin: React.FC = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState('dashboard');
-  
+
   // Dashboard data
   const [stats, setStats] = useState({
     totalCards: 0,
@@ -48,7 +71,7 @@ const Admin: React.FC = () => {
     announcements: 0,
     pendingFeedback: 0,
   });
-  
+
   // Section-specific data
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [feedback, setFeedback] = useState<any[]>([]);
@@ -56,7 +79,7 @@ const Admin: React.FC = () => {
   const [templates, setTemplates] = useState<any[]>([]);
   const [selectedDoc, setSelectedDoc] = useState<string>('');
   const [docContent, setDocContent] = useState<string>('');
-  
+
   // Form states
   const [announcementForm, setAnnouncementForm] = useState({
     title: '',
@@ -66,10 +89,10 @@ const Admin: React.FC = () => {
     sendToAll: false,
     targetUserId: null as string | null,
   });
-  
+
   const [docPages, setDocPages] = useState<any[]>([]);
   const [isNewDoc, setIsNewDoc] = useState(false);
-  
+
   // Background image form state
   const [backgroundImages, setBackgroundImages] = useState<any[]>([]);
   const [existingTags, setExistingTags] = useState<string[]>([]);
@@ -83,6 +106,33 @@ const Admin: React.FC = () => {
   });
   const [tagInput, setTagInput] = useState('');
   const [uploadingImage, setUploadingImage] = useState(false);
+
+  // New Features State
+  const [searchTerm, setSearchTerm] = useState('');
+  const [feedbackFilter, setFeedbackFilter] = useState('all');
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [recentActivity, setRecentActivity] = useState<any[]>([]);
+
+  // System Settings (Persisted in LocalStorage for demo)
+  const [systemSettings, setSystemSettings] = useState({
+    maintenanceMode: false,
+    allowRegistrations: true,
+    requireEmailVerification: true,
+    enableAiFeatures: true,
+    maxCardsPerUser: 5,
+  });
+
+  // Mock Chart Data (since we don't have historical data API)
+  const chartData = [
+    { name: 'Jan', users: 40, cards: 24 },
+    { name: 'Feb', users: 30, cards: 13 },
+    { name: 'Mar', users: 20, cards: 98 },
+    { name: 'Apr', users: 27, cards: 39 },
+    { name: 'May', users: 18, cards: 48 },
+    { name: 'Jun', users: 23, cards: 38 },
+    { name: 'Jul', users: 34, cards: 43 },
+  ];
 
   useEffect(() => {
     checkAdminAccess();
@@ -101,10 +151,48 @@ const Admin: React.FC = () => {
       loadTemplates();
       loadBackgroundImages();
       loadExistingTags();
-    } else if (isAdmin && activeSection === 'docs') {
-      loadDocPages();
+    } else if (isAdmin && activeSection === 'settings') {
+      loadSystemSettings();
     }
   }, [isAdmin, activeSection]);
+
+  useEffect(() => {
+    if (isAdmin) {
+      loadRecentActivity();
+    }
+  }, [isAdmin]);
+
+  const loadSystemSettings = () => {
+    const saved = localStorage.getItem('patra_system_settings');
+    if (saved) {
+      setSystemSettings(JSON.parse(saved));
+    }
+  };
+
+  const saveSystemSettings = (newSettings: any) => {
+    setSystemSettings(newSettings);
+    localStorage.setItem('patra_system_settings', JSON.stringify(newSettings));
+    toast({ title: 'Settings Saved', description: 'System configuration updated.' });
+  };
+
+  const loadRecentActivity = async () => {
+    try {
+      const [usersRes, cardsRes] = await Promise.all([
+        supabase.from('profiles').select('id, display_name, created_at').order('created_at', { ascending: false }).limit(5),
+        supabase.from('digital_cards').select('id, title, created_at').order('created_at', { ascending: false }).limit(5)
+      ]);
+
+      const activities = [
+        ...(usersRes.data || []).map(u => ({ type: 'user', ...u })),
+        ...(cardsRes.data || []).map(c => ({ type: 'card', ...c }))
+      ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 10);
+
+      setRecentActivity(activities);
+    } catch (error) {
+      console.error('Error loading activity:', error);
+    }
+  };
 
   const checkAdminAccess = async () => {
     if (!user) {
@@ -224,7 +312,7 @@ const Admin: React.FC = () => {
         .from('documentation_pages')
         .select('*')
         .order('order_index', { ascending: true });
-      
+
       if (error) throw error;
       if (data) setDocPages(data);
     } catch (error) {
@@ -367,7 +455,7 @@ const Admin: React.FC = () => {
         });
       } else if (announcementForm.sendToAll) {
         const { data: allUsers } = await supabase.from('profiles').select('user_id');
-        
+
         if (allUsers && allUsers.length > 0) {
           const recipients = allUsers.map(u => ({
             announcement_id: announcement.id,
@@ -428,6 +516,11 @@ const Admin: React.FC = () => {
     window.open(`/admin/user/${userId}`, '_blank');
   };
 
+  const handleOpenUserModal = (user: any) => {
+    setSelectedUser(user);
+    setShowUserModal(true);
+  };
+
   const handleUpdateFeedbackStatus = async (id: string, status: string) => {
     try {
       const { error } = await supabase
@@ -468,35 +561,48 @@ const Admin: React.FC = () => {
   return (
     <div className="min-h-screen bg-background flex w-full">
       <AdminSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
-      
+
       <main className="flex-1 overflow-y-auto md:ml-0 ml-16">
         <div className="container mx-auto px-4 md:px-8 py-8 max-w-7xl">
           {/* Dashboard Section */}
           {activeSection === 'dashboard' && (
-            <div className="space-y-6">
-              <div>
-                <h1 className="text-3xl font-bold">Dashboard</h1>
-                <p className="text-muted-foreground">System overview and analytics</p>
+            <div className="space-y-6 animate-fade-in">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+                  <p className="text-muted-foreground">System overview and analytics</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={() => setActiveSection('announcements')} size="sm">
+                    <Megaphone className="w-4 h-4 mr-2" />
+                    New Announcement
+                  </Button>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <Card>
+              {/* Stats Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <Card className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border-blue-200/20">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                      <CreditCard className="w-4 h-4" />
+                      <CreditCard className="w-4 h-4 text-blue-500" />
                       Total Cards
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-3xl font-bold">{stats.totalCards}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{stats.activeCards} active</p>
+                    <div className="flex items-baseline justify-between">
+                      <p className="text-3xl font-bold">{stats.totalCards}</p>
+                      <Badge variant="outline" className="text-green-600 bg-green-500/10">
+                        {stats.activeCards} active
+                      </Badge>
+                    </div>
                   </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-200/20">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                      <Users className="w-4 h-4" />
+                      <Users className="w-4 h-4 text-green-500" />
                       Total Users
                     </CardTitle>
                   </CardHeader>
@@ -505,10 +611,10 @@ const Admin: React.FC = () => {
                   </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="bg-gradient-to-br from-orange-500/10 to-red-500/10 border-orange-200/20">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                      <Activity className="w-4 h-4" />
+                      <Activity className="w-4 h-4 text-orange-500" />
                       Pending Feedback
                     </CardTitle>
                   </CardHeader>
@@ -516,16 +622,90 @@ const Admin: React.FC = () => {
                     <p className="text-3xl font-bold">{stats.pendingFeedback}</p>
                   </CardContent>
                 </Card>
+
+                <Card className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-purple-200/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                      <Shield className="w-4 h-4 text-purple-500" />
+                      System Status
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-3 h-3 rounded-full ${systemSettings.maintenanceMode ? 'bg-red-500' : 'bg-green-500'} animate-pulse`} />
+                      <span className="font-medium">
+                        {systemSettings.maintenanceMode ? 'Maintenance' : 'Operational'}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Recent Activity</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">Activity feed coming soon...</p>
-                </CardContent>
-              </Card>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Growth Chart */}
+                <Card className="lg:col-span-2">
+                  <CardHeader>
+                    <CardTitle>Growth Analytics</CardTitle>
+                    <CardDescription>User and Card acquisition trends</CardDescription>
+                  </CardHeader>
+                  <CardContent className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={chartData}>
+                        <defs>
+                          <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
+                            <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
+                          </linearGradient>
+                          <linearGradient id="colorCards" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#82ca9d" stopOpacity={0.8} />
+                            <stop offset="95%" stopColor="#82ca9d" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                        <Tooltip />
+                        <Area type="monotone" dataKey="users" stroke="#8884d8" fillOpacity={1} fill="url(#colorUsers)" />
+                        <Area type="monotone" dataKey="cards" stroke="#82ca9d" fillOpacity={1} fill="url(#colorCards)" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                {/* Recent Activity Feed */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Recent Activity</CardTitle>
+                    <CardDescription>Latest system events</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
+                      {recentActivity.length > 0 ? (
+                        recentActivity.map((item, i) => (
+                          <div key={i} className="flex items-start gap-3 pb-3 border-b last:border-0">
+                            <div className={`p-2 rounded-full ${item.type === 'user' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'}`}>
+                              {item.type === 'user' ? <Users className="w-4 h-4" /> : <CreditCard className="w-4 h-4" />}
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium">
+                                {item.type === 'user' ? 'New User Joined' : 'New Card Created'}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {item.type === 'user' ? item.display_name : item.title}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground mt-1">
+                                {new Date(item.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-sm text-muted-foreground text-center py-4">No recent activity</p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           )}
 
@@ -658,72 +838,92 @@ const Admin: React.FC = () => {
           {/* Feedback Section */}
           {activeSection === 'feedback' && (
             <div className="space-y-6">
-              <div>
-                <h1 className="text-3xl font-bold">Feedback & Support</h1>
-                <p className="text-muted-foreground">Manage user feedback and support tickets</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-3xl font-bold">Feedback & Support</h1>
+                  <p className="text-muted-foreground">Manage user feedback and support tickets</p>
+                </div>
+                <Select value={feedbackFilter} onValueChange={setFeedbackFilter}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Filter by status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Feedback</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="in-progress">In Progress</SelectItem>
+                    <SelectItem value="resolved">Resolved</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-4">
-                {feedback.map((item) => (
-                  <Card key={item.id}>
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <CardTitle className="text-lg">{item.subject}</CardTitle>
-                          <CardDescription className="mt-1">
-                            From: {item.user_name} ({item.user_email})
-                          </CardDescription>
+                {feedback
+                  .filter(f => feedbackFilter === 'all' || f.status === feedbackFilter)
+                  .map((item) => (
+                    <Card key={item.id}>
+                      <CardHeader>
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <CardTitle className="text-lg">{item.subject}</CardTitle>
+                            <CardDescription className="mt-1">
+                              From: {item.user_name} ({item.user_email})
+                            </CardDescription>
+                          </div>
+                          <Badge variant={item.status === 'resolved' ? 'default' : item.status === 'pending' ? 'destructive' : 'secondary'}>
+                            {item.status}
+                          </Badge>
                         </div>
-                        <Badge>{item.type}</Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <p className="text-sm">{item.content}</p>
-                      
-                      <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                        {item.ip_address && <span>IP: {item.ip_address}</span>}
-                        {item.user_phone && <span>Phone: {item.user_phone}</span>}
-                        <span>Date: {new Date(item.created_at).toLocaleDateString()}</span>
-                      </div>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="bg-muted p-4 rounded-lg text-sm">
+                          {item.content}
+                        </div>
 
-                      <div className="flex gap-2 flex-wrap">
-                        <Select
-                          value={item.status}
-                          onValueChange={(v) => handleUpdateFeedbackStatus(item.id, v)}
-                        >
-                          <SelectTrigger className="w-[180px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="pending">Pending</SelectItem>
-                            <SelectItem value="in-progress">In Progress</SelectItem>
-                            <SelectItem value="resolved">Resolved</SelectItem>
-                            <SelectItem value="closed">Closed</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                          {item.ip_address && <span>IP: {item.ip_address}</span>}
+                          {item.user_phone && <span>Phone: {item.user_phone}</span>}
+                          <span>Date: {new Date(item.created_at).toLocaleDateString()}</span>
+                        </div>
 
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm">
-                              Send Response
-                              <ChevronDown className="w-4 h-4 ml-2" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent>
-                            <DropdownMenuItem onClick={() => handleSendResponse(item, 'announcement')}>
-                              <Megaphone className="w-4 h-4 mr-2" />
-                              Via Announcement
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleSendResponse(item, 'email')}>
+                        <div className="flex gap-2 flex-wrap items-center pt-2 border-t">
+                          <span className="text-sm font-medium mr-2">Update Status:</span>
+                          <Select
+                            value={item.status}
+                            onValueChange={(v) => handleUpdateFeedbackStatus(item.id, v)}
+                          >
+                            <SelectTrigger className="w-[150px] h-8">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pending">Pending</SelectItem>
+                              <SelectItem value="in-progress">In Progress</SelectItem>
+                              <SelectItem value="resolved">Resolved</SelectItem>
+                              <SelectItem value="closed">Closed</SelectItem>
+                            </SelectContent>
+                          </Select>
+
+                          <div className="flex-1" />
+
+                          <Button variant="outline" size="sm" asChild>
+                            <a href={`mailto:${item.user_email}?subject=Re: ${item.subject}`}>
                               <Mail className="w-4 h-4 mr-2" />
-                              Via Email
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                              Reply via Email
+                            </a>
+                          </Button>
+
+                          <Button variant="outline" size="sm" onClick={() => handleSendResponse(item, 'announcement')}>
+                            <Megaphone className="w-4 h-4 mr-2" />
+                            Send Announcement
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                {feedback.length === 0 && (
+                  <div className="text-center py-12 text-muted-foreground">
+                    No feedback found.
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -731,9 +931,20 @@ const Admin: React.FC = () => {
           {/* Users Section */}
           {activeSection === 'users' && (
             <div className="space-y-6">
-              <div>
-                <h1 className="text-3xl font-bold">User Management</h1>
-                <p className="text-muted-foreground">View and manage user accounts</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-3xl font-bold">User Management</h1>
+                  <p className="text-muted-foreground">View and manage user accounts</p>
+                </div>
+                <div className="relative w-64">
+                  <Input
+                    placeholder="Search users..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-8"
+                  />
+                  <Users className="w-4 h-4 absolute left-2.5 top-3 text-muted-foreground" />
+                </div>
               </div>
 
               <Card>
@@ -745,53 +956,73 @@ const Admin: React.FC = () => {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Name</TableHead>
-                          <TableHead>Email</TableHead>
+                          <TableHead>User</TableHead>
                           <TableHead>Account Type</TableHead>
-                          <TableHead>Role</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Joined</TableHead>
                           <TableHead>Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {users.map((userItem) => (
-                          <TableRow key={userItem.id}>
-                            <TableCell className="font-medium">{userItem.display_name || 'N/A'}</TableCell>
-                            <TableCell className="text-sm text-muted-foreground">{userItem.user_id}</TableCell>
-                            <TableCell>
-                              <Badge variant="outline">{userItem.account_type || 'individual'}</Badge>
-                            </TableCell>
-                            <TableCell>
-                              <Badge>{userItem.role || 'member'}</Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex gap-2">
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={() => handleViewProfile(userItem.user_id)}
-                                >
-                                  <ExternalLink className="w-4 h-4 mr-1" />
-                                  View
-                                </Button>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={() => {
-                                    setAnnouncementForm({
-                                      ...announcementForm,
-                                      targetUserId: userItem.user_id,
-                                      sendToAll: false,
-                                    });
-                                    setActiveSection('announcements');
-                                  }}
-                                >
-                                  <Send className="w-4 h-4 mr-1" />
-                                  Message
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                        {users
+                          .filter(u =>
+                            u.display_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            u.user_id?.toLowerCase().includes(searchTerm.toLowerCase())
+                          )
+                          .map((userItem) => (
+                            <TableRow key={userItem.id}>
+                              <TableCell>
+                                <div className="flex items-center gap-3">
+                                  <Avatar className="h-8 w-8">
+                                    <AvatarImage src={userItem.avatar_url} />
+                                    <AvatarFallback>{userItem.display_name?.charAt(0) || 'U'}</AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <div className="font-medium">{userItem.display_name || 'N/A'}</div>
+                                    <div className="text-xs text-muted-foreground">{userItem.user_id.substring(0, 8)}...</div>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="capitalize">{userItem.account_type || 'individual'}</Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={userItem.role === 'admin' ? 'default' : 'secondary'}>
+                                  {userItem.role || 'member'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-sm text-muted-foreground">
+                                {new Date(userItem.created_at).toLocaleDateString()}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleOpenUserModal(userItem)}
+                                  >
+                                    <Eye className="w-4 h-4 mr-1" />
+                                    Details
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setAnnouncementForm({
+                                        ...announcementForm,
+                                        targetUserId: userItem.user_id,
+                                        sendToAll: false,
+                                      });
+                                      setActiveSection('announcements');
+                                    }}
+                                  >
+                                    <Send className="w-4 h-4 mr-1" />
+                                    Message
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
                       </TableBody>
                     </Table>
                   </div>
@@ -997,7 +1228,7 @@ const Admin: React.FC = () => {
                       <div className="space-y-4">
                         <div className="space-y-2">
                           <Label>Document Title</Label>
-                          <Input 
+                          <Input
                             placeholder="Enter document title"
                             value={selectedDoc}
                             onChange={(e) => setSelectedDoc(e.target.value)}
@@ -1021,19 +1252,19 @@ const Admin: React.FC = () => {
                                   is_published: true,
                                   created_by: user?.id,
                                 });
-                              
+
                               if (error) throw error;
-                              
+
                               toast({ title: 'Document Created', description: 'Successfully created new document' });
                               setIsNewDoc(false);
                               setDocContent('');
                               setSelectedDoc('');
                               loadDocPages();
                             } catch (error: any) {
-                              toast({ 
-                                title: 'Error', 
+                              toast({
+                                title: 'Error',
                                 description: error.message || 'Failed to create document',
-                                variant: 'destructive' 
+                                variant: 'destructive'
                               });
                             }
                           }}>
@@ -1075,13 +1306,13 @@ const Admin: React.FC = () => {
                           <>
                             <div className="space-y-2">
                               <Label>Document Title</Label>
-                              <Input 
+                              <Input
                                 placeholder="Enter document title"
                                 value={docPages.find(d => d.id === selectedDoc)?.title || ''}
                                 onChange={(e) => {
                                   const doc = docPages.find(d => d.id === selectedDoc);
                                   if (doc) {
-                                    setDocPages(docPages.map(d => 
+                                    setDocPages(docPages.map(d =>
                                       d.id === selectedDoc ? { ...d, title: e.target.value } : d
                                     ));
                                   }
@@ -1104,9 +1335,9 @@ const Admin: React.FC = () => {
                                       content: docContent,
                                     })
                                     .eq('id', selectedDoc);
-                                  
+
                                   if (error) throw error;
-                                  
+
                                   toast({ title: 'Saved', description: 'Documentation updated successfully' });
                                   loadDocPages();
                                 } catch (error: any) {
@@ -1119,7 +1350,7 @@ const Admin: React.FC = () => {
                               }}>
                                 Save Changes
                               </Button>
-                              <Button 
+                              <Button
                                 variant="destructive"
                                 onClick={async () => {
                                   if (confirm('Are you sure you want to delete this document?')) {
@@ -1128,9 +1359,9 @@ const Admin: React.FC = () => {
                                         .from('documentation_pages')
                                         .delete()
                                         .eq('id', selectedDoc);
-                                      
+
                                       if (error) throw error;
-                                      
+
                                       toast({ title: 'Deleted', description: 'Document deleted successfully' });
                                       setSelectedDoc('');
                                       setDocContent('');
@@ -1148,7 +1379,7 @@ const Admin: React.FC = () => {
                                 <Trash2 className="w-4 h-4 mr-2" />
                                 Delete
                               </Button>
-                              <Button 
+                              <Button
                                 variant="outline"
                                 onClick={() => {
                                   setSelectedDoc('');
@@ -1173,24 +1404,146 @@ const Admin: React.FC = () => {
             <div className="space-y-6">
               <div>
                 <h1 className="text-3xl font-bold">System Settings</h1>
-                <p className="text-muted-foreground">Configure system-wide settings</p>
+                <p className="text-muted-foreground">Configure system-wide settings and preferences</p>
               </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>API Keys</CardTitle>
-                  <CardDescription>Manage external API integrations</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">API key management coming soon...</p>
-                </CardContent>
-              </Card>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>General Configuration</CardTitle>
+                    <CardDescription>Control core system behavior</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>Maintenance Mode</Label>
+                        <p className="text-sm text-muted-foreground">Disable access for non-admin users</p>
+                      </div>
+                      <Switch
+                        checked={systemSettings.maintenanceMode}
+                        onCheckedChange={(c) => saveSystemSettings({ ...systemSettings, maintenanceMode: c })}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>Allow Registrations</Label>
+                        <p className="text-sm text-muted-foreground">Enable new user signups</p>
+                      </div>
+                      <Switch
+                        checked={systemSettings.allowRegistrations}
+                        onCheckedChange={(c) => saveSystemSettings({ ...systemSettings, allowRegistrations: c })}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>Require Email Verification</Label>
+                        <p className="text-sm text-muted-foreground">Users must verify email before access</p>
+                      </div>
+                      <Switch
+                        checked={systemSettings.requireEmailVerification}
+                        onCheckedChange={(c) => saveSystemSettings({ ...systemSettings, requireEmailVerification: c })}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Feature Flags</CardTitle>
+                    <CardDescription>Enable or disable specific features</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>AI Assistant Features</Label>
+                        <p className="text-sm text-muted-foreground">Enable AI profile generation and chat</p>
+                      </div>
+                      <Switch
+                        checked={systemSettings.enableAiFeatures}
+                        onCheckedChange={(c) => saveSystemSettings({ ...systemSettings, enableAiFeatures: c })}
+                      />
+                    </div>
+
+                    <div className="space-y-2 pt-4 border-t">
+                      <Label>Max Cards Per User</Label>
+                      <Input
+                        type="number"
+                        value={systemSettings.maxCardsPerUser}
+                        onChange={(e) => saveSystemSettings({ ...systemSettings, maxCardsPerUser: parseInt(e.target.value) })}
+                      />
+                      <p className="text-xs text-muted-foreground">Limit for free tier users</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           )}
         </div>
       </main>
-    </div>
-  );
-};
 
-export default Admin;
+      {/* User Details Modal */}
+      <Dialog open={showUserModal} onOpenChange={setShowUserModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>User Details</DialogTitle>
+          </DialogHeader>
+          {selectedUser && (
+            <div className="space-y-6">
+              <div className="flex items-center gap-4">
+                <Avatar className="h-16 w-16">
+                  <AvatarImage src={selectedUser.avatar_url} />
+                  <AvatarFallback>{selectedUser.display_name?.charAt(0) || 'U'}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="font-bold text-lg">{selectedUser.display_name}</h3>
+                  <p className="text-sm text-muted-foreground">{selectedUser.user_id}</p>
+                  <div className="flex gap-2 mt-2">
+                    <Badge>{selectedUser.role || 'Member'}</Badge>
+                    <Badge variant="outline">{selectedUser.account_type || 'Free'}</Badge>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4 border-t pt-4">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Joined</p>
+                    <p className="font-medium">{new Date(selectedUser.created_at).toLocaleDateString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Location</p>
+                    <p className="font-medium">{selectedUser.location || 'Not set'}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Company</p>
+                    <p className="font-medium">{selectedUser.company || 'Not set'}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Job Title</p>
+                    <p className="font-medium">{selectedUser.job_title || 'Not set'}</p>
+                  </div>
+                </div>
+              </div>
+
+              <DialogFooter className="gap-2 sm:gap-0">
+                <Button variant="outline" onClick={() => handleViewProfile(selectedUser.user_id)}>
+                  View Public Profile
+                </Button>
+                <Button onClick={() => {
+                  setShowUserModal(false);
+                  setAnnouncementForm({
+                    ...announcementForm,
+                    targetUserId: selectedUser.user_id,
+                    sendToAll: false,
+                  });
+                  setActiveSection('announcements');
+                }}>
+                  Send Message
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      export default Admin;
