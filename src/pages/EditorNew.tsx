@@ -32,6 +32,12 @@ import {
   LayoutGrid,
   MapPin,
 } from 'lucide-react';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { CardPreviewNew } from '@/components/card-preview-new';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { VideoIntro } from '@/components/VideoIntro';
@@ -72,8 +78,6 @@ export const EditorNew: React.FC = () => {
   const isMobile = useIsMobile();
   const [loading, setSaving] = useState(false);
   const [activeSection, setActiveSection] = useState('avatar');
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [inputPanelOpen, setInputPanelOpen] = useState(false);
   const [showMobilePreview, setShowMobilePreview] = useState(false);
   const [cardData, setCardData] = useState<CardData>({
     fullName: '',
@@ -149,238 +153,11 @@ export const EditorNew: React.FC = () => {
         e.preventDefault();
         handleSave();
       }
-      // Esc to close panels
-      if (e.key === 'Escape') {
-        if (inputPanelOpen) {
-          handleBackToSidebar();
-        }
-      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [inputPanelOpen]);
-
-  const [shouldStartTour, setShouldStartTour] = useState(false);
-
-  useEffect(() => {
-    if (user) {
-      fetchExistingCard();
-      fetchAIStatus();
-
-      // Check for selected template and apply it
-      const selectedTemplate = localStorage.getItem('selectedTemplate');
-      if (selectedTemplate) {
-        // Import template and apply its styles
-        import('@/types/template').then((module) => {
-          const allTemplates = [...module.defaultCardTemplates, ...module.defaultProfileTemplates];
-          const template = allTemplates.find(t => t.id === selectedTemplate);
-          if (template) {
-            setCardData(prev => ({
-              ...prev,
-              customCSS: template.style.customCSS || prev.customCSS,
-            }));
-          }
-        });
-        // Clear the selection after applying
-        localStorage.removeItem('selectedTemplate');
-      }
-
-      // Show video intro on first visit
-      const hasSeenIntro = localStorage.getItem('patra_video_intro_seen');
-      const hasCompletedTour = localStorage.getItem('patra-tour-completed') === 'true';
-
-      if (!hasSeenIntro) {
-        // Delay to allow editor to load first
-        setTimeout(() => setShowVideoIntro(true), 1000);
-      } else if (!hasCompletedTour) {
-        // If video already seen but tour not completed, start tour immediately
-        setShouldStartTour(true);
-      }
-    }
-  }, [user]);
-
-  // Initialize guided tour - will start only when shouldStartTour is true
-  useTour(shouldStartTour);
-
-  const fetchAIStatus = async () => {
-    if (!user) return;
-
-    const { data } = await supabase
-      .from('profiles')
-      .select('ai_enabled')
-      .eq('user_id', user.id)
-      .single();
-
-    if (data) {
-      setAiEnabled(data.ai_enabled || false);
-    }
-  };
-
-  const handleAIToggle = async (enabled: boolean) => {
-    if (enabled && !aiEnabled) {
-      setShowAIConsent(true);
-    } else {
-      await updateAIStatus(enabled);
-    }
-  };
-
-  const handleAIConsentAccept = async () => {
-    await updateAIStatus(true);
-    setShowAIConsent(false);
-  };
-
-  const updateAIStatus = async (enabled: boolean) => {
-    if (!user) return;
-
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        ai_enabled: enabled,
-        ai_consent_given_at: enabled ? new Date().toISOString() : null
-      })
-      .eq('user_id', user.id);
-
-    if (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to update AI settings',
-        variant: 'destructive',
-      });
-    } else {
-      setAiEnabled(enabled);
-      toast({
-        title: enabled ? 'AI Enabled' : 'AI Disabled',
-        description: enabled
-          ? 'Your AI assistant is now active!'
-          : 'Your AI assistant has been disabled.',
-      });
-    }
-  };
-
-  const fetchExistingCard = async () => {
-    if (!user) return;
-
-    try {
-      // Fetch both digital card and profile data
-      const [cardResult, profileResult] = await Promise.all([
-        supabase
-          .from('digital_cards')
-          .select('*')
-          .eq('owner_user_id', user.id)
-          .maybeSingle(),
-        supabase
-          .from('profiles')
-          .select('address, show_address_map, location_coordinates')
-          .eq('user_id', user.id)
-          .maybeSingle()
-      ]);
-
-      if (cardResult.error && cardResult.error.code !== 'PGRST116') throw cardResult.error;
-
-      if (cardResult.data && cardResult.data.content_json) {
-        const incoming = cardResult.data.content_json as Partial<CardData>;
-        const profileData = profileResult.data;
-
-        // Parse location coordinates if available
-        let lat = null;
-        let lng = null;
-        if (profileData?.location_coordinates) {
-          const coords = String(profileData.location_coordinates).replace(/[()]/g, '').split(',');
-          if (coords.length === 2) {
-            lat = parseFloat(coords[0].trim());
-            lng = parseFloat(coords[1].trim());
-          }
-        }
-        // Ensure new Location section exists in order/visibility
-        const defaultOrder = ['contact', 'verified', 'links', 'achievements', 'testimonials', 'interests', 'gallery', 'languages', 'location'];
-        const computedOrder = Array.isArray(incoming.cardOrder) && incoming.cardOrder.length
-          ? (incoming.cardOrder.includes('location') ? incoming.cardOrder : [...incoming.cardOrder, 'location'])
-          : defaultOrder;
-
-        const defaultVisibility = {
-          contact: true,
-          verified: true,
-          links: true,
-          achievements: true,
-          testimonials: true,
-          interests: true,
-          gallery: true,
-          languages: true,
-          location: true,
-        };
-
-        const computedVisibility = incoming.cardVisibility
-          ? { ...defaultVisibility, ...incoming.cardVisibility }
-          : defaultVisibility;
-
-        setCardData((prev) => ({
-          ...prev,
-          ...incoming,
-          languages: Array.isArray(incoming.languages) ? incoming.languages : [],
-          socialLinks: Array.isArray(incoming.socialLinks) ? incoming.socialLinks : [],
-          paymentLinks: Array.isArray(incoming.paymentLinks) ? incoming.paymentLinks : [],
-          customLinks: Array.isArray(incoming.customLinks) ? incoming.customLinks : [],
-          linkGroups: Array.isArray(incoming.linkGroups) ? incoming.linkGroups : [],
-          interests: Array.isArray(incoming.interests) ? incoming.interests : [],
-          achievements: Array.isArray(incoming.achievements) ? incoming.achievements : [],
-          testimonials: Array.isArray(incoming.testimonials) ? incoming.testimonials : [],
-          photos: Array.isArray(incoming.photos) ? incoming.photos : [],
-          fullName: incoming.fullName ?? '',
-          about: incoming.about ?? '',
-          location: incoming.location ?? '',
-          pronunciation: incoming.pronunciation ?? '',
-          pronoun: incoming.pronoun ?? '',
-          audioPronunciation: incoming.audioPronunciation ?? '',
-          jobTitle: incoming.jobTitle ?? '',
-          company: incoming.company ?? '',
-          email: incoming.email ?? '',
-          phone: incoming.phone ?? '',
-          contactForm: incoming.contactForm ?? '',
-          calendar: incoming.calendar ?? '',
-          avatarUrl: incoming.avatarUrl ?? '',
-          vanityUrl: incoming.vanityUrl ?? '',
-          upiId: incoming.upiId ?? '',
-          videoIntro: incoming.videoIntro ?? '',
-          theme: incoming.theme ?? 'default',
-          customCSS: incoming.customCSS ?? '',
-          bannerType: incoming.bannerType ?? 'gradient',
-          bannerValue: incoming.bannerValue ?? '',
-          cardOrder: computedOrder,
-          cardVisibility: computedVisibility,
-          address: profileData?.address ?? incoming.address ?? '',
-          showAddressMap: profileData?.show_address_map ?? incoming.showAddressMap ?? false,
-          latitude: lat ?? incoming.latitude ?? null,
-          longitude: lng ?? incoming.longitude ?? null,
-          mapUrl: incoming.mapUrl ?? '',
-        }));
-      }
-    } catch (error) {
-      console.error('Error fetching card:', error);
-    }
-  };
-
-  const handleSectionChange = (sectionId: string) => {
-    if (sectionId === 'card') {
-      navigate(`/${cardData.vanityUrl}?card`);
-      return;
-    }
-
-    setActiveSection(sectionId);
-
-    // On mobile/tablet, collapse sidebar and show input panel
-    if (isMobile) {
-      setSidebarOpen(false);
-      setShowMobilePreview(false);
-      setInputPanelOpen(true);
-    }
-    // Desktop: Sidebar and Input Panel are always visible, so no state toggle needed
-  };
-
-  const handleBackToSidebar = () => {
-    setSidebarOpen(true);
-    setInputPanelOpen(false);
-  };
+  }, []);
 
   const toggleMobilePreview = () => {
     setShowMobilePreview(!showMobilePreview);
@@ -467,8 +244,8 @@ export const EditorNew: React.FC = () => {
     setTimeout(() => setCopiedUrl(false), 2000);
   };
 
-  const renderSection = () => {
-    switch (activeSection) {
+  const renderSection = (sectionId: string) => {
+    switch (sectionId) {
       case 'avatar':
         return <BasicInfoEditor cardData={cardData} setCardData={setCardData} user={user} />;
 
@@ -576,162 +353,92 @@ export const EditorNew: React.FC = () => {
 
       {/* Main */}
       <div className="flex-1 flex overflow-hidden scrollbar-thin">
-        <div className="flex flex-1 overflow-hidden relative scrollbar-thin">
-          {/* Sidebar */}
-          <aside
-            className={`
-              transition-all duration-300 border-r border-border bg-card flex flex-col flex-shrink-0 
-              scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent
-              ${isMobile
-                ? (sidebarOpen ? 'w-full absolute inset-y-0 left-0 z-30' : 'hidden')
-                : 'w-64 flex-shrink-0' // Desktop: Fixed width, always visible
-              }
-            `}
-            style={{
-              overflowY: 'auto',
-              maxHeight: 'calc(100vh - 4rem)'
-            }}
-          >
-
-            <div className={`p-4 border-b border-border ${!sidebarOpen && !isMobile ? 'hidden' : ''}`}>
-              <div className="flex items-center justify-between">
-                <h2 className="font-semibold text-sm text-muted-foreground">
-                  Sections
-                </h2>
-                {isMobile && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setSidebarOpen(!sidebarOpen)}
-                    className="h-6 w-6"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            <nav className="flex-1 p-2 space-y-1 overflow-y-auto scrollbar-thin">
+        {/* Left Column - Editor (Accordion) */}
+        <div className={`flex flex-col border-r border-border bg-card overflow-hidden transition-all duration-300
+            ${isMobile ? (showMobilePreview ? 'hidden' : 'w-full') : 'w-[500px] flex-shrink-0'}
+        `}>
+          <div className="flex-1 overflow-y-auto scrollbar-thin">
+            <Accordion type="single" collapsible value={activeSection} onValueChange={setActiveSection}>
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const isAIProfile = item.id === 'aiprofile';
                 return (
-                  <button
-                    key={item.id}
-                    data-tour={item.id}
-                    onClick={() => handleSectionChange(item.id)}
-                    className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-colors text-left relative ${activeSection === item.id
-                      ? 'bg-primary text-primary-foreground'
-                      : 'hover:bg-muted'
-                      } ${isAIProfile && aiEnabled ? 'overflow-hidden' : ''}`}
-                  >
-                    {/* Silver glow effect for AI Profile when enabled */}
-                    {isAIProfile && aiEnabled && (
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" />
-                    )}
-                    <Icon className="w-5 h-5 flex-shrink-0 relative z-10" />
-                    <span className="font-medium text-sm relative z-10">
-                      {item.label}
-                    </span>
-                  </button>
+                  <AccordionItem value={item.id} key={item.id}>
+                    <AccordionTrigger className={`px-4 py-3 hover:no-underline hover:bg-muted/50 data-[state=open]:bg-muted/50 ${isAIProfile && aiEnabled ? 'relative overflow-hidden' : ''}`}>
+                      {isAIProfile && aiEnabled && (
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer pointer-events-none" />
+                      )}
+                      <div className="flex items-center gap-3 relative z-10">
+                        <Icon className="w-5 h-5 text-muted-foreground" />
+                        <span>{item.label}</span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="p-4 border-t bg-background">
+                      {renderSection(item.id)}
+                    </AccordionContent>
+                  </AccordionItem>
                 );
               })}
+            </Accordion>
 
-              {/* Divider/Spacer before redirection buttons */}
-              {cardData.vanityUrl && (
-                <div className="relative py-3 flex items-center justify-center">
-                  <hr className="absolute inset-x-0 border-border" />
-                  <div className="relative h-10" />
-                </div>
-              )}
-
-              {/* Card, Analytics and Profile buttons */}
-              {cardData.vanityUrl && (
-                <>
-                  <button
-                    onClick={() => window.open(`/${cardData.vanityUrl}?card`, '_blank')}
-                    className="w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-colors text-left hover:bg-muted"
-                  >
-                    <CreditCard className="w-5 h-5 flex-shrink-0" />
-                    <span className="font-medium text-sm">Card</span>
-                  </button>
-
-                  <button
-                    onClick={() => window.open('/analytics', '_blank')}
-                    className="w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-colors text-left hover:bg-muted"
-                  >
-                    <ExternalLink className="w-5 h-5 flex-shrink-0" />
-                    <span className="font-medium text-sm">Analytics</span>
-                  </button>
-
-                  <button
-                    onClick={() => window.open(`/${cardData.vanityUrl}`, '_blank')}
-                    className="w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-colors text-left hover:bg-muted"
-                  >
-                    <Eye className="w-5 h-5 flex-shrink-0" />
-                    <span className="font-medium text-sm">Profile</span>
-                  </button>
-
-                  {/* Card URL display with copy button */}
-                  <div className="px-3 py-2">
-                    <div className="flex items-center gap-2 p-2 border border-border rounded-lg bg-muted/30">
-                      <span className="text-sm flex-1 truncate font-mono">
-                        patra.me/{cardData.vanityUrl}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 flex-shrink-0"
-                        onClick={handleCopyUrl}
-                        title="Copy URL"
-                      >
-                        {copiedUrl ? (
-                          <Check className="w-4 h-4 text-green-600" />
-                        ) : (
-                          <Copy className="w-4 h-4" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                </>
-              )}
-            </nav>
-
-          </aside>
-
-          {/* Input Panel */}
-          <main
-            className={`overflow-y-auto p-4 md:p-6 transition-all duration-300 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent bg-card border-r border-border
-              ${isMobile
-                ? (showMobilePreview ? 'hidden' : 'w-full')
-                : 'w-[500px] flex-shrink-0' // Desktop: Fixed width, always visible
-              }`}
-            style={{ maxHeight: 'calc(100vh - 4rem)' }}
-          >
-            {/* Back button - Mobile Only */}
-            {isMobile && (
-              <div className="flex items-center gap-2 mb-4">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleBackToSidebar}
-                  className="h-8 w-8"
+            {/* Extra Links */}
+            {cardData.vanityUrl && (
+              <div className="p-4 border-t space-y-1 mt-4">
+                <button
+                  onClick={() => window.open(`/${cardData.vanityUrl}?card`, '_blank')}
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-colors text-left hover:bg-muted"
                 >
-                  <ArrowLeft className="w-5 h-5" />
-                </Button>
-                <h2 className="text-lg font-semibold capitalize">{activeSection}</h2>
+                  <CreditCard className="w-5 h-5 flex-shrink-0" />
+                  <span className="font-medium text-sm">Card</span>
+                </button>
+
+                <button
+                  onClick={() => window.open('/analytics', '_blank')}
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-colors text-left hover:bg-muted"
+                >
+                  <ExternalLink className="w-5 h-5 flex-shrink-0" />
+                  <span className="font-medium text-sm">Analytics</span>
+                </button>
+
+                <button
+                  onClick={() => window.open(`/${cardData.vanityUrl}`, '_blank')}
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-colors text-left hover:bg-muted"
+                >
+                  <Eye className="w-5 h-5 flex-shrink-0" />
+                  <span className="font-medium text-sm">Profile</span>
+                </button>
+
+                {/* Card URL display with copy button */}
+                <div className="pt-2">
+                  <div className="flex items-center gap-2 p-2 border border-border rounded-lg bg-muted/30">
+                    <span className="text-sm flex-1 truncate font-mono">
+                      patra.me/{cardData.vanityUrl}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 flex-shrink-0"
+                      onClick={handleCopyUrl}
+                      title="Copy URL"
+                    >
+                      {copiedUrl ? (
+                        <Check className="w-4 h-4 text-green-600" />
+                      ) : (
+                        <Copy className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
               </div>
             )}
-
-            {renderSection()}
-          </main>
+          </div>
         </div>
 
-        {/* Preview Column - Desktop/Tablet */}
+        {/* Right Column - Preview (Desktop/Tablet) */}
         {!isMobile && (
           <aside
             data-tour="preview"
-            className={`flex-1 border-l border-border overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent ${cardData.theme === 'modern' ? 'bg-gradient-to-br from-gray-900 to-gray-800' :
+            className={`flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent ${cardData.theme === 'modern' ? 'bg-gradient-to-br from-gray-900 to-gray-800' :
               cardData.theme === 'vibrant' ? 'bg-gradient-to-br from-purple-400 to-pink-600' :
                 cardData.theme === 'professional' ? 'bg-gradient-to-br from-slate-100 to-gray-200' :
                   cardData.theme === 'minimal' ? 'bg-background' :

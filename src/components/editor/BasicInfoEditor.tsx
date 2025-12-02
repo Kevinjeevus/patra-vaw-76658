@@ -133,21 +133,33 @@ export const BasicInfoEditor: React.FC<BasicInfoEditorProps> = ({ cardData, setC
                     </AvatarFallback>
                 </Avatar>
 
-                <Label htmlFor="avatar-upload" className="cursor-pointer">
-                    <Button variant="outline" disabled={uploadingAvatar} asChild>
-                        <span>
-                            <Upload className="w-4 h-4 mr-2" />
-                            {uploadingAvatar ? 'Uploading...' : 'Upload Photo'}
-                        </span>
-                    </Button>
-                </Label>
-                <Input
-                    id="avatar-upload"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleAvatarUpload}
-                />
+                <div className="flex flex-col gap-2 w-full max-w-xs">
+                    <Label htmlFor="avatar-upload" className="cursor-pointer w-full">
+                        <Button variant="outline" disabled={uploadingAvatar} className="w-full" asChild>
+                            <span>
+                                <Upload className="w-4 h-4 mr-2" />
+                                {uploadingAvatar ? 'Uploading...' : 'Upload Photo'}
+                            </span>
+                        </Button>
+                    </Label>
+                    <Input
+                        id="avatar-upload"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleAvatarUpload}
+                    />
+
+                    {user?.user_metadata?.avatar_url && (
+                        <Button
+                            variant="ghost"
+                            className="w-full text-xs"
+                            onClick={() => setCardData({ ...cardData, avatarUrl: user.user_metadata.avatar_url })}
+                        >
+                            Use Google Profile Picture
+                        </Button>
+                    )}
+                </div>
 
                 <p className="text-xs text-muted-foreground text-center">
                     Recommended: Square image, at least 400x400px
