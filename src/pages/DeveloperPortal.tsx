@@ -74,25 +74,9 @@ export const DeveloperPortal: React.FC = () => {
     }, []);
 
     const fetchApiKeys = async () => {
-        // Simulated API keys for demo
-        setApiKeys([
-            {
-                id: '1',
-                name: 'Production API',
-                key: 'pk_live_XXXXXXXXXXXXXXXXXXXXXXXX',
-                created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-                last_used: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-                requests_count: 12453
-            },
-            {
-                id: '2',
-                name: 'Development API',
-                key: 'pk_test_XXXXXXXXXXXXXXXXXXXXXXXX',
-                created_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-                last_used: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-                requests_count: 3421
-            }
-        ]);
+        // TODO: Implement actual API call to fetch keys from backend
+        // Example: const { data, error } = await supabase.from('api_keys').select('*');
+        setApiKeys([]);
     };
 
     const generateApiKey = () => {
@@ -120,6 +104,7 @@ export const DeveloperPortal: React.FC = () => {
             requests_count: 0
         };
 
+        // TODO: Save to backend before updating local state
         setApiKeys([...apiKeys, newApiKey]);
         setGeneratedKey(newKey);
         setNewKeyName('');
@@ -127,6 +112,7 @@ export const DeveloperPortal: React.FC = () => {
     };
 
     const handleDeleteKey = (id: string) => {
+        // TODO: Delete from backend before updating local state
         setApiKeys(apiKeys.filter(k => k.id !== id));
         toast.success('API key revoked');
     };

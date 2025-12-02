@@ -20,8 +20,10 @@ Authentication to the API is performed via HTTP Basic Auth. Provide your API key
 
 ```bash
 curl https://api.patra.app/v1/cards/johndoe \
-  -u YOUR_API_KEY_HERE:
+  -u YOUR_API_KEY:
 ```
+
+**Important:** Replace `YOUR_API_KEY` with your actual API key from the Developer Portal.
 
 ## Endpoints
 
@@ -33,6 +35,13 @@ Retrieve public details for a specific user card using their vanity URL (usernam
 
 **Parameters:**
 - `username` (string, required): The vanity URL/username of the Patra card.
+
+**Example Request:**
+
+```bash
+curl https://api.patra.app/v1/cards/johndoe \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
 
 **Response:**
 
@@ -62,6 +71,13 @@ Search for users by name or job title.
 **Query Parameters:**
 - `q` (string, required): The search query.
 - `limit` (integer, optional): Number of results to return (default: 10).
+
+**Example Request:**
+
+```bash
+curl "https://api.patra.app/v1/cards/search?q=engineer&limit=10" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
 
 **Response:**
 
@@ -96,6 +112,10 @@ Add the following script to your HTML. This will automatically find any element 
 <script src="https://patra.app/embed.js" async></script>
 ```
 
+**Attributes:**
+- `data-username`: The username of the card to embed (required)
+- `data-theme`: Either "light" or "dark" (optional, default: "light")
+
 ### Option 2: Iframe
 
 If you prefer isolation, use an iframe:
@@ -117,10 +137,10 @@ If you prefer isolation, use an iframe:
 If you are building a React application, you can use our SDK or standard `fetch`:
 
 ```javascript
-async function getPatraUser(username) {
+async function getPatraUser(username, apiKey) {
   const response = await fetch(`https://api.patra.app/v1/cards/${username}`, {
     headers: {
-      'Authorization': 'Bearer YOUR_API_KEY'
+      'Authorization': `Bearer ${apiKey}`
     }
   });
   
@@ -130,7 +150,16 @@ async function getPatraUser(username) {
   
   return response.json();
 }
+
+// Usage
+const userData = await getPatraUser('johndoe', process.env.PATRA_API_KEY);
 ```
+
+**Security Best Practices:**
+- Store your API key in environment variables (e.g., `process.env.PATRA_API_KEY`)
+- Never commit API keys to version control
+- Use different API keys for development and production
+- Rotate your API keys regularly
 
 ### Webhooks
 
@@ -139,3 +168,56 @@ We support webhooks for the following events:
 - `contact.shared`: Triggered when someone shares their contact info via a card.
 
 Configure webhooks in your [Developer Dashboard](/settings/webhooks).
+
+**Webhook Payload Example:**
+
+```json
+{
+  "event": "card.updated",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "data": {
+    "username": "johndoe",
+    "changes": ["displayName", "jobTitle"]
+  }
+}
+```
+
+## Rate Limits
+
+- **Standard Plan:** 1,000 requests per hour
+- **Pro Plan:** 10,000 requests per hour
+- **Enterprise:** Custom limits
+
+Rate limit information is included in response headers:
+- `X-RateLimit-Limit`: Your rate limit ceiling
+- `X-RateLimit-Remaining`: Number of requests remaining
+- `X-RateLimit-Reset`: Time when the rate limit resets (Unix timestamp)
+
+## Error Codes
+
+| Status Code | Description |
+|-------------|-------------|
+| 200 | Success |
+| 400 | Bad Request - Invalid parameters |
+| 401 | Unauthorized - Invalid or missing API key |
+| 404 | Not Found - User does not exist |
+| 429 | Too Many Requests - Rate limit exceeded |
+| 500 | Internal Server Error |
+
+**Error Response Format:**
+
+```json
+{
+  "error": {
+    "code": "invalid_request",
+    "message": "The username parameter is required"
+  }
+}
+```
+
+## Support
+
+For API support and questions:
+- Email: api-support@patra.app
+- Documentation: https://docs.patra.app
+- Developer Portal: https://patra.app/settings/developer
