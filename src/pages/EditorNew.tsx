@@ -577,7 +577,7 @@ export const EditorNew: React.FC = () => {
           <div className="flex flex-1 overflow-hidden">
             {/* Desktop/Tablet Navigation Rail */}
             {!isMobile && (
-              <div className="w-16 flex-none border-r border-border bg-muted/10 flex flex-col items-center py-4 gap-2 overflow-y-auto scrollbar-none">
+              <div className="w-18 flex-none border-r border-border bg-muted/10 flex flex-col items-center py-6 gap-4 overflow-y-auto scrollbar-thin">
                 {navItems.map((item) => {
                   const Icon = item.icon;
                   const isActive = activeSection === item.id;
@@ -590,8 +590,8 @@ export const EditorNew: React.FC = () => {
                         setSearchParams({ tab: item.id });
                       }}
                       title={item.label}
-                      className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all ${isActive
-                        ? 'bg-primary text-primary-foreground shadow-sm'
+                      className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all ${isActive
+                        ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
                         : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                         }`}
                     >
@@ -608,21 +608,21 @@ export const EditorNew: React.FC = () => {
                     <button
                       onClick={() => window.open(`/${cardData.vanityUrl}?card`, '_blank')}
                       title="View Card"
-                      className="w-10 h-10 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
+                      className="w-11 h-11 rounded-xl flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
                     >
                       <CreditCard className="w-5 h-5" />
                     </button>
                     <button
                       onClick={() => window.open('/analytics', '_blank')}
                       title="Analytics"
-                      className="w-10 h-10 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
+                      className="w-11 h-11 rounded-xl flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
                     >
                       <ExternalLink className="w-5 h-5" />
                     </button>
                     <button
                       onClick={() => window.open(`/${cardData.vanityUrl}`, '_blank')}
                       title="View Profile"
-                      className="w-10 h-10 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
+                      className="w-11 h-11 rounded-xl flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
                     >
                       <Eye className="w-5 h-5" />
                     </button>
