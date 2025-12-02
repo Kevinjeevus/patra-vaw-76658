@@ -22,7 +22,7 @@ import { EmailSignature } from "./pages/EmailSignature";
 import { ApiDocs } from "./pages/ApiDocs";
 import { DeveloperPortal } from "./pages/DeveloperPortal";
 import { Settings } from "./pages/Settings";
-import { DocsNew } from "./pages/DocsNew";
+import { Docs } from "./pages/Docs";
 import NotFound from "./pages/NotFound";
 import AIChat from "./pages/AIChat";
 import { Templates } from "./pages/Templates";
@@ -119,7 +119,7 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            <Route path="/docs" element={<DocsNew />} />
+            <Route path="/docs" element={<Docs />} />
             <Route
               path="/admin"
               element={

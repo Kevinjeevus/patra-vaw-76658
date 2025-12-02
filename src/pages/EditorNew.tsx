@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useTour } from '@/hooks/useTour';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -77,7 +77,8 @@ export const EditorNew: React.FC = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [loading, setSaving] = useState(false);
-  const [activeSection, setActiveSection] = useState('avatar');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeSection, setActiveSection] = useState(searchParams.get('tab') || 'avatar');
   const [showMobilePreview, setShowMobilePreview] = useState(false);
   const [cardData, setCardData] = useState<CardData>({
     fullName: '',
@@ -556,7 +557,10 @@ export const EditorNew: React.FC = () => {
                 return (
                   <button
                     key={item.id}
-                    onClick={() => setActiveSection(item.id)}
+                    onClick={() => {
+                      setActiveSection(item.id);
+                      setSearchParams({ tab: item.id });
+                    }}
                     className={`flex flex-col items-center justify-center min-w-[4.5rem] py-3 px-1 gap-1 transition-colors border-b-2 ${isActive
                       ? 'border-primary text-primary bg-background'
                       : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/20'
@@ -581,7 +585,10 @@ export const EditorNew: React.FC = () => {
                     <button
                       key={item.id}
                       data-tour={item.id}
-                      onClick={() => setActiveSection(item.id)}
+                      onClick={() => {
+                        setActiveSection(item.id);
+                        setSearchParams({ tab: item.id });
+                      }}
                       title={item.label}
                       className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all ${isActive
                         ? 'bg-primary text-primary-foreground shadow-sm'
