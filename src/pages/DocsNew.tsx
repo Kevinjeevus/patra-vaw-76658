@@ -4,8 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
-import { 
-  TreePine, 
+import {
+  TreePine,
   Leaf,
   Globe,
   Heart,
@@ -26,6 +26,7 @@ import {
   Rocket,
   CheckCircle2
 } from 'lucide-react';
+import { parseMarkdown } from '@/lib/markdown';
 
 // Default static sections
 const defaultSections = [
@@ -89,7 +90,7 @@ export const DocsNew: React.FC = () => {
         .select('*')
         .eq('is_published', true)
         .order('order_index', { ascending: true });
-      
+
       if (error) throw error;
       if (data) setCustomDocs(data);
     } catch (error) {
@@ -115,7 +116,7 @@ export const DocsNew: React.FC = () => {
                 The modern, eco-friendly way to share your professional identity
               </p>
             </div>
-            
+
             <Card className="border-green-200 dark:border-green-900">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -462,6 +463,8 @@ export const DocsNew: React.FC = () => {
           </section>
         ))}
 
+
+
         {/* Render custom documentation from database */}
         {customDocs.map((doc) => (
           <section
@@ -476,9 +479,9 @@ export const DocsNew: React.FC = () => {
               </div>
               <Card>
                 <CardContent className="pt-6">
-                  <div 
+                  <div
                     className="prose prose-sm max-w-none dark:prose-invert"
-                    dangerouslySetInnerHTML={{ __html: doc.content }}
+                    dangerouslySetInnerHTML={{ __html: parseMarkdown(doc.content) }}
                   />
                 </CardContent>
               </Card>
