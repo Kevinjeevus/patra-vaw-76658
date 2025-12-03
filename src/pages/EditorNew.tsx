@@ -31,6 +31,10 @@ import {
   Code,
   LayoutGrid,
   MapPin,
+  ChevronRight,
+  ChevronLeft,
+  HelpCircle,
+  LogOut
 } from 'lucide-react';
 import {
   Accordion,
@@ -55,6 +59,7 @@ import { AiProfileEditor } from '@/components/editor/AiProfileEditor';
 import { BasicInfoEditor } from '@/components/editor/BasicInfoEditor';
 import { CustomLinksEditor } from '@/components/editor/CustomLinksEditor';
 import { CardData } from '@/components/editor/types';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const navItems = [
   { id: 'avatar', label: 'Avatar', icon: UserCircle },
@@ -80,6 +85,7 @@ export const EditorNew: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeSection, setActiveSection] = useState(searchParams.get('tab') || 'avatar');
   const [showMobilePreview, setShowMobilePreview] = useState(false);
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(!isMobile);
   const [cardData, setCardData] = useState<CardData>({
     fullName: '',
     about: '',
@@ -509,6 +515,15 @@ export const EditorNew: React.FC = () => {
               <CreditCard className="w-5 h-5 text-primary-foreground" />
             </div>
             <h1 className="text-xl font-semibold hidden sm:block">Patra</h1>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="ml-2 text-muted-foreground"
+              onClick={() => setShouldStartTour(true)}
+            >
+              <HelpCircle className="w-4 h-4 mr-2" />
+              Help
+            </Button>
           </div>
 
           <div className="flex items-center gap-2">
@@ -525,14 +540,23 @@ export const EditorNew: React.FC = () => {
             )}
 
             {!isMobile && (
-              <Button data-tour="save" onClick={() => handleSave()} disabled={loading} size="sm">
-                <Save className="w-4 h-4 mr-2" />
-                {loading ? 'Saving...' : 'Save'}
+              <Button data-tour="save" onClick={() => handleSave()} disabled={loading} size="sm" className="min-w-[100px]">
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <span className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></span>
+                    Saving...
+                  </span>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    Save
+                  </>
+                )}
               </Button>
             )}
 
             <Avatar
-              className="h-9 w-9 cursor-pointer ring-2 ring-primary/20 hover:ring-primary/40 transition-all"
+              className="h-9 w-9 cursor-pointer ring-2 ring-primary/20 hover:ring-primary/40 transition-all ml-2"
               onClick={() => navigate('/settings')}
             >
               <AvatarImage src={cardData.avatarUrl} alt={cardData.fullName} />
@@ -546,7 +570,7 @@ export const EditorNew: React.FC = () => {
       <div className="flex-1 flex overflow-hidden">
         {/* Left Column - Editor */}
         <div className={`flex flex-col border-r border-border bg-card overflow-hidden transition-all duration-300
-            ${isMobile ? (showMobilePreview ? 'hidden' : 'w-full') : 'w-[500px] flex-shrink-0'}
+            ${isMobile ? (showMobilePreview ? 'hidden' : 'w-full') : (isSidebarExpanded ? 'w-[600px]' : 'w-[400px]')} flex-shrink-0
         `}>
           {/* Mobile Navigation Tabs */}
           {isMobile && (
@@ -577,55 +601,119 @@ export const EditorNew: React.FC = () => {
           <div className="flex flex-1 overflow-hidden">
             {/* Desktop/Tablet Navigation Rail */}
             {!isMobile && (
-              <div className="w-18 flex-none border-r border-border bg-muted/10 flex flex-col items-center py-6 gap-4 overflow-y-auto scrollbar-thin">
+              <div className={`flex-none border-r border-border bg-muted/10 flex flex-col items-center py-6 gap-2 overflow-y-auto scrollbar-thin transition-all duration-300 ${isSidebarExpanded ? 'w-48 items-start px-3' : 'w-18'}`}>
+
+                {/* Expand/Collapse Toggle */}
+                <div className={`w-full flex ${isSidebarExpanded ? 'justify-end' : 'justify-center'} mb-4`}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setIsSidebarExpanded(!isSidebarExpanded)}
+                  >
+                    {isSidebarExpanded ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                  </Button>
+                </div>
+
                 {navItems.map((item) => {
                   const Icon = item.icon;
                   const isActive = activeSection === item.id;
+
+                  if (isSidebarExpanded) {
+                    return (
+                      <button
+                        key={item.id}
+                        data-tour={item.id}
+                        onClick={() => {
+                          setActiveSection(item.id);
+                          setSearchParams({ tab: item.id });
+                        }}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm font-medium ${isActive
+                          ? 'bg-primary text-primary-foreground shadow-sm'
+                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                          }`}
+                      >
+                        <Icon className="w-5 h-5 flex-shrink-0" />
+                        <span className="truncate">{item.label}</span>
+                      </button>
+                    );
+                  }
+
                   return (
-                    <button
-                      key={item.id}
-                      data-tour={item.id}
-                      onClick={() => {
-                        setActiveSection(item.id);
-                        setSearchParams({ tab: item.id });
-                      }}
-                      title={item.label}
-                      className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all ${isActive
-                        ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
-                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                        }`}
-                    >
-                      <Icon className="w-5 h-5" />
-                    </button>
+                    <TooltipProvider key={item.id}>
+                      <Tooltip delayDuration={0}>
+                        <TooltipTrigger asChild>
+                          <button
+                            data-tour={item.id}
+                            onClick={() => {
+                              setActiveSection(item.id);
+                              setSearchParams({ tab: item.id });
+                            }}
+                            className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all ${isActive
+                              ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
+                              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                              }`}
+                          >
+                            <Icon className="w-5 h-5" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="right">
+                          <p>{item.label}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   );
                 })}
 
-                <div className="w-8 h-[1px] bg-border my-2" />
+                <div className="w-full h-[1px] bg-border my-2" />
 
                 {/* Extra Links Icons */}
                 {cardData.vanityUrl && (
                   <>
-                    <button
-                      onClick={() => window.open(`/${cardData.vanityUrl}?card`, '_blank')}
-                      title="View Card"
-                      className="w-11 h-11 rounded-xl flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
-                    >
-                      <CreditCard className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={() => window.open('/analytics', '_blank')}
-                      title="Analytics"
-                      className="w-11 h-11 rounded-xl flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
-                    >
-                      <ExternalLink className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={() => window.open(`/${cardData.vanityUrl}`, '_blank')}
-                      title="View Profile"
-                      className="w-11 h-11 rounded-xl flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
-                    >
-                      <Eye className="w-5 h-5" />
-                    </button>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            onClick={() => window.open(`/${cardData.vanityUrl}?card`, '_blank')}
+                            className={`rounded-xl flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-all ${isSidebarExpanded ? 'w-full px-3 py-2.5 gap-3 justify-start' : 'w-11 h-11'}`}
+                          >
+                            <CreditCard className="w-5 h-5" />
+                            {isSidebarExpanded && <span className="text-sm font-medium">View Card</span>}
+                          </button>
+                        </TooltipTrigger>
+                        {!isSidebarExpanded && <TooltipContent side="right">View Card</TooltipContent>}
+                      </Tooltip>
+                    </TooltipProvider>
+
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            onClick={() => window.open('/analytics', '_blank')}
+                            className={`rounded-xl flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-all ${isSidebarExpanded ? 'w-full px-3 py-2.5 gap-3 justify-start' : 'w-11 h-11'}`}
+                          >
+                            <ExternalLink className="w-5 h-5" />
+                            {isSidebarExpanded && <span className="text-sm font-medium">Analytics</span>}
+                          </button>
+                        </TooltipTrigger>
+                        {!isSidebarExpanded && <TooltipContent side="right">Analytics</TooltipContent>}
+                      </Tooltip>
+                    </TooltipProvider>
+
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            onClick={() => window.open(`/${cardData.vanityUrl}`, '_blank')}
+                            className={`rounded-xl flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-all ${isSidebarExpanded ? 'w-full px-3 py-2.5 gap-3 justify-start' : 'w-11 h-11'}`}
+                          >
+                            <Eye className="w-5 h-5" />
+                            {isSidebarExpanded && <span className="text-sm font-medium">View Profile</span>}
+                          </button>
+                        </TooltipTrigger>
+                        {!isSidebarExpanded && <TooltipContent side="right">View Profile</TooltipContent>}
+                      </Tooltip>
+                    </TooltipProvider>
                   </>
                 )}
               </div>

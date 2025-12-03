@@ -4,139 +4,35 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Search, Image as ImageIcon } from 'lucide-react';
+import {
+  ArrowLeft,
+  Search,
+  Image as ImageIcon,
+  CheckCircle2,
+  LayoutTemplate,
+  UserCircle,
+  CreditCard,
+  Loader2
+} from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface BackgroundTemplate {
   id: string;
   name: string;
-  imageUrl: string;
+  image_url: string;
   tags: string[];
+  description?: string;
 }
-
-const backgroundTemplates: BackgroundTemplate[] = [
-  {
-    id: 'abstract-1',
-    name: 'Abstract Purple Gradient',
-    imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&h=500&fit=crop',
-    tags: ['abstract', 'purple', 'gradient', 'modern'],
-  },
-  {
-    id: 'abstract-2',
-    name: 'Blue Wave Pattern',
-    imageUrl: 'https://images.unsplash.com/photo-1557672172-298e090bd0f1?w=800&h=500&fit=crop',
-    tags: ['abstract', 'blue', 'waves', 'pattern'],
-  },
-  {
-    id: 'abstract-3',
-    name: 'Golden Liquid',
-    imageUrl: 'https://images.unsplash.com/photo-1618556450994-a6a128ef0d9d?w=800&h=500&fit=crop',
-    tags: ['abstract', 'gold', 'luxury', 'elegant'],
-  },
-  {
-    id: 'nature-1',
-    name: 'Ocean Blue',
-    imageUrl: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&h=500&fit=crop',
-    tags: ['nature', 'ocean', 'blue', 'calm'],
-  },
-  {
-    id: 'nature-2',
-    name: 'Forest Green',
-    imageUrl: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&h=500&fit=crop',
-    tags: ['nature', 'forest', 'green', 'peaceful'],
-  },
-  {
-    id: 'gradient-1',
-    name: 'Sunset Gradient',
-    imageUrl: 'https://images.unsplash.com/photo-1557682250-33bd709cbe85?w=800&h=500&fit=crop',
-    tags: ['gradient', 'sunset', 'orange', 'pink'],
-  },
-  {
-    id: 'gradient-2',
-    name: 'Neon Lights',
-    imageUrl: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&h=500&fit=crop',
-    tags: ['gradient', 'neon', 'colorful', 'modern'],
-  },
-  {
-    id: 'tech-1',
-    name: 'Circuit Board',
-    imageUrl: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&h=500&fit=crop',
-    tags: ['tech', 'modern', 'professional', 'blue'],
-  },
-  {
-    id: 'tech-2',
-    name: 'Digital Matrix',
-    imageUrl: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&h=500&fit=crop',
-    tags: ['tech', 'digital', 'modern', 'green'],
-  },
-  {
-    id: 'minimal-1',
-    name: 'White Marble',
-    imageUrl: 'https://images.unsplash.com/photo-1615799998603-7c6270a45196?w=800&h=500&fit=crop',
-    tags: ['minimal', 'marble', 'elegant', 'white'],
-  },
-  {
-    id: 'minimal-2',
-    name: 'Black Concrete',
-    imageUrl: 'https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?w=800&h=500&fit=crop',
-    tags: ['minimal', 'concrete', 'professional', 'dark'],
-  },
-  {
-    id: 'professional-1',
-    name: 'Corporate Blue',
-    imageUrl: 'https://images.unsplash.com/photo-1557683316-973673baf926?w=800&h=500&fit=crop',
-    tags: ['professional', 'corporate', 'blue', 'clean'],
-  },
-  {
-    id: 'professional-2',
-    name: 'Business Gray',
-    imageUrl: 'https://images.unsplash.com/photo-1557682224-5b8590cd9ec5?w=800&h=500&fit=crop',
-    tags: ['professional', 'business', 'gray', 'modern'],
-  },
-  {
-    id: 'creative-1',
-    name: 'Colorful Paint',
-    imageUrl: 'https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=800&h=500&fit=crop',
-    tags: ['creative', 'colorful', 'artistic', 'vibrant'],
-  },
-  {
-    id: 'creative-2',
-    name: 'Watercolor Art',
-    imageUrl: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=800&h=500&fit=crop',
-    tags: ['creative', 'watercolor', 'artistic', 'soft'],
-  },
-  {
-    id: 'dark-1',
-    name: 'Dark Space',
-    imageUrl: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=800&h=500&fit=crop',
-    tags: ['dark', 'space', 'elegant', 'mysterious'],
-  },
-  {
-    id: 'luxury-1',
-    name: 'Rose Gold',
-    imageUrl: 'https://images.unsplash.com/photo-1557682268-e3955ed5d83f?w=800&h=500&fit=crop',
-    tags: ['luxury', 'rose-gold', 'elegant', 'premium'],
-  },
-  {
-    id: 'vibrant-1',
-    name: 'Rainbow Spectrum',
-    imageUrl: 'https://images.unsplash.com/photo-1557682224-5b8590cd9ec5?w=800&h=500&fit=crop',
-    tags: ['vibrant', 'rainbow', 'colorful', 'energetic'],
-  },
-];
-
 
 export const Templates: React.FC = () => {
   const navigate = useNavigate();
@@ -144,30 +40,37 @@ export const Templates: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<BackgroundTemplate | null>(null);
-  const [applyTarget, setApplyTarget] = useState<'card' | 'profile' | 'both' | null>(null);
   const [cardData, setCardData] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filteredTemplates, setFilteredTemplates] = useState(backgroundTemplates);
+  const [templates, setTemplates] = useState<BackgroundTemplate[]>([]);
   const [showApplyDialog, setShowApplyDialog] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
+    loadTemplates();
     if (user) {
       fetchCardData();
     }
   }, [user]);
 
-  useEffect(() => {
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      const filtered = backgroundTemplates.filter(template =>
-        template.name.toLowerCase().includes(query) ||
-        template.tags.some(tag => tag.toLowerCase().includes(query))
-      );
-      setFilteredTemplates(filtered);
-    } else {
-      setFilteredTemplates(backgroundTemplates);
+  const loadTemplates = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('background_images')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (data) {
+        setTemplates(data);
+      }
+    } catch (error) {
+      console.error('Error loading templates:', error);
+    } finally {
+      setLoading(false);
     }
-  }, [searchQuery]);
+  };
 
   const fetchCardData = async () => {
     try {
@@ -175,24 +78,22 @@ export const Templates: React.FC = () => {
         .from('digital_cards')
         .select('*')
         .eq('owner_user_id', user?.id)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
-      
-      if (data) {
-        setCardData(data);
-      }
+      if (data) setCardData(data);
     } catch (error) {
       console.error('Error fetching card:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load card data.',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
     }
   };
+
+  const filteredTemplates = templates.filter(template => {
+    const query = searchQuery.toLowerCase();
+    return (
+      template.name.toLowerCase().includes(query) ||
+      (template.tags && template.tags.some(tag => tag.toLowerCase().includes(query)))
+    );
+  });
 
   const handleSelectTemplate = (template: BackgroundTemplate) => {
     setSelectedTemplate(template);
@@ -201,23 +102,22 @@ export const Templates: React.FC = () => {
 
   const handleApplyTemplate = async (target: 'card' | 'profile' | 'both') => {
     if (!selectedTemplate || !cardData) return;
-    
+
     setSaving(true);
-    setApplyTarget(target);
-    
+
     try {
       const currentContent = cardData.content_json || {};
       const currentConfig = currentContent.cardConfig || {};
-      
+
       let updatedContent = { ...currentContent };
 
       // Apply to card background
       if (target === 'card' || target === 'both') {
         updatedContent.cardConfig = {
           ...currentConfig,
-          backgroundImage: selectedTemplate.imageUrl,
-          backBackgroundImage: selectedTemplate.imageUrl,
-          backgroundColor: '#1e293b', // Fallback
+          backgroundImage: selectedTemplate.image_url,
+          backBackgroundImage: selectedTemplate.image_url,
+          backgroundColor: '#1e293b',
           backgroundPattern: 'none',
         };
       }
@@ -225,7 +125,7 @@ export const Templates: React.FC = () => {
       // Apply to profile banner
       if (target === 'profile' || target === 'both') {
         updatedContent.bannerType = 'image';
-        updatedContent.bannerValue = selectedTemplate.imageUrl;
+        updatedContent.bannerValue = selectedTemplate.image_url;
       }
 
       const { error } = await supabase
@@ -238,15 +138,18 @@ export const Templates: React.FC = () => {
 
       if (error) throw error;
 
-      const targetText = target === 'both' ? 'card and profile' : target;
-      toast({
-        title: 'Template Applied!',
-        description: `"${selectedTemplate.name}" has been applied to your ${targetText}.`,
-      });
-
-      await fetchCardData();
       setShowApplyDialog(false);
-      setSelectedTemplate(null);
+      setShowSuccess(true);
+
+      // Refresh card data
+      await fetchCardData();
+
+      // Hide success message after 2 seconds
+      setTimeout(() => {
+        setShowSuccess(false);
+        setSelectedTemplate(null);
+      }, 2000);
+
     } catch (error: any) {
       console.error('Error applying template:', error);
       toast({
@@ -256,185 +159,225 @@ export const Templates: React.FC = () => {
       });
     } finally {
       setSaving(false);
-      setApplyTarget(null);
     }
   };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading templates...</p>
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <p className="text-muted-foreground animate-pulse">Loading amazing templates...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      {/* Success Overlay */}
+      <AnimatePresence>
+        {showSuccess && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              className="bg-card border border-border p-8 rounded-2xl shadow-2xl text-center max-w-sm mx-4"
+            >
+              <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+                <CheckCircle2 className="w-10 h-10 text-green-600 dark:text-green-400" />
+              </div>
+              <h2 className="text-2xl font-bold mb-2">Template Applied!</h2>
+              <p className="text-muted-foreground">
+                Your new design has been successfully applied.
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header */}
-      <header className="border-b border-border bg-card sticky top-0 z-10">
+      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+              <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="rounded-full hover:bg-muted">
                 <ArrowLeft className="w-5 h-5" />
               </Button>
               <div>
                 <h1 className="text-2xl font-bold flex items-center gap-2">
-                  <ImageIcon className="w-6 h-6" />
-                  Background Templates
+                  <LayoutTemplate className="w-6 h-6 text-primary" />
+                  Design Gallery
                 </h1>
-                <p className="text-sm text-muted-foreground">
-                  Choose a stunning background for your card and profile
+                <p className="text-sm text-muted-foreground hidden md:block">
+                  Discover premium backgrounds for your digital presence
                 </p>
               </div>
+            </div>
+
+            <div className="relative w-full md:w-96">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Search styles, colors, moods..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 rounded-full bg-muted/50 border-transparent focus:bg-background focus:border-primary transition-all"
+              />
             </div>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-6">
-          <p className="text-muted-foreground mb-4">
-            Select a background image to apply to your card, profile, or both. Each template can be easily searched by tags.
-          </p>
-          
-          {/* Search Bar */}
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Search by name or tags (e.g., 'blue', 'professional')..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </div>
-
+      <main className="container mx-auto px-4 py-8">
         {filteredTemplates.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">No templates found matching "{searchQuery}"</p>
+          <div className="text-center py-20">
+            <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
+              <ImageIcon className="w-10 h-10 text-muted-foreground" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">No templates found</h3>
+            <p className="text-muted-foreground max-w-md mx-auto">
+              We couldn't find any templates matching "{searchQuery}". Try searching for something else or browse all templates.
+            </p>
+            <Button
+              variant="outline"
+              className="mt-6"
+              onClick={() => setSearchQuery('')}
+            >
+              Clear Search
+            </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredTemplates.map((template) => (
-              <Card
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredTemplates.map((template, index) => (
+              <motion.div
                 key={template.id}
-                className="overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-105"
-                onClick={() => handleSelectTemplate(template)}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
               >
-                {/* Template Preview */}
-                <div
-                  className="h-48 bg-cover bg-center relative"
-                  style={{ backgroundImage: `url(${template.imageUrl})` }}
-                />
-
-                {/* Template Info */}
-                <div className="p-4 bg-card">
-                  <h3 className="font-semibold text-base mb-2">{template.name}</h3>
-                  
-                  {/* Tags */}
-                  <div className="flex flex-wrap gap-1">
-                    {template.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="text-xs">
-                        {tag}
-                      </Badge>
-                    ))}
+                <Card
+                  className="group overflow-hidden cursor-pointer border-0 shadow-sm hover:shadow-xl transition-all duration-300 bg-card h-full flex flex-col"
+                  onClick={() => handleSelectTemplate(template)}
+                >
+                  {/* Image Container */}
+                  <div className="relative aspect-[16/10] overflow-hidden">
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors z-10" />
+                    <img
+                      src={template.image_url}
+                      alt={template.name}
+                      className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                      <Button variant="secondary" className="rounded-full shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-transform">
+                        Use Template
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </Card>
+
+                  {/* Content */}
+                  <div className="p-4 flex flex-col flex-1">
+                    <h3 className="font-semibold text-lg mb-1 group-hover:text-primary transition-colors">
+                      {template.name}
+                    </h3>
+                    {template.description && (
+                      <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                        {template.description}
+                      </p>
+                    )}
+
+                    <div className="mt-auto flex flex-wrap gap-1.5 pt-2">
+                      {template.tags?.slice(0, 3).map((tag) => (
+                        <Badge
+                          key={tag}
+                          variant="secondary"
+                          className="text-xs font-normal bg-muted/50 hover:bg-muted"
+                        >
+                          #{tag}
+                        </Badge>
+                      ))}
+                      {template.tags?.length > 3 && (
+                        <span className="text-xs text-muted-foreground self-center">
+                          +{template.tags.length - 3}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+              </motion.div>
             ))}
           </div>
         )}
-
-        {/* Info Card */}
-        <Card className="mt-8 p-6 bg-muted">
-          <h3 className="font-semibold mb-3">Need more customization?</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Use the Advanced Card Editor to upload your own background image or customize other aspects of your design.
-          </p>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => navigate('/card-editor')}
-            >
-              Go to Basic Editor
-            </Button>
-            <Button
-              onClick={() => navigate('/card-editor-new')}
-            >
-              Go to Advanced Editor
-            </Button>
-          </div>
-        </Card>
-      </div>
+      </main>
 
       {/* Apply Dialog */}
-      <AlertDialog open={showApplyDialog} onOpenChange={setShowApplyDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Apply Background Template</AlertDialogTitle>
-            <AlertDialogDescription>
-              Where would you like to apply "{selectedTemplate?.name}"?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          
-          <div className="space-y-3 py-4">
+      <Dialog open={showApplyDialog} onOpenChange={setShowApplyDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-2xl text-center">Apply Design</DialogTitle>
+            <DialogDescription className="text-center">
+              Choose where you want to apply "{selectedTemplate?.name}"
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-6">
             <Button
               variant="outline"
-              className="w-full justify-start h-auto py-4"
+              className="h-auto p-6 flex flex-col items-center gap-3 hover:border-primary hover:bg-primary/5 transition-all group"
               onClick={() => handleApplyTemplate('card')}
               disabled={saving}
             >
-              <div className="text-left">
-                <div className="font-semibold">Card Only</div>
-                <div className="text-xs text-muted-foreground">Apply to digital card background (front & back)</div>
+              <div className="w-12 h-12 rounded-full bg-muted group-hover:bg-primary/10 flex items-center justify-center transition-colors">
+                <CreditCard className="w-6 h-6 group-hover:text-primary transition-colors" />
+              </div>
+              <div className="text-center">
+                <span className="font-semibold block">Card Only</span>
+                <span className="text-xs text-muted-foreground">Digital card background</span>
               </div>
             </Button>
-            
+
             <Button
               variant="outline"
-              className="w-full justify-start h-auto py-4"
+              className="h-auto p-6 flex flex-col items-center gap-3 hover:border-primary hover:bg-primary/5 transition-all group"
               onClick={() => handleApplyTemplate('profile')}
               disabled={saving}
             >
-              <div className="text-left">
-                <div className="font-semibold">Profile Only</div>
-                <div className="text-xs text-muted-foreground">Apply to profile banner background</div>
+              <div className="w-12 h-12 rounded-full bg-muted group-hover:bg-primary/10 flex items-center justify-center transition-colors">
+                <UserCircle className="w-6 h-6 group-hover:text-primary transition-colors" />
+              </div>
+              <div className="text-center">
+                <span className="font-semibold block">Profile Only</span>
+                <span className="text-xs text-muted-foreground">Profile banner image</span>
               </div>
             </Button>
-            
+
             <Button
               variant="default"
-              className="w-full justify-start h-auto py-4"
+              className="sm:col-span-2 h-auto p-4 flex items-center justify-center gap-3 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
               onClick={() => handleApplyTemplate('both')}
               disabled={saving}
             >
+              {saving ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <CheckCircle2 className="w-5 h-5" />
+              )}
               <div className="text-left">
-                <div className="font-semibold">Both Card & Profile</div>
-                <div className="text-xs text-muted-foreground">Apply to both card and profile backgrounds</div>
+                <span className="font-semibold block">Apply to Everything</span>
+                <span className="text-xs opacity-90 font-normal">Update both card and profile</span>
               </div>
             </Button>
           </div>
-
-          {saving && (
-            <div className="text-center py-2">
-              <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                Applying template to {applyTarget === 'both' ? 'card and profile' : applyTarget}...
-              </div>
-            </div>
-          )}
-
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={saving}>Cancel</AlertDialogCancel>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
