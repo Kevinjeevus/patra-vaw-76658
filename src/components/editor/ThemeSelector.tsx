@@ -1,12 +1,25 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { CardData } from './types';
-import { cardThemes } from './constants';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Palette, LayoutGrid } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+    Palette,
+    LayoutGrid,
+    ArrowRight,
+    ArrowDown,
+    ArrowDownRight,
+    ArrowUpRight,
+    Plus,
+    Trash2,
+    Upload,
+    Image as ImageIcon,
+    Grid3X3,
+    Waves,
+    MoreHorizontal,
+    Maximize
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -20,26 +33,96 @@ interface ThemeSelectorProps {
 export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ cardData, setCardData }) => {
     const navigate = useNavigate();
     const { user } = useAuth();
+    const [activeTab, setActiveTab] = useState(cardData.bannerType || 'gradient');
+
+    // Sync active tab with cardData
+    useEffect(() => {
+        if (cardData.bannerType) {
+            setActiveTab(cardData.bannerType);
+        }
+    }, [cardData.bannerType]);
+
+    const handleTabChange = (val: string) => {
+        setActiveTab(val);
+        // Set default values when switching tabs if empty
+        let newValue = cardData.bannerValue;
+
+        if (val === 'gradient' && (!newValue || !newValue.includes('#'))) {
+            newValue = 'to bottom right|#3b82f6,#8b5cf6';
+        } else if (val === 'pattern' && (!newValue || newValue.includes('#') && !newValue.includes('|'))) {
+            newValue = 'dots|hsl(var(--primary) / 0.3)|transparent';
+        } else if (val === 'color' && (!newValue || newValue.includes('|'))) {
+            newValue = '#3b82f6';
+        }
+
+        setCardData({
+            ...cardData,
+            bannerType: val as any,
+            bannerValue: newValue
+        });
+    };
+
+    // --- Gradient Helpers ---
+    const getGradientState = () => {
+        const val = cardData.bannerValue || 'to bottom right|#3b82f6,#8b5cf6';
+        const parts = val.includes('|') ? val.split('|') : ['to bottom right', val];
+        return {
+            direction: parts[0],
+            colors: (parts[1] || '').split(',').filter(Boolean)
+        };
+    };
+
+    const updateGradient = (direction: string, colors: string[]) => {
+        setCardData({
+            ...cardData,
+            bannerType: 'gradient',
+            bannerValue: `${direction}|${colors.join(',')}`
+        });
+    };
+
+    // --- Pattern Helpers ---
+    const getPatternState = () => {
+        const val = cardData.bannerValue || 'dots|hsl(var(--primary) / 0.3)|transparent';
+        const parts = val.includes('|') ? val.split('|') : [val, 'hsl(var(--primary) / 0.3)', 'transparent'];
+        return {
+            pattern: parts[0],
+            fg: parts[1] || 'hsl(var(--primary) / 0.3)',
+            bg: parts[2] || 'transparent'
+        };
+    };
+
+    const updatePattern = (pattern: string, fg: string, bg: string) => {
+        setCardData({
+            ...cardData,
+            bannerType: 'pattern',
+            bannerValue: `${pattern}|${fg}|${bg}`
+        });
+    };
+
+    const gradientState = getGradientState();
+    const patternState = getPatternState();
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 animate-in fade-in duration-500">
             <div>
                 <h2 className="text-2xl font-bold mb-2">Design</h2>
                 <p className="text-muted-foreground text-sm mb-6">
-                    Customize your card appearance with templates and themes
+                    Customize your profile banner and appearance
                 </p>
             </div>
 
             {/* Template Browse Button */}
-            <div className="p-4 border border-border rounded-lg bg-gradient-to-r from-primary/5 to-accent/5">
+            <div className="p-4 border border-border rounded-xl bg-gradient-to-r from-primary/5 to-accent/5 hover:from-primary/10 hover:to-accent/10 transition-colors">
                 <div className="flex items-center justify-between mb-3">
                     <div>
-                        <h3 className="font-semibold">Choose a Template</h3>
+                        <h3 className="font-semibold">Template Gallery</h3>
                         <p className="text-sm text-muted-foreground">
-                            Browse our gallery of professional templates
+                            Browse professional designs
                         </p>
                     </div>
-                    <Palette className="w-8 h-8 text-primary" />
+                    <div className="p-2 bg-background rounded-lg shadow-sm">
+                        <Palette className="w-5 h-5 text-primary" />
+                    </div>
                 </div>
                 <Button
                     onClick={() => navigate('/templates')}
@@ -51,246 +134,274 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ cardData, setCardD
                 </Button>
             </div>
 
-            {/* Theme Selection */}
-            <div className="space-y-4">
-                <h3 className="font-semibold text-sm">Card Theme</h3>
-                <div className="grid grid-cols-2 gap-3">
-                    {cardThemes.map((theme) => (
-                        <button
-                            key={theme.id}
-                            onClick={() => setCardData({ ...cardData, theme: theme.id })}
-                            className={`p-4 rounded-lg border-2 transition-all ${cardData.theme === theme.id
-                                    ? 'border-primary bg-primary/5'
-                                    : 'border-border hover:border-primary/50'
-                                }`}
-                        >
-                            <div className={`w-full h-20 rounded-md mb-2 ${theme.preview}`}></div>
-                            <p className="text-sm font-medium">{theme.name}</p>
-                        </button>
-                    ))}
-                </div>
-            </div>
-
             {/* Banner Customization */}
-            <div className="space-y-4 p-4 border border-border rounded-lg">
-                <h3 className="font-semibold text-sm">Banner Customization</h3>
-                <p className="text-xs text-muted-foreground">
-                    Customize your card header background
-                </p>
-
-                <div className="space-y-3">
-                    <Label>Banner Style</Label>
-                    <div className="grid grid-cols-3 gap-2">
-                        <Button
-                            variant={cardData.bannerType === 'gradient' || !cardData.bannerType ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => setCardData({ ...cardData, bannerType: 'gradient' })}
-                        >
-                            Gradient
-                        </Button>
-                        <Button
-                            variant={cardData.bannerType === 'color' ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => setCardData({ ...cardData, bannerType: 'color' })}
-                        >
-                            Color
-                        </Button>
-                        <Button
-                            variant={cardData.bannerType === 'image' ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => setCardData({ ...cardData, bannerType: 'image' })}
-                        >
-                            Image
-                        </Button>
-                        <Button
-                            variant={cardData.bannerType === 'blurred' ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => setCardData({ ...cardData, bannerType: 'blurred' })}
-                        >
-                            Blurred
-                        </Button>
-                        <Button
-                            variant={cardData.bannerType === 'pattern' ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => setCardData({ ...cardData, bannerType: 'pattern' })}
-                        >
-                            Pattern
-                        </Button>
-                    </div>
-
-                    {cardData.bannerType === 'color' && (
-                        <div className="space-y-2">
-                            <Label>Pick a Color</Label>
-                            <div className="grid grid-cols-5 gap-2">
-                                {['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#ef4444', '#06b6d4', '#6366f1'].map((color) => (
-                                    <button
-                                        key={color}
-                                        onClick={() => setCardData({ ...cardData, bannerValue: color })}
-                                        className={`w-full aspect-square rounded-lg border-2 transition-all ${cardData.bannerValue === color ? 'border-foreground scale-110' : 'border-border'
-                                            }`}
-                                        style={{ backgroundColor: color }}
-                                    />
-                                ))}
-                            </div>
-                            <Input
-                                type="color"
-                                value={cardData.bannerValue || '#3b82f6'}
-                                onChange={(e) => setCardData({ ...cardData, bannerValue: e.target.value })}
-                                className="w-full h-10"
-                            />
-                        </div>
-                    )}
-
-                    {cardData.bannerType === 'image' && (
-                        <div className="space-y-2">
-                            {cardData.bannerValue && (
-                                <div className="relative w-full h-32 rounded-lg border overflow-hidden mb-2">
-                                    <img src={cardData.bannerValue} alt="Banner" className="w-full h-full object-cover" />
-                                    <Button
-                                        variant="destructive"
-                                        size="sm"
-                                        className="absolute top-2 right-2"
-                                        onClick={() => setCardData({ ...cardData, bannerValue: '' })}
-                                    >
-                                        Remove
-                                    </Button>
-                                </div>
-                            )}
-                            <Label>Upload Banner Image</Label>
-                            <Input
-                                type="file"
-                                accept="image/*"
-                                onChange={async (e) => {
-                                    const file = e.target.files?.[0];
-                                    if (!file) return;
-
-                                    try {
-                                        const fileExt = file.name.split('.').pop();
-                                        const fileName = `${user?.id}-banner-${Date.now()}.${fileExt}`;
-                                        const filePath = `${user?.id}/${fileName}`;
-
-                                        const { error: uploadError } = await supabase.storage
-                                            .from('avatars')
-                                            .upload(filePath, file);
-
-                                        if (uploadError) throw uploadError;
-
-                                        const { data: { publicUrl } } = supabase.storage
-                                            .from('avatars')
-                                            .getPublicUrl(filePath);
-
-                                        setCardData({ ...cardData, bannerValue: publicUrl });
-
-                                        toast({
-                                            title: 'Success',
-                                            description: 'Banner image uploaded!',
-                                        });
-                                    } catch (error: any) {
-                                        toast({
-                                            title: 'Error',
-                                            description: error.message,
-                                            variant: 'destructive',
-                                        });
-                                    }
-                                }}
-                                className="cursor-pointer"
-                            />
-                            <p className="text-xs text-muted-foreground">
-                                Upload an image for your profile banner
-                            </p>
-                        </div>
-                    )}
-
-                    {cardData.bannerType === 'gradient' && (
-                        <div className="space-y-3">
-                            <Label>Gradient Colors (2-4 colors)</Label>
-                            <div className="flex gap-2 mb-2">
-                                {[2, 3, 4].map((num) => (
-                                    <Button
-                                        key={num}
-                                        variant={(cardData.bannerValue?.split(',').length || 2) === num ? 'default' : 'outline'}
-                                        onClick={() => {
-                                            const colors = Array(num).fill('#3b82f6').map((c, i) => {
-                                                const existing = cardData.bannerValue?.split(',')[i];
-                                                return existing || c;
-                                            });
-                                            setCardData({ ...cardData, bannerValue: colors.join(',') });
-                                        }}
-                                        size="sm"
-                                    >
-                                        {num} Colors
-                                    </Button>
-                                ))}
-                            </div>
-                            {(cardData.bannerValue?.split(',') || ['#3b82f6', '#8b5cf6']).map((color, index) => (
-                                <div key={index}>
-                                    <Label>Color {index + 1}</Label>
-                                    <Input
-                                        type="color"
-                                        value={color}
-                                        onChange={(e) => {
-                                            const colors = cardData.bannerValue?.split(',') || ['#3b82f6', '#8b5cf6'];
-                                            colors[index] = e.target.value;
-                                            setCardData({ ...cardData, bannerValue: colors.join(',') });
-                                        }}
-                                        className="h-12 cursor-pointer"
-                                    />
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
-                    {cardData.bannerType === 'blurred' && (
-                        <div className="space-y-2">
-                            <p className="text-xs text-muted-foreground">
-                                Your profile photo will be used as a blurred background
-                            </p>
-                        </div>
-                    )}
-
-                    {cardData.bannerType === 'pattern' && (
-                        <div className="space-y-2">
-                            <Label>Pattern Type</Label>
-                            <div className="grid grid-cols-2 gap-2">
-                                {['dots', 'lines', 'waves', 'grid'].map((pattern) => (
-                                    <Button
-                                        key={pattern}
-                                        variant={cardData.bannerValue === pattern ? 'default' : 'outline'}
-                                        size="sm"
-                                        onClick={() => setCardData({ ...cardData, bannerValue: pattern })}
-                                        className="capitalize"
-                                    >
-                                        {pattern}
-                                    </Button>
-                                ))}
-                            </div>
-                        </div>
-                    )}
+            <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-sm">Banner Style</h3>
                 </div>
+
+                <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+                    <TabsList className="grid w-full grid-cols-5 mb-6">
+                        <TabsTrigger value="gradient" className="text-xs">Gradient</TabsTrigger>
+                        <TabsTrigger value="pattern" className="text-xs">Pattern</TabsTrigger>
+                        <TabsTrigger value="color" className="text-xs">Color</TabsTrigger>
+                        <TabsTrigger value="image" className="text-xs">Image</TabsTrigger>
+                        <TabsTrigger value="blurred" className="text-xs">Blur</TabsTrigger>
+                    </TabsList>
+
+                    {/* GRADIENT TAB */}
+                    <TabsContent value="gradient" className="space-y-6">
+                        <div className="space-y-4 p-4 border border-border rounded-xl bg-card">
+                            <div className="space-y-3">
+                                <Label>Direction</Label>
+                                <div className="flex gap-2">
+                                    {[
+                                        { val: 'to right', icon: ArrowRight, label: 'Right' },
+                                        { val: 'to bottom', icon: ArrowDown, label: 'Down' },
+                                        { val: 'to bottom right', icon: ArrowDownRight, label: 'Diagonal' },
+                                        { val: 'to top right', icon: ArrowUpRight, label: 'Up Right' },
+                                    ].map((dir) => (
+                                        <Button
+                                            key={dir.val}
+                                            variant={gradientState.direction === dir.val ? 'default' : 'outline'}
+                                            size="icon"
+                                            onClick={() => updateGradient(dir.val, gradientState.colors)}
+                                            className="w-10 h-10"
+                                            title={dir.label}
+                                        >
+                                            <dir.icon className="w-4 h-4" />
+                                        </Button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <Label>Colors</Label>
+                                    <span className="text-xs text-muted-foreground">{gradientState.colors.length} / 4</span>
+                                </div>
+                                <div className="space-y-3">
+                                    {gradientState.colors.map((color, index) => (
+                                        <div key={index} className="flex items-center gap-3">
+                                            <div className="relative flex-1">
+                                                <Input
+                                                    type="color"
+                                                    value={color}
+                                                    onChange={(e) => {
+                                                        const newColors = [...gradientState.colors];
+                                                        newColors[index] = e.target.value;
+                                                        updateGradient(gradientState.direction, newColors);
+                                                    }}
+                                                    className="w-full h-10 p-1 cursor-pointer"
+                                                />
+                                            </div>
+                                            {gradientState.colors.length > 2 && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => {
+                                                        const newColors = gradientState.colors.filter((_, i) => i !== index);
+                                                        updateGradient(gradientState.direction, newColors);
+                                                    }}
+                                                    className="text-muted-foreground hover:text-destructive"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </Button>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {gradientState.colors.length < 4 && (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => updateGradient(gradientState.direction, [...gradientState.colors, '#ffffff'])}
+                                        className="w-full border-dashed"
+                                    >
+                                        <Plus className="w-4 h-4 mr-2" />
+                                        Add Color
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+                    </TabsContent>
+
+                    {/* PATTERN TAB */}
+                    <TabsContent value="pattern" className="space-y-6">
+                        <div className="space-y-4 p-4 border border-border rounded-xl bg-card">
+                            <div className="space-y-3">
+                                <Label>Pattern Style</Label>
+                                <div className="grid grid-cols-4 gap-2">
+                                    {[
+                                        { id: 'dots', icon: Grid3X3, label: 'Dots' },
+                                        { id: 'lines', icon: MoreHorizontal, label: 'Lines' },
+                                        { id: 'waves', icon: Waves, label: 'Waves' },
+                                        { id: 'grid', icon: LayoutGrid, label: 'Grid' },
+                                        { id: 'checker', icon: Maximize, label: 'Check' },
+                                    ].map((pat) => (
+                                        <button
+                                            key={pat.id}
+                                            onClick={() => updatePattern(pat.id, patternState.fg, patternState.bg)}
+                                            className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all ${patternState.pattern === pat.id
+                                                    ? 'border-primary bg-primary/5 text-primary'
+                                                    : 'border-border hover:bg-muted text-muted-foreground'
+                                                }`}
+                                        >
+                                            <pat.icon className="w-5 h-5 mb-1" />
+                                            <span className="text-[10px] font-medium">{pat.label}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label className="text-xs">Pattern Color</Label>
+                                    <div className="flex gap-2">
+                                        <Input
+                                            type="color"
+                                            value={patternState.fg.startsWith('hsl') ? '#000000' : patternState.fg}
+                                            onChange={(e) => updatePattern(patternState.pattern, e.target.value, patternState.bg)}
+                                            className="h-9 w-full p-1 cursor-pointer"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-xs">Background</Label>
+                                    <div className="flex gap-2">
+                                        <Input
+                                            type="color"
+                                            value={patternState.bg === 'transparent' ? '#ffffff' : patternState.bg}
+                                            onChange={(e) => updatePattern(patternState.pattern, patternState.fg, e.target.value)}
+                                            className="h-9 w-full p-1 cursor-pointer"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </TabsContent>
+
+                    {/* COLOR TAB */}
+                    <TabsContent value="color" className="space-y-6">
+                        <div className="space-y-4 p-4 border border-border rounded-xl bg-card">
+                            <div className="space-y-3">
+                                <Label>Solid Color</Label>
+                                <div className="grid grid-cols-6 gap-2 mb-2">
+                                    {['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#ef4444', '#06b6d4', '#6366f1', '#1e293b', '#000000', '#ffffff', '#94a3b8'].map((color) => (
+                                        <button
+                                            key={color}
+                                            onClick={() => setCardData({ ...cardData, bannerType: 'color', bannerValue: color })}
+                                            className={`w-full aspect-square rounded-full border shadow-sm transition-transform hover:scale-110 ${cardData.bannerValue === color ? 'ring-2 ring-primary ring-offset-2' : ''
+                                                }`}
+                                            style={{ backgroundColor: color }}
+                                        />
+                                    ))}
+                                </div>
+                                <Input
+                                    type="color"
+                                    value={cardData.bannerValue && !cardData.bannerValue.includes('|') ? cardData.bannerValue : '#3b82f6'}
+                                    onChange={(e) => setCardData({ ...cardData, bannerType: 'color', bannerValue: e.target.value })}
+                                    className="w-full h-12 p-1 cursor-pointer"
+                                />
+                            </div>
+                        </div>
+                    </TabsContent>
+
+                    {/* IMAGE TAB */}
+                    <TabsContent value="image" className="space-y-6">
+                        <div className="space-y-4 p-4 border border-border rounded-xl bg-card">
+                            <div className="space-y-4">
+                                {cardData.bannerValue && !cardData.bannerValue.includes('|') && (
+                                    <div className="relative w-full aspect-video rounded-lg border overflow-hidden bg-muted">
+                                        <img
+                                            src={cardData.bannerValue}
+                                            alt="Banner"
+                                            className="w-full h-full object-cover"
+                                        />
+                                        <Button
+                                            variant="destructive"
+                                            size="icon"
+                                            className="absolute top-2 right-2 h-8 w-8 rounded-full"
+                                            onClick={() => setCardData({ ...cardData, bannerValue: '' })}
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                    </div>
+                                )}
+
+                                <div className="grid w-full items-center gap-1.5">
+                                    <Label htmlFor="banner-upload">Upload Image</Label>
+                                    <div className="flex items-center gap-2">
+                                        <Input
+                                            id="banner-upload"
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={async (e) => {
+                                                const file = e.target.files?.[0];
+                                                if (!file) return;
+
+                                                try {
+                                                    const fileExt = file.name.split('.').pop();
+                                                    const fileName = `${user?.id}-banner-${Date.now()}.${fileExt}`;
+                                                    const filePath = `${user?.id}/${fileName}`;
+
+                                                    const { error: uploadError } = await supabase.storage
+                                                        .from('avatars')
+                                                        .upload(filePath, file);
+
+                                                    if (uploadError) throw uploadError;
+
+                                                    const { data: { publicUrl } } = supabase.storage
+                                                        .from('avatars')
+                                                        .getPublicUrl(filePath);
+
+                                                    setCardData({ ...cardData, bannerType: 'image', bannerValue: publicUrl });
+
+                                                    toast({
+                                                        title: 'Success',
+                                                        description: 'Banner image uploaded!',
+                                                    });
+                                                } catch (error: any) {
+                                                    toast({
+                                                        title: 'Error',
+                                                        description: error.message,
+                                                        variant: 'destructive',
+                                                    });
+                                                }
+                                            }}
+                                            className="cursor-pointer"
+                                        />
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                        Recommended size: 1200x400px. Max 5MB.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </TabsContent>
+
+                    {/* BLURRED TAB */}
+                    <TabsContent value="blurred" className="space-y-6">
+                        <div className="space-y-4 p-6 border border-border rounded-xl bg-card text-center">
+                            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-2">
+                                <ImageIcon className="w-8 h-8 text-primary" />
+                            </div>
+                            <div>
+                                <h3 className="font-semibold mb-1">Blurred Profile Photo</h3>
+                                <p className="text-sm text-muted-foreground">
+                                    Automatically uses your profile photo as a blurred background for a sleek, modern look.
+                                </p>
+                            </div>
+                            <div className="pt-2">
+                                <div className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                                    Auto-generated
+                                </div>
+                            </div>
+                        </div>
+                    </TabsContent>
+                </Tabs>
             </div>
-
-            {/* Custom CSS - Hidden for now, can be enabled from developer settings */}
-            {false && (
-                <div className="space-y-4 p-4 border border-border rounded-lg">
-                    <div className="flex items-center justify-between">
-                        <h3 className="font-semibold text-sm">Custom CSS (Advanced)</h3>
-                        <Badge variant="secondary">Pro</Badge>
-                    </div>
-                    <div>
-                        <Label htmlFor="custom-css">Custom CSS Code</Label>
-                        <Textarea
-                            id="custom-css"
-                            value={cardData.customCSS}
-                            onChange={(e) => setCardData({ ...cardData, customCSS: e.target.value })}
-                            placeholder=".card { background: linear-gradient(...); }"
-                            className="min-h-[120px] font-mono text-xs"
-                        />
-                        <p className="text-xs text-muted-foreground mt-1">
-                            Add custom CSS to style your card (for advanced users)
-                        </p>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };

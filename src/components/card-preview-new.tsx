@@ -4,12 +4,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Label } from '@/components/ui/label';
-import { 
-  MapPin, 
-  Briefcase, 
-  Mail, 
-  Phone, 
-  Calendar, 
+import {
+  MapPin,
+  Briefcase,
+  Mail,
+  Phone,
+  Calendar,
   ExternalLink,
   Heart,
   Globe,
@@ -29,12 +29,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { 
-  FaGithub, 
-  FaLinkedin, 
-  FaTwitter, 
-  FaInstagram, 
-  FaFacebook, 
+import {
+  FaGithub,
+  FaLinkedin,
+  FaTwitter,
+  FaInstagram,
+  FaFacebook,
   FaYoutube,
   FaTiktok,
   FaDribbble,
@@ -109,7 +109,7 @@ interface CardPreviewNewProps {
 const getSocialIcon = (platform: string) => {
   const platformLower = platform.toLowerCase();
   const iconProps = { className: "w-5 h-5" };
-  
+
   if (platformLower.includes('github')) return <FaGithub {...iconProps} />;
   if (platformLower.includes('linkedin')) return <FaLinkedin {...iconProps} />;
   if (platformLower.includes('twitter') || platformLower.includes('x.com')) return <FaXTwitter {...iconProps} />;
@@ -126,7 +126,7 @@ const getSocialIcon = (platform: string) => {
   if (platformLower.includes('slack')) return <FaSlack {...iconProps} />;
   if (platformLower.includes('telegram')) return <FaTelegram {...iconProps} />;
   if (platformLower.includes('whatsapp')) return <FaWhatsapp {...iconProps} />;
-  
+
   return <Globe {...iconProps} />;
 };
 
@@ -181,8 +181,8 @@ export const CardPreviewNew: React.FC<CardPreviewNewProps> = ({ cardData, onOpen
   // Truncate about text
   const aboutText = cardData.about || '';
   const shouldTruncate = aboutText.length > 250;
-  const displayAbout = showFullAbout || !shouldTruncate 
-    ? aboutText 
+  const displayAbout = showFullAbout || !shouldTruncate
+    ? aboutText
     : aboutText.slice(0, 250) + '...';
 
   return (
@@ -191,62 +191,79 @@ export const CardPreviewNew: React.FC<CardPreviewNewProps> = ({ cardData, onOpen
       {cardData.customCSS && (
         <style dangerouslySetInnerHTML={{ __html: cardData.customCSS }} />
       )}
-      
+
       {/* Main Profile Card */}
       <Card className="overflow-hidden card-container">
         {/* Header Banner - Dynamic based on banner settings */}
-        <div 
+        <div
           className="relative h-32"
           style={{
             ...(cardData.bannerType === 'color' && cardData.bannerValue
               ? { backgroundColor: cardData.bannerValue }
               : cardData.bannerType === 'image' && cardData.bannerValue
-              ? { 
+                ? {
                   backgroundImage: `url(${cardData.bannerValue})`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center'
                 }
-              : cardData.bannerType === 'blurred' && cardData.avatarUrl
-              ? {
-                  backgroundImage: `url(${cardData.avatarUrl})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  filter: 'blur(20px)',
-                  transform: 'scale(1.1)'
-                }
-              : cardData.bannerType === 'pattern' && cardData.bannerValue === 'dots'
-              ? {
-                  background: 'radial-gradient(circle, hsl(var(--primary) / 0.3) 1px, transparent 1px)',
-                  backgroundSize: '20px 20px'
-                }
-              : cardData.bannerType === 'pattern' && cardData.bannerValue === 'lines'
-              ? {
-                  background: 'repeating-linear-gradient(45deg, hsl(var(--primary) / 0.1), hsl(var(--primary) / 0.1) 10px, transparent 10px, transparent 20px)'
-                }
-              : cardData.bannerType === 'pattern' && cardData.bannerValue === 'waves'
-              ? {
-                  background: 'linear-gradient(135deg, hsl(var(--primary) / 0.2) 25%, transparent 25%), linear-gradient(225deg, hsl(var(--primary) / 0.2) 25%, transparent 25%)',
-                  backgroundSize: '40px 40px'
-                }
-              : cardData.bannerType === 'pattern' && cardData.bannerValue === 'grid'
-              ? {
-                  background: 'linear-gradient(hsl(var(--primary) / 0.1) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary) / 0.1) 1px, transparent 1px)',
-                  backgroundSize: '20px 20px'
-                }
-              : cardData.bannerType === 'gradient' && cardData.bannerValue
-              ? { 
-                  background: `linear-gradient(to bottom right, ${(cardData.bannerValue.split(',') || ['#3b82f6', '#8b5cf6']).join(', ')})` 
-                }
-              : cardData.bannerType === 'gradient'
-              ? { background: 'linear-gradient(135deg, hsl(var(--primary) / 0.2), hsl(var(--accent) / 0.1))' }
-              : { backgroundColor: 'hsl(var(--muted))' })
+                : cardData.bannerType === 'blurred' && cardData.avatarUrl
+                  ? {
+                    backgroundImage: `url(${cardData.avatarUrl})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    filter: 'blur(20px)',
+                    transform: 'scale(1.1)'
+                  }
+                  : cardData.bannerType === 'pattern' && cardData.bannerValue
+                    ? (() => {
+                      const [pattern, fgColor, bgColor] = cardData.bannerValue.includes('|')
+                        ? cardData.bannerValue.split('|')
+                        : [cardData.bannerValue, 'hsl(var(--primary) / 0.3)', 'transparent'];
+
+                      const fg = fgColor || 'hsl(var(--primary) / 0.3)';
+                      const bg = bgColor || 'transparent';
+
+                      const styles: React.CSSProperties = { backgroundColor: bg };
+
+                      if (pattern === 'dots') {
+                        styles.backgroundImage = `radial-gradient(circle, ${fg} 1px, transparent 1px)`;
+                        styles.backgroundSize = '20px 20px';
+                      } else if (pattern === 'lines') {
+                        styles.backgroundImage = `repeating-linear-gradient(45deg, ${fg}, ${fg} 1px, transparent 1px, transparent 10px)`;
+                      } else if (pattern === 'waves') {
+                        styles.backgroundImage = `linear-gradient(135deg, ${fg} 25%, transparent 25%), linear-gradient(225deg, ${fg} 25%, transparent 25%)`;
+                        styles.backgroundSize = '40px 40px';
+                      } else if (pattern === 'grid') {
+                        styles.backgroundImage = `linear-gradient(${fg} 1px, transparent 1px), linear-gradient(90deg, ${fg} 1px, transparent 1px)`;
+                        styles.backgroundSize = '20px 20px';
+                      } else if (pattern === 'checker') {
+                        styles.backgroundImage = `linear-gradient(45deg, ${fg} 25%, transparent 25%), linear-gradient(-45deg, ${fg} 25%, transparent 25%), linear-gradient(45deg, transparent 75%, ${fg} 75%), linear-gradient(-45deg, transparent 75%, ${fg} 75%)`;
+                        styles.backgroundSize = '20px 20px';
+                        styles.backgroundPosition = '0 0, 0 10px, 10px -10px, -10px 0px';
+                      }
+                      return styles;
+                    })()
+                    : cardData.bannerType === 'gradient' && cardData.bannerValue
+                      ? (() => {
+                        const [direction, colorsStr] = cardData.bannerValue.includes('|')
+                          ? cardData.bannerValue.split('|')
+                          : ['to bottom right', cardData.bannerValue];
+                        const colors = (colorsStr || '').split(',').filter(Boolean);
+                        const validColors = colors.length > 0 ? colors : ['#3b82f6', '#8b5cf6'];
+                        return {
+                          background: `linear-gradient(${direction}, ${validColors.join(', ')})`
+                        };
+                      })()
+                      : cardData.bannerType === 'gradient'
+                        ? { background: 'linear-gradient(135deg, hsl(var(--primary) / 0.2), hsl(var(--accent) / 0.1))' }
+                        : { backgroundColor: 'hsl(var(--muted))' })
           }}
         ></div>
-        
+
         <div className="px-6 pb-6">
           {/* Avatar overlapping header - with QR flip */}
           <div className="-mt-16 mb-4">
-            <div 
+            <div
               className="relative w-28 h-28 cursor-pointer perspective-1000"
               onClick={() => setShowQR(!showQR)}
             >
@@ -271,7 +288,7 @@ export const CardPreviewNew: React.FC<CardPreviewNewProps> = ({ cardData, onOpen
           {/* Name and basic info */}
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-card-foreground mb-1">{displayName}</h2>
-            
+
             {cardData.jobTitle && (
               <p className="text-base text-muted-foreground mb-2">
                 {displayTitle}
@@ -326,9 +343,9 @@ export const CardPreviewNew: React.FC<CardPreviewNewProps> = ({ cardData, onOpen
 
           {/* Action buttons */}
           <div className="grid grid-cols-1 gap-2">
-            <Button 
-              variant="default" 
-              size="sm" 
+            <Button
+              variant="default"
+              size="sm"
               className="h-9"
               onClick={() => setShowPaymentDialog(true)}
             >
@@ -353,7 +370,7 @@ export const CardPreviewNew: React.FC<CardPreviewNewProps> = ({ cardData, onOpen
           languages: true,
           location: true,
         };
-        
+
         const order = cardData.cardOrder || defaultOrder;
         const visibility = cardData.cardVisibility || defaultVisibility;
 
@@ -403,7 +420,7 @@ export const CardPreviewNew: React.FC<CardPreviewNewProps> = ({ cardData, onOpen
           <>
             {/* Render filled sections */}
             {filledSections.map(sectionId => sectionMap[sectionId])}
-            
+
             {/* Note: Empty sections "Add More Information" removed - only show in editor */}
           </>
         );
@@ -448,34 +465,34 @@ export const CardPreviewNew: React.FC<CardPreviewNewProps> = ({ cardData, onOpen
               </div>
             )}
             {showAIButton && cardData.aiEnabled && cardData.vanityUrl && (
-              
 
-<Button 
-  variant="outline" 
-  size="sm" 
-  className="w-full mt-3 relative group border border-violet-400/40 bg-transparent hover:bg-blue-600 hover:border-blue-500 transition-all duration-300"
-  onClick={() => window.location.href = `/${cardData.vanityUrl}/ai`}
->
-  {/* Simple fading sparkles */}
-  <Icon 
-    icon="proicons:sparkle-2" 
-    className="absolute top-1.5 left-6 w-2.5 h-2.5 text-violet-400 animate-sparkle-fade-1"
-  />
-  <Icon 
-    icon="proicons:sparkle-2" 
-    className="absolute top-1.5 right-6 w-3 h-3 text-fuchsia-400 animate-sparkle-fade-2"
-  />
-  <Icon 
-    icon="proicons:sparkle-2" 
-    className="absolute bottom-1.5 left-1/3 w-2.5 h-2.5 text-purple-400 animate-sparkle-fade-3"
-  />
-  <MessageCircle className="w-4 h-4 mr-2 relative z-10 group-hover:text-white transition-colors duration-300" />
-  <span className="relative z-10 font-medium group-hover:text-white transition-colors duration-300">
-    Chat with mini me - AI
-  </span>
-</Button>
 
-          
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full mt-3 relative group border border-violet-400/40 bg-transparent hover:bg-blue-600 hover:border-blue-500 transition-all duration-300"
+                onClick={() => window.location.href = `/${cardData.vanityUrl}/ai`}
+              >
+                {/* Simple fading sparkles */}
+                <Icon
+                  icon="proicons:sparkle-2"
+                  className="absolute top-1.5 left-6 w-2.5 h-2.5 text-violet-400 animate-sparkle-fade-1"
+                />
+                <Icon
+                  icon="proicons:sparkle-2"
+                  className="absolute top-1.5 right-6 w-3 h-3 text-fuchsia-400 animate-sparkle-fade-2"
+                />
+                <Icon
+                  icon="proicons:sparkle-2"
+                  className="absolute bottom-1.5 left-1/3 w-2.5 h-2.5 text-purple-400 animate-sparkle-fade-3"
+                />
+                <MessageCircle className="w-4 h-4 mr-2 relative z-10 group-hover:text-white transition-colors duration-300" />
+                <span className="relative z-10 font-medium group-hover:text-white transition-colors duration-300">
+                  Chat with mini me - AI
+                </span>
+              </Button>
+
+
             )}
           </div>
         </Card>
@@ -490,7 +507,7 @@ export const CardPreviewNew: React.FC<CardPreviewNewProps> = ({ cardData, onOpen
               Send Money to {cardData.fullName || 'User'}
             </DialogTitle>
           </DialogHeader>
-          
+
           <div className="space-y-4 pt-4">
             {/* UPI ID Section */}
             {cardData.upiId && (
@@ -511,16 +528,16 @@ export const CardPreviewNew: React.FC<CardPreviewNewProps> = ({ cardData, onOpen
 
                 {/* QR and Pay Now Buttons */}
                 <div className="grid grid-cols-2 gap-3">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     onClick={() => setShowUPIQR(!showUPIQR)}
                     className="w-full"
                   >
                     <QrCode className="w-4 h-4 mr-2" />
                     {showUPIQR ? 'Hide QR' : 'Show QR'}
                   </Button>
-                  
-                  <Button 
+
+                  <Button
                     variant="default"
                     onClick={handlePayNow}
                     className="w-full"
@@ -533,7 +550,7 @@ export const CardPreviewNew: React.FC<CardPreviewNewProps> = ({ cardData, onOpen
                 {/* UPI QR Code Display */}
                 {showUPIQR && (
                   <div className="flex justify-center p-4 bg-white rounded-lg border">
-                    <QRCodeSVG 
+                    <QRCodeSVG
                       value={generateUPILink(cardData.upiId, cardData.fullName || 'User')}
                       size={200}
                       level="M"
