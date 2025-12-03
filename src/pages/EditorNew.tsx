@@ -34,7 +34,8 @@ import {
   ChevronRight,
   ChevronLeft,
   HelpCircle,
-  LogOut
+  LogOut,
+  BarChart3
 } from 'lucide-react';
 import {
   Accordion,
@@ -649,7 +650,7 @@ export const EditorNew: React.FC = () => {
                               setActiveSection(item.id);
                               setSearchParams({ tab: item.id });
                             }}
-                            className={`w-11 h-11 rounded-lg flex items-center justify-center transition-all ${isActive
+                            className={`w-10 h-10 my-1 rounded-lg flex items-center justify-center transition-all ${isActive
                               ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
                               : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                               }`}
@@ -657,7 +658,7 @@ export const EditorNew: React.FC = () => {
                             <Icon className="w-5 h-5" />
                           </button>
                         </TooltipTrigger>
-                        <TooltipContent side="right">
+                        <TooltipContent side="right" className="bg-primary text-primary-foreground border-primary">
                           <p>{item.label}</p>
                         </TooltipContent>
                       </Tooltip>
@@ -665,7 +666,7 @@ export const EditorNew: React.FC = () => {
                   );
                 })}
 
-                <div className="w-full h-[1px] bg-border my-2" />
+                {!isSidebarExpanded && <div className="w-8 h-[1px] bg-border my-2" />}
 
                 {/* Extra Links Icons */}
                 {cardData.vanityUrl && (
@@ -675,13 +676,13 @@ export const EditorNew: React.FC = () => {
                         <TooltipTrigger asChild>
                           <button
                             onClick={() => window.open(`/${cardData.vanityUrl}?card`, '_blank')}
-                            className={`rounded-lg flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-all ${isSidebarExpanded ? 'w-full px-3 py-2.5 gap-3 justify-start' : 'w-11 h-11'}`}
+                            className={`rounded-lg flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-all ${isSidebarExpanded ? 'w-full px-3 py-2.5 gap-3 justify-start' : 'w-10 h-10 my-1'}`}
                           >
                             <CreditCard className="w-5 h-5" />
                             {isSidebarExpanded && <span className="text-sm font-medium">View Card</span>}
                           </button>
                         </TooltipTrigger>
-                        {!isSidebarExpanded && <TooltipContent side="right">View Card</TooltipContent>}
+                        {!isSidebarExpanded && <TooltipContent side="right" className="bg-primary text-primary-foreground border-primary">View Card</TooltipContent>}
                       </Tooltip>
                     </TooltipProvider>
 
@@ -690,13 +691,13 @@ export const EditorNew: React.FC = () => {
                         <TooltipTrigger asChild>
                           <button
                             onClick={() => window.open('/analytics', '_blank')}
-                            className={`rounded-lg flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-all ${isSidebarExpanded ? 'w-full px-3 py-2.5 gap-3 justify-start' : 'w-11 h-11'}`}
+                            className={`rounded-lg flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-all ${isSidebarExpanded ? 'w-full px-3 py-2.5 gap-3 justify-start' : 'w-10 h-10 my-1'}`}
                           >
-                            <ExternalLink className="w-5 h-5" />
+                            <BarChart3 className="w-5 h-5" />
                             {isSidebarExpanded && <span className="text-sm font-medium">Analytics</span>}
                           </button>
                         </TooltipTrigger>
-                        {!isSidebarExpanded && <TooltipContent side="right">Analytics</TooltipContent>}
+                        {!isSidebarExpanded && <TooltipContent side="right" className="bg-primary text-primary-foreground border-primary">Analytics</TooltipContent>}
                       </Tooltip>
                     </TooltipProvider>
 
@@ -705,13 +706,13 @@ export const EditorNew: React.FC = () => {
                         <TooltipTrigger asChild>
                           <button
                             onClick={() => window.open(`/${cardData.vanityUrl}`, '_blank')}
-                            className={`rounded-lg flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-all ${isSidebarExpanded ? 'w-full px-3 py-2.5 gap-3 justify-start' : 'w-11 h-11'}`}
+                            className={`rounded-lg flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-all ${isSidebarExpanded ? 'w-full px-3 py-2.5 gap-3 justify-start' : 'w-10 h-10 my-1'}`}
                           >
                             <Eye className="w-5 h-5" />
                             {isSidebarExpanded && <span className="text-sm font-medium">View Profile</span>}
                           </button>
                         </TooltipTrigger>
-                        {!isSidebarExpanded && <TooltipContent side="right">View Profile</TooltipContent>}
+                        {!isSidebarExpanded && <TooltipContent side="right" className="bg-primary text-primary-foreground border-primary">View Profile</TooltipContent>}
                       </Tooltip>
                     </TooltipProvider>
                   </>
