@@ -20,10 +20,12 @@ import {
   Smartphone,
   Award,
   ImageIcon,
-  Volume2
+  Play,
+  Pause
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useToast } from '@/hooks/use-toast';
+import { AudioPlayer } from './AudioPlayer';
 import {
   Dialog,
   DialogContent,
@@ -295,18 +297,9 @@ export const CardPreviewNew: React.FC<CardPreviewNewProps> = ({ cardData, onOpen
             <div className="flex items-center gap-2">
               <h2 className="text-2xl font-bold text-card-foreground">{displayName}</h2>
 
-              {/* Audio Pronunciation Play Button */}
+              {/* Audio Pronunciation Player with Circular Progress */}
               {cardData.audioPronunciation && (
-                <button
-                  onClick={() => {
-                    const audio = new Audio(cardData.audioPronunciation);
-                    audio.play();
-                  }}
-                  className="p-1.5 rounded-full hover:bg-accent transition-colors"
-                  title="Play name pronunciation"
-                >
-                  <Volume2 className="w-4 h-4 text-primary" />
-                </button>
+                <AudioPlayer audioUrl={cardData.audioPronunciation} />
               )}
             </div>
 

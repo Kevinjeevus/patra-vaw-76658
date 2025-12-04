@@ -356,7 +356,7 @@ export const GallerySection: React.FC<SectionProps> = ({ cardData }) => {
           )}
 
           {cardData.photos && cardData.photos.length > 0 && (
-            <div className="grid grid-cols-2 gap-2">
+            <div className={`grid gap-2 ${cardData.photos.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
               {cardData.photos.map((photo, index) => (
                 <div
                   key={index}
