@@ -36,7 +36,8 @@ import {
   ChevronLeft,
   HelpCircle,
   LogOut,
-  BarChart3
+  BarChart3,
+  Download
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import {
@@ -47,6 +48,7 @@ import {
 } from "@/components/ui/accordion";
 import { CardPreviewNew } from '@/components/card-preview-new';
 import { BusinessCard3D } from '@/components/BusinessCard3D';
+import { addToGoogleWallet } from '@/lib/google-wallet-utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { VideoIntro } from '@/components/VideoIntro';
 import { ProfileInfoEditor } from '@/components/editor/ProfileInfoEditor';
@@ -516,6 +518,25 @@ export const EditorNew: React.FC = () => {
     setTimeout(() => setCopiedUrl(false), 2000);
   };
 
+  const handleAddToGoogleWallet = () => {
+    const result = addToGoogleWallet({
+      fullName: cardData.fullName || 'Your Name',
+      jobTitle: cardData.jobTitle || '',
+      company: cardData.company || '',
+      email: cardData.email || '',
+      phone: cardData.phone || '',
+      avatarUrl: cardData.avatarUrl || '',
+      vanityUrl: cardData.vanityUrl || '',
+      qrCodeData: `https://patra.me/${cardData.vanityUrl}`,
+    });
+
+    toast({
+      title: "Contact Card Downloaded!",
+      description: result.message,
+    });
+  };
+
+
   const renderSection = (sectionId: string) => {
     switch (sectionId) {
       case 'avatar':
@@ -821,6 +842,22 @@ export const EditorNew: React.FC = () => {
                           </button>
                         </TooltipTrigger>
                         {!isSidebarExpanded && <TooltipContent side="right" className="bg-primary text-primary-foreground border-primary">View Profile</TooltipContent>}
+                      </Tooltip>
+                    </TooltipProvider>
+
+                    {/* Google Wallet Button - Hidden Feature */}
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            onClick={handleAddToGoogleWallet}
+                            className={`rounded-lg flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-all ${isSidebarExpanded ? 'w-full px-3 py-2.5 gap-3 justify-start' : 'w-10 h-10 my-1'}`}
+                          >
+                            <Download className="w-5 h-5" />
+                            {isSidebarExpanded && <span className="text-sm font-medium">Add to Wallet</span>}
+                          </button>
+                        </TooltipTrigger>
+                        {!isSidebarExpanded && <TooltipContent side="right" className="bg-primary text-primary-foreground border-primary">Add to Google Wallet</TooltipContent>}
                       </Tooltip>
                     </TooltipProvider>
                   </>

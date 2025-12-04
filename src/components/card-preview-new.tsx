@@ -57,6 +57,7 @@ interface CardData {
   location: string;
   pronunciation: string;
   pronoun: string;
+  audioPronunciation?: string;
   languages: string[];
   jobTitle: string;
   company: string;
@@ -304,6 +305,17 @@ export const CardPreviewNew: React.FC<CardPreviewNewProps> = ({ cardData, onOpen
                 <span className="text-foreground/70">{cardData.pronoun}</span>
               )}
             </div>
+
+            {/* Audio Pronunciation */}
+            {cardData.audioPronunciation && (
+              <div className="mt-3">
+                <audio controls className="w-full max-w-xs h-8">
+                  <source src={cardData.audioPronunciation} />
+                  Your browser does not support audio playback.
+                </audio>
+                <p className="text-xs text-muted-foreground mt-1">Name pronunciation</p>
+              </div>
+            )}
           </div>
 
           {/* Social Links - Inline icons */}

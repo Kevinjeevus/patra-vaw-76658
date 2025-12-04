@@ -2,9 +2,9 @@ import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { 
-  Mail, Phone, Globe, Calendar, MessageCircle, 
-  Check, ExternalLink, Award, Heart, ImageIcon, MapPin 
+import {
+  Mail, Phone, Globe, Calendar, MessageCircle,
+  Check, ExternalLink, Award, Heart, ImageIcon, MapPin
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@iconify/react';
@@ -80,22 +80,22 @@ export const ContactSection: React.FC<SectionProps> = ({ cardData, showAIButton,
           </div>
         )}
         {showAIButton && cardData.aiEnabled && cardData.vanityUrl && (
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             className="w-full mt-3 relative group border border-violet-400/40 bg-transparent hover:bg-blue-600 hover:border-blue-500 transition-all duration-300"
             onClick={() => window.location.href = `/${cardData.vanityUrl}/ai`}
           >
-            <Icon 
-              icon="proicons:sparkle-2" 
+            <Icon
+              icon="proicons:sparkle-2"
               className="absolute top-1.5 left-6 w-2.5 h-2.5 text-violet-400 animate-sparkle-fade-1"
             />
-            <Icon 
-              icon="proicons:sparkle-2" 
+            <Icon
+              icon="proicons:sparkle-2"
               className="absolute top-1.5 right-6 w-3 h-3 text-fuchsia-400 animate-sparkle-fade-2"
             />
-            <Icon 
-              icon="proicons:sparkle-2" 
+            <Icon
+              icon="proicons:sparkle-2"
               className="absolute bottom-1.5 left-1/3 w-2.5 h-2.5 text-purple-400 animate-sparkle-fade-3"
             />
             <MessageCircle className="w-4 h-4 mr-2 relative z-10 group-hover:text-white transition-colors duration-300" />
@@ -158,8 +158,8 @@ export const LinksSection: React.FC<SectionProps> = ({ cardData }) => {
     >
       {link.previewImage && (
         <div className="w-16 h-16 flex-shrink-0 rounded overflow-hidden bg-muted">
-          <img 
-            src={link.previewImage} 
+          <img
+            src={link.previewImage}
             alt={link.title}
             className="w-full h-full object-cover"
           />
@@ -224,9 +224,9 @@ export const AchievementsSection: React.FC<SectionProps> = ({ cardData }) => {
                 {achievement.issuer} • {achievement.date}
               </p>
               {achievement.url && (
-                <a 
-                  href={achievement.url} 
-                  target="_blank" 
+                <a
+                  href={achievement.url}
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="text-xs text-primary hover:underline flex items-center gap-1 mt-1"
                 >
@@ -265,9 +265,9 @@ export const TestimonialsSection: React.FC<SectionProps> = ({ cardData }) => {
             </div>
             <p className="text-sm text-foreground leading-relaxed mb-2">"{testimonial.content}"</p>
             {testimonial.socialUrl && (
-              <a 
-                href={testimonial.socialUrl} 
-                target="_blank" 
+              <a
+                href={testimonial.socialUrl}
+                target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs text-primary hover:underline flex items-center gap-1"
               >
@@ -304,6 +304,24 @@ export const InterestsSection: React.FC<SectionProps> = ({ cardData }) => {
 export const GallerySection: React.FC<SectionProps> = ({ cardData }) => {
   if (!cardData.photos?.length && !cardData.videoIntro) return null;
 
+  // Helper function to convert YouTube URL to embed URL
+  const getEmbedUrl = (url: string) => {
+    if (url.includes('youtube.com/watch?v=')) {
+      return url.replace('watch?v=', 'embed/').split('&')[0];
+    } else if (url.includes('youtu.be/')) {
+      const videoId = url.split('youtu.be/')[1].split('?')[0];
+      return `https://www.youtube.com/embed/${videoId}`;
+    } else if (url.includes('vimeo.com/')) {
+      const videoId = url.split('vimeo.com/')[1].split('?')[0];
+      return `https://player.vimeo.com/video/${videoId}`;
+    }
+    return url;
+  };
+
+  const isYouTubeOrVimeo = (url: string) => {
+    return url.includes('youtube.com') || url.includes('youtu.be') || url.includes('vimeo.com');
+  };
+
   return (
     <Card className="p-6">
       <h3 className="font-semibold text-base mb-4 flex items-center gap-2">
@@ -313,21 +331,31 @@ export const GallerySection: React.FC<SectionProps> = ({ cardData }) => {
       <div className="space-y-4">
         {cardData.videoIntro && (
           <div className="rounded-lg overflow-hidden bg-black aspect-video">
-            <video 
-              src={cardData.videoIntro} 
-              controls 
-              className="w-full h-full"
-              preload="metadata"
-            />
+            {isYouTubeOrVimeo(cardData.videoIntro) ? (
+              <iframe
+                src={getEmbedUrl(cardData.videoIntro)}
+                className="w-full h-full"
+                allowFullScreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                title="Video Introduction"
+              />
+            ) : (
+              <video
+                src={cardData.videoIntro}
+                controls
+                className="w-full h-full"
+                preload="metadata"
+              />
+            )}
           </div>
         )}
-        
+
         {cardData.photos && cardData.photos.length > 0 && (
           <div className="grid grid-cols-2 gap-2">
             {cardData.photos.map((photo, index) => (
               <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-muted group">
-                <img 
-                  src={photo.url} 
+                <img
+                  src={photo.url}
                   alt={photo.caption || `Gallery image ${index + 1}`}
                   className="w-full h-full object-cover"
                 />
@@ -366,13 +394,13 @@ export const LocationSection: React.FC<SectionProps> = ({ cardData }) => {
   if (!cardData.address && !cardData.latitude && !cardData.longitude) return null;
 
   // Use coordinates if available, otherwise encode address
-  const hasCoordinates = cardData.latitude !== null && cardData.latitude !== undefined && 
-                       cardData.longitude !== null && cardData.longitude !== undefined;
-  
+  const hasCoordinates = cardData.latitude !== null && cardData.latitude !== undefined &&
+    cardData.longitude !== null && cardData.longitude !== undefined;
+
   const mapEmbedUrl = hasCoordinates
     ? `https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${cardData.latitude},${cardData.longitude}&zoom=15`
     : `https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodeURIComponent(cardData.address || '')}`;
-  
+
   const mapUrl = hasCoordinates
     ? `https://www.google.com/maps/search/?api=1&query=${cardData.latitude},${cardData.longitude}`
     : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cardData.address || '')}`;
