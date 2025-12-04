@@ -28,6 +28,8 @@ import AIChat from "./pages/AIChat";
 import { Templates } from "./pages/Templates";
 import Admin from "./pages/Admin";
 import { Feedback } from "./pages/Feedback";
+import { ProfileCollection } from "./pages/ProfileCollection";
+import { ProfileView } from "./pages/ProfileView";
 // import PrintCard from "./pages/Printcard";
 
 const queryClient = new QueryClient();
@@ -161,6 +163,23 @@ const App = () => (
                 </ProtectedRoute>
               }
             /> */}
+
+            <Route
+              path="/dashboard/profiles"
+              element={
+                <ProtectedRoute>
+                  <ProfileCollection />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/profiles/:username"
+              element={
+                <ProtectedRoute>
+                  <ProfileView />
+                </ProtectedRoute>
+              }
+            />
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="/:username/ai" element={<AIChat />} />

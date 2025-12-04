@@ -91,7 +91,7 @@ export const Dashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [searchQuery, setSearchQuery] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  
+
   // Card Drop State
   const [isCardDropOpen, setIsCardDropOpen] = useState(false);
   const [cardDropMode, setCardDropMode] = useState<'send' | 'receive'>('send');
@@ -206,8 +206,8 @@ export const Dashboard: React.FC = () => {
     <button
       onClick={() => onClick ? onClick() : setActiveTab(id)}
       className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === id
-          ? 'bg-primary/10 text-primary font-medium'
-          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+        ? 'bg-primary/10 text-primary font-medium'
+        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
         }`}
     >
       <Icon className="w-5 h-5" />
@@ -334,7 +334,7 @@ export const Dashboard: React.FC = () => {
             </div>
 
             {/* Quick Access Panel */}
-            <QuickAccessPanel 
+            <QuickAccessPanel
               onShare={handleShare}
               onScan={handleScan}
               onCreate={handleCreate}
@@ -342,7 +342,7 @@ export const Dashboard: React.FC = () => {
             />
 
             {/* Enhanced Stats */}
-            <EnhancedStats 
+            <EnhancedStats
               stats={{
                 totalViews: 1234,
                 activeCards: cards.filter(c => c.is_active).length,
@@ -356,10 +356,10 @@ export const Dashboard: React.FC = () => {
             />
 
             {/* Saved Profiles Overview */}
-            <SavedProfilesOverview 
+            <SavedProfilesOverview
               totalSaved={24}
               newThisWeek={3}
-              onViewAll={() => toast({ title: "Coming Soon", description: "Profile collection view coming soon!" })}
+              onViewAll={() => navigate('/dashboard/profiles')}
             />
 
             {/* Recent Cards Section */}
