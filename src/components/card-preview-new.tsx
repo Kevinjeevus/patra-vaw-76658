@@ -19,7 +19,8 @@ import {
   QrCode,
   Smartphone,
   Award,
-  ImageIcon
+  ImageIcon,
+  Volume2
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useToast } from '@/hooks/use-toast';
@@ -291,10 +292,26 @@ export const CardPreviewNew: React.FC<CardPreviewNewProps> = ({ cardData, onOpen
 
           {/* Name and basic info */}
           <div className="mb-6">
-            <h2 className="text-2xl font-bold text-card-foreground mb-1">{displayName}</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-2xl font-bold text-card-foreground">{displayName}</h2>
+
+              {/* Audio Pronunciation Play Button */}
+              {cardData.audioPronunciation && (
+                <button
+                  onClick={() => {
+                    const audio = new Audio(cardData.audioPronunciation);
+                    audio.play();
+                  }}
+                  className="p-1.5 rounded-full hover:bg-accent transition-colors"
+                  title="Play name pronunciation"
+                >
+                  <Volume2 className="w-4 h-4 text-primary" />
+                </button>
+              )}
+            </div>
 
             {cardData.jobTitle && (
-              <p className="text-base text-muted-foreground mb-2">
+              <p className="text-base text-muted-foreground mb-2 mt-1">
                 {displayTitle}
                 {cardData.company && <span className="font-medium"> at {displayCompany}</span>}
               </p>
@@ -305,17 +322,6 @@ export const CardPreviewNew: React.FC<CardPreviewNewProps> = ({ cardData, onOpen
                 <span className="text-foreground/70">{cardData.pronoun}</span>
               )}
             </div>
-
-            {/* Audio Pronunciation */}
-            {cardData.audioPronunciation && (
-              <div className="mt-3">
-                <audio controls className="w-full max-w-xs h-8">
-                  <source src={cardData.audioPronunciation} />
-                  Your browser does not support audio playback.
-                </audio>
-                <p className="text-xs text-muted-foreground mt-1">Name pronunciation</p>
-              </div>
-            )}
           </div>
 
           {/* Social Links - Inline icons */}

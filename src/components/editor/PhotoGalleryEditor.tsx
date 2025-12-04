@@ -46,7 +46,7 @@ export const PhotoGalleryEditor: React.FC<PhotoGalleryEditorProps> = ({ cardData
                     {/* Photos Section */}
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                            <h3 className="font-semibold text-sm">Photo Gallery ({cardData.photos.length}/5)</h3>
+                            <h3 className="font-semibold text-sm">Photo Gallery ({cardData.photos.length}/4)</h3>
                         </div>
 
                         {/* Photo Grid */}
@@ -81,7 +81,7 @@ export const PhotoGalleryEditor: React.FC<PhotoGalleryEditorProps> = ({ cardData
                             ))}
 
                             {/* Add Photo Button */}
-                            {cardData.photos.length < 5 && (
+                            {cardData.photos.length < 4 && (
                                 <div className="aspect-square rounded-xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-accent/50 transition-all flex flex-col items-center justify-center p-4 text-center">
                                     <Label htmlFor="photo-upload" className="cursor-pointer w-full h-full flex flex-col items-center justify-center">
                                         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-2 text-primary">
