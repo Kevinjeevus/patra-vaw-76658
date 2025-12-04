@@ -921,7 +921,7 @@ export const EditorNew: React.FC = () => {
 
               {/* 3D Business Card */}
               <div className="mb-8">
-                <BusinessCard3D cardData={cardData} scale={0.85} showControls={true} />
+                <BusinessCard3D cardData={cardData} scale={0.85} showControls={false} />
               </div>
 
               {/* Profile Preview */}
@@ -980,7 +980,7 @@ export const EditorNew: React.FC = () => {
             <div className="space-y-8">
               {/* 3D Business Card */}
               <div className="mb-8">
-                <BusinessCard3D cardData={cardData} scale={0.85} showControls={true} />
+                <BusinessCard3D cardData={cardData} scale={0.85} showControls={false} />
               </div>
 
               {/* Profile Preview */}
