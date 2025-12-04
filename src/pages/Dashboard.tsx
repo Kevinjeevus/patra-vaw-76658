@@ -61,27 +61,6 @@ interface DigitalCard {
   content_json?: any;
 }
 
-// Mock data for charts (updated for EnhancedStats)
-const viewData = [
-  { name: 'Mon', value: 40 },
-  { name: 'Tue', value: 30 },
-  { name: 'Wed', value: 20 },
-  { name: 'Thu', value: 27 },
-  { name: 'Fri', value: 18 },
-  { name: 'Sat', value: 23 },
-  { name: 'Sun', value: 34 },
-];
-
-const activityData = [
-  { name: 'Mon', value: 10 },
-  { name: 'Tue', value: 15 },
-  { name: 'Wed', value: 8 },
-  { name: 'Thu', value: 12 },
-  { name: 'Fri', value: 20 },
-  { name: 'Sat', value: 16 },
-  { name: 'Sun', value: 25 },
-];
-
 export const Dashboard: React.FC = () => {
   const { user, signOut, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -194,6 +173,12 @@ export const Dashboard: React.FC = () => {
     card.vanity_url?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Generate empty chart data for now (no demo data)
+  const emptyChartData = Array(7).fill(0).map((_, i) => ({
+    name: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i],
+    value: 0
+  }));
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -213,6 +198,109 @@ export const Dashboard: React.FC = () => {
       <Icon className="w-5 h-5" />
       <span>{label}</span>
     </button>
+  );
+
+  // Render Card Item Helper
+  const renderCardItem = (card: DigitalCard, index: number) => (
+    <motion.div
+      key={card.id}
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay: index * 0.1 }}
+      whileHover={{ y: -5 }}
+    >
+      <Card className="h-full overflow-hidden border-none shadow-md hover:shadow-xl transition-all duration-300 group relative">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-purple-600 transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
+
+        <CardHeader className="pb-3">
+          <div className="flex justify-between items-start">
+            <div className="space-y-1">
+              <CardTitle className="text-lg font-bold truncate pr-4">{card.title}</CardTitle>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span>{new Date(card.created_at).toLocaleDateString()}</span>
+                <span>•</span>
+                <span className={card.is_active ? "text-green-500" : "text-yellow-500"}>
+                  {card.is_active ? "Active" : "Inactive"}
+                </span>
+              </div>
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <MoreVertical className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => navigate('/editor')}>
+                  <Edit3 className="w-4 h-4 mr-2" /> Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => window.open(`/${card.vanity_url}`, '_blank')}>
+                  <Eye className="w-4 h-4 mr-2" /> View
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/analytics')}>
+                  <BarChart3 className="w-4 h-4 mr-2" /> Analytics
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="text-destructive">
+                  <LogOut className="w-4 h-4 mr-2" /> Deactivate
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </CardHeader>
+
+        <CardContent>
+          <div className="p-3 bg-muted/30 rounded-lg mb-4 flex items-center justify-between group-hover:bg-muted/50 transition-colors">
+            <div className="flex items-center gap-2 overflow-hidden">
+              <div className="w-8 h-8 rounded bg-white flex items-center justify-center text-xs font-bold border">
+                <QrCode className="w-4 h-4" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium truncate">patra.me/{card.vanity_url}</p>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 shrink-0"
+              onClick={() => copyToClipboard(`https://patra.me/${card.vanity_url}`, card.id)}
+            >
+              {copiedId === card.id ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
+            </Button>
+          </div>
+
+          <div className="flex gap-2">
+            <Button className="flex-1 gap-2" variant="outline" onClick={() => window.open(`/${card.vanity_url}`, '_blank')}>
+              <Eye className="w-4 h-4" /> Preview
+            </Button>
+            <Button className="flex-1 gap-2 bg-primary/10 text-primary hover:bg-primary/20 border-none" onClick={() => navigate('/editor')}>
+              <Edit3 className="w-4 h-4" /> Edit
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+
+  const CreateCardButton = () => (
+    <motion.div
+      key="create-new"
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      whileHover={{ scale: 1.02 }}
+      className="group cursor-pointer h-full"
+      onClick={() => navigate('/editor')}
+    >
+      <div className="h-full min-h-[200px] rounded-xl border-2 border-dashed border-muted-foreground/25 hover:border-primary/50 bg-muted/5 flex flex-col items-center justify-center gap-4 transition-all duration-300">
+        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors duration-300">
+          <Plus className="w-6 h-6" />
+        </div>
+        <div className="text-center">
+          <h3 className="font-semibold text-lg">Create New Card</h3>
+          <p className="text-sm text-muted-foreground">Design a new digital card</p>
+        </div>
+      </div>
+    </motion.div>
   );
 
   return (
@@ -344,21 +432,20 @@ export const Dashboard: React.FC = () => {
             {/* Enhanced Stats */}
             <EnhancedStats
               stats={{
-                totalViews: 1234,
-                activeCards: cards.filter(c => c.is_active).length,
-                savedProfiles: 24,
-                connections: 18,
-                viewsTrend: 12,
-                profilesTrend: 3
+                totalViews: 0, // Placeholder for real data
+                savedProfiles: 0,
+                connections: 0,
+                viewsTrend: 0,
+                profilesTrend: 0
               }}
-              viewData={viewData}
-              activityData={activityData}
+              viewData={emptyChartData}
+              onAnalyticsClick={handleAnalytics}
             />
 
             {/* Saved Profiles Overview */}
             <SavedProfilesOverview
-              totalSaved={24}
-              newThisWeek={3}
+              totalSaved={0}
+              newThisWeek={0}
               onViewAll={() => navigate('/dashboard/profiles')}
             />
 
@@ -371,126 +458,22 @@ export const Dashboard: React.FC = () => {
                 </Button>
               </div>
 
-              {cards.length === 0 ? (
-                <Card className="text-center py-12 border-dashed">
-                  <CardContent>
-                    <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-                      <CreditCard className="w-8 h-8 text-muted-foreground" />
-                    </div>
-                    <CardTitle className="mb-2">No cards yet</CardTitle>
-                    <CardDescription className="mb-6 max-w-sm mx-auto">
-                      Create your first digital business card to share your contact info, social links, and more.
-                    </CardDescription>
-                    <Button onClick={() => navigate('/editor')}>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Create Your First Card
-                    </Button>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {/* Create New Card Placeholder */}
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    whileHover={{ scale: 1.02 }}
-                    className="group cursor-pointer"
-                    onClick={() => navigate('/editor')}
-                  >
-                    <div className="h-full min-h-[200px] rounded-xl border-2 border-dashed border-muted-foreground/25 hover:border-primary/50 bg-muted/5 flex flex-col items-center justify-center gap-4 transition-all duration-300">
-                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors duration-300">
-                        <Plus className="w-6 h-6" />
-                      </div>
-                      <div className="text-center">
-                        <h3 className="font-semibold text-lg">Create New Card</h3>
-                        <p className="text-sm text-muted-foreground">Design a new digital card</p>
-                      </div>
-                    </div>
-                  </motion.div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredCards.length === 0 ? (
+                  <CreateCardButton />
+                ) : (
+                  <>
+                    {/* First Card */}
+                    {renderCardItem(filteredCards[0], 0)}
 
-                  {/* Existing Cards */}
-                  {filteredCards.slice(0, 5).map((card, index) => (
-                    <motion.div
-                      key={card.id}
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: index * 0.1 }}
-                      whileHover={{ y: -5 }}
-                    >
-                      <Card className="h-full overflow-hidden border-none shadow-md hover:shadow-xl transition-all duration-300 group relative">
-                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-purple-600 transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
+                    {/* Create New Card (2nd Position) */}
+                    <CreateCardButton />
 
-                        <CardHeader className="pb-3">
-                          <div className="flex justify-between items-start">
-                            <div className="space-y-1">
-                              <CardTitle className="text-lg font-bold truncate pr-4">{card.title}</CardTitle>
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <span>{new Date(card.created_at).toLocaleDateString()}</span>
-                                <span>•</span>
-                                <span className={card.is_active ? "text-green-500" : "text-yellow-500"}>
-                                  {card.is_active ? "Active" : "Inactive"}
-                                </span>
-                              </div>
-                            </div>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                  <MoreVertical className="w-4 h-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => navigate('/editor')}>
-                                  <Edit3 className="w-4 h-4 mr-2" /> Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => window.open(`/${card.vanity_url}`, '_blank')}>
-                                  <Eye className="w-4 h-4 mr-2" /> View
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => navigate('/analytics')}>
-                                  <BarChart3 className="w-4 h-4 mr-2" /> Analytics
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem className="text-destructive">
-                                  <LogOut className="w-4 h-4 mr-2" /> Deactivate
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </CardHeader>
-
-                        <CardContent>
-                          <div className="p-3 bg-muted/30 rounded-lg mb-4 flex items-center justify-between group-hover:bg-muted/50 transition-colors">
-                            <div className="flex items-center gap-2 overflow-hidden">
-                              <div className="w-8 h-8 rounded bg-white flex items-center justify-center text-xs font-bold border">
-                                <QrCode className="w-4 h-4" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium truncate">patra.me/{card.vanity_url}</p>
-                              </div>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 shrink-0"
-                              onClick={() => copyToClipboard(`https://patra.me/${card.vanity_url}`, card.id)}
-                            >
-                              {copiedId === card.id ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
-                            </Button>
-                          </div>
-
-                          <div className="flex gap-2">
-                            <Button className="flex-1 gap-2" variant="outline" onClick={() => window.open(`/${card.vanity_url}`, '_blank')}>
-                              <Eye className="w-4 h-4" /> Preview
-                            </Button>
-                            <Button className="flex-1 gap-2 bg-primary/10 text-primary hover:bg-primary/20 border-none" onClick={() => navigate('/editor')}>
-                              <Edit3 className="w-4 h-4" /> Edit
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  ))}
-                </div>
-              )}
+                    {/* Rest of Cards */}
+                    {filteredCards.slice(1).map((card, index) => renderCardItem(card, index + 1))}
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>

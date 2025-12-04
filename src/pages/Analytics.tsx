@@ -18,7 +18,9 @@ import {
   Activity,
   MousePointerClick,
   Share2,
-  PieChart as PieChartIcon
+  PieChart as PieChartIcon,
+  QrCode,
+  Scan
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import {
@@ -163,6 +165,7 @@ export const Analytics: React.FC = () => {
   const getTotalViews = () => filteredAnalytics.filter(item => item.event_type === 'view').length;
   const getTotalTaps = () => filteredAnalytics.filter(item => item.event_type === 'tap').length;
   const getTotalShares = () => filteredAnalytics.filter(item => item.event_type === 'share').length;
+  const getTotalScans = () => filteredAnalytics.filter(item => item.event_type === 'scan').length;
 
   const getDeviceIcon = (deviceType: string) => {
     switch (deviceType?.toLowerCase()) {
@@ -190,7 +193,7 @@ export const Analytics: React.FC = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" onClick={() => navigate('/editor')} className="rounded-full hover:bg-muted">
+              <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')} className="rounded-full hover:bg-muted">
                 <ArrowLeft className="w-5 h-5" />
               </Button>
               <div>
@@ -200,8 +203,6 @@ export const Analytics: React.FC = () => {
                 </h1>
               </div>
             </div>
-
-            {/* Card Filter Dropdown could go here, but using tabs below for better visibility */}
           </div>
         </div>
       </header>
@@ -239,14 +240,13 @@ export const Analytics: React.FC = () => {
             icon={Users}
             color="text-blue-500"
             bg="bg-blue-500/10"
-            trend="+12% this week" // Placeholder trend
           />
           <StatCard
-            title="NFC Taps"
-            value={getTotalTaps()}
-            icon={MousePointerClick}
-            color="text-purple-500"
-            bg="bg-purple-500/10"
+            title="QR Scans"
+            value={getTotalScans()}
+            icon={Scan}
+            color="text-orange-500"
+            bg="bg-orange-500/10"
           />
           <StatCard
             title="Shares"
@@ -256,11 +256,11 @@ export const Analytics: React.FC = () => {
             bg="bg-pink-500/10"
           />
           <StatCard
-            title="Total Interactions"
-            value={filteredAnalytics.length}
-            icon={BarChart3}
-            color="text-emerald-500"
-            bg="bg-emerald-500/10"
+            title="NFC Taps"
+            value={getTotalTaps()}
+            icon={MousePointerClick}
+            color="text-purple-500"
+            bg="bg-purple-500/10"
           />
         </div>
 
@@ -459,11 +459,13 @@ export const Analytics: React.FC = () => {
                         <div className="flex items-center gap-3">
                           <div className={`p-2 rounded-full ${item.event_type === 'view' ? 'bg-blue-500/10 text-blue-500' :
                               item.event_type === 'tap' ? 'bg-purple-500/10 text-purple-500' :
-                                'bg-pink-500/10 text-pink-500'
+                                item.event_type === 'scan' ? 'bg-orange-500/10 text-orange-500' :
+                                  'bg-pink-500/10 text-pink-500'
                             }`}>
                             {item.event_type === 'view' ? <Users className="w-3 h-3" /> :
                               item.event_type === 'tap' ? <MousePointerClick className="w-3 h-3" /> :
-                                <Share2 className="w-3 h-3" />}
+                                item.event_type === 'scan' ? <Scan className="w-3 h-3" /> :
+                                  <Share2 className="w-3 h-3" />}
                           </div>
                           <div>
                             <p className="text-sm font-medium capitalize">{item.event_type}</p>
