@@ -54,24 +54,103 @@ export const ApiDocs: React.FC = () => {
     setApiResponse(null);
 
     try {
-      // Call the real Edge Function using Supabase client
-      // This handles auth headers and URL construction automatically
+      console.log('Attempting to invoke get-card function...');
+
+      // 1. Try standard invoke
       const { data, error } = await supabase.functions.invoke('get-card', {
         body: { vanity_url: testUsername },
         method: 'POST'
       });
 
-      if (error) {
-        throw error;
+      if (!error) {
+        setApiResponse(JSON.stringify(data, null, 2));
+        return;
       }
 
-      setApiResponse(JSON.stringify(data, null, 2));
+      console.warn('Invoke failed, trying fallback fetch...', error);
+
+      // 2. Fallback: Direct Fetch (useful for local dev or if invoke misbehaves)
+      // Construct URL based on environment
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "https://ffpqhgiucoqjmkyeevqq.supabase.co";
+      const functionUrl = `${supabaseUrl}/functions/v1/get-card`;
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZmcHFoZ2l1Y29xam1reWVldnFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3MjY3NjcsImV4cCI6MjA3NDMwMjc2N30.9Vb7U2X0nT1dG8PP0x9LtGy3iPEkYeVMhEyvB6ZqQ6Q";
+
+      const response = await fetch(functionUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${anonKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ vanity_url: testUsername })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || result.message || 'Fetch failed');
+      }
+
+      setApiResponse(JSON.stringify(result, null, 2));
 
     } catch (err: any) {
       console.error('API Error:', err);
+
+      // 3. Last Resort: Direct DB Query (Simulation)
+      // If the function is down, we can at least show what the data WOULD look like
+      // This is helpful for the user to see the structure even if the API is broken
+      try {
+        console.log('Falling back to direct DB query simulation...');
+        const { data: card } = await supabase
+          .from('digital_cards')
+          .select(`
+            id, 
+            title, 
+            vanity_url, 
+            content_json, 
+            owner_user_id,
+            profiles:owner_user_id (
+              display_name,
+              avatar_url,
+              job_title
+            )
+          `)
+          .eq('vanity_url', testUsername)
+          .single();
+
+        if (card) {
+          const content = card.content_json as any;
+          const profile = Array.isArray(card.profiles) ? card.profiles[0] : card.profiles;
+
+          const simulatedResponse = {
+            id: card.id,
+            vanity_url: card.vanity_url,
+            title: card.title,
+            owner: {
+              name: profile?.display_name || content.fullName,
+              avatar_url: profile?.avatar_url || content.avatarUrl,
+              job_title: profile?.job_title || content.jobTitle
+            },
+            card_data: {
+              ...content,
+              fullName: content.fullName || profile?.display_name,
+              jobTitle: content.jobTitle || profile?.job_title,
+              avatarUrl: content.avatarUrl || profile?.avatar_url
+            },
+            _note: "This is a simulated response from the database because the Edge Function is currently unreachable."
+          };
+
+          setApiResponse(JSON.stringify(simulatedResponse, null, 2));
+          toast.warning('Displayed simulated data (Edge Function unreachable)');
+          return;
+        }
+      } catch (dbErr) {
+        console.error('DB Fallback failed:', dbErr);
+      }
+
       setApiResponse(JSON.stringify({
         error: 'Request Failed',
-        message: err.message || 'Failed to fetch data'
+        message: err.message || 'Failed to fetch data',
+        hint: 'Ensure the "get-card" Edge Function is deployed and active.'
       }, null, 2));
     } finally {
       setIsLoading(false);
