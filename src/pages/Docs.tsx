@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { ArrowLeft, Code, Zap, CreditCard, HelpCircle, History, Share2, Smartphone, Settings } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import ReactMarkdown from 'react-markdown';
+
+export default function Docs() {
+  const navigate = useNavigate();
+  const [changelog, setChangelog] = useState('');
   const [loadingChangelog, setLoadingChangelog] = useState(false);
 
   useEffect(() => {
@@ -268,4 +278,4 @@ import { Button } from '@/components/ui/button';
       </div>
     </div>
   );
-};
+}
