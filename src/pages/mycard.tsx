@@ -416,103 +416,111 @@ export const MyCard: React.FC = () => {
   };
 
   const cardUrl = `${window.location.origin}/${username}`;
-  
-  return (
-    <div className="min-h-screen bg-[#fafafa] relative overflow-hidden scrollbar-thin">
-      {/* Micro-dotted canvas background */}
-      <div className="absolute inset-0 opacity-30" style={{
-        backgroundImage: 'radial-gradient(circle, #d1d5db 1px, transparent 1px)',
-        backgroundSize: '20px 20px'
-      }}></div>
 
-      {/* Profile Preview - appears on scroll up */}
-      <div
-        className={`fixed top-0 left-0 right-0 z-[60] bg-white border-b border-slate-200 shadow-lg transform transition-transform duration-500 ease-out ${showProfilePreview ? 'translate-y-0' : '-translate-y-full'
-          }`}
-      >
-        <div className="px-6 py-4 flex items-center justify-between max-w-6xl mx-auto">
-          <div className="flex items-center gap-4">
-            {cardData?.avatarUrl && (
-              <img
-                src={cardData.avatarUrl}
-                alt={cardData.fullName}
-                className="w-12 h-12 rounded-full object-cover border-2 border-slate-200"
-              />
-            )}
-            <div>
-              <h3 className="font-semibold text-slate-900">{cardData?.fullName}</h3>
-              <p className="text-sm text-slate-500">{cardData?.jobTitle}</p>
+  const isEmbed = searchParams.get('embed') === 'true';
+
+  return (
+    <div className={`min-h-screen bg-[#fafafa] relative overflow-hidden scrollbar-thin ${isEmbed ? 'bg-transparent' : ''}`}>
+      {/* Micro-dotted canvas background - hide in embed if transparent desired, or keep */}
+      {!isEmbed && (
+        <div className="absolute inset-0 opacity-30" style={{
+          backgroundImage: 'radial-gradient(circle, #d1d5db 1px, transparent 1px)',
+          backgroundSize: '20px 20px'
+        }}></div>
+      )}
+
+      {/* Profile Preview - appears on scroll up - Hide in embed */}
+      {!isEmbed && (
+        <div
+          className={`fixed top-0 left-0 right-0 z-[60] bg-white border-b border-slate-200 shadow-lg transform transition-transform duration-500 ease-out ${showProfilePreview ? 'translate-y-0' : '-translate-y-full'
+            }`}
+        >
+          <div className="px-6 py-4 flex items-center justify-between max-w-6xl mx-auto">
+            <div className="flex items-center gap-4">
+              {cardData?.avatarUrl && (
+                <img
+                  src={cardData.avatarUrl}
+                  alt={cardData.fullName}
+                  className="w-12 h-12 rounded-full object-cover border-2 border-slate-200"
+                />
+              )}
+              <div>
+                <h3 className="font-semibold text-slate-900">{cardData?.fullName}</h3>
+                <p className="text-sm text-slate-500">{cardData?.jobTitle}</p>
+              </div>
+            </div>
+            <Button
+              onClick={() => navigate(`/${username}`)}
+              className="bg-slate-900 hover:bg-slate-800"
+            >
+              View Full Profile
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Header - Hide in embed */}
+      {!isEmbed && (
+        <header className="relative z-50 px-6 py-5 border-b border-slate-200/60 bg-white/80 backdrop-blur-sm">
+          <div className="flex items-center justify-between gap-4">
+            <div className="text-2xl font-bold text-slate-900">
+              <span className="text-slate-600">P</span>atra
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setFlipped(!flipped)}
+                className="hover:bg-slate-200/80 hover:text-slate-900 transition-colors"
+                title="Flip Card"
+              >
+                <FlipHorizontal className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleShare}
+                className="hover:bg-slate-200/80 hover:text-slate-900 transition-colors"
+                title="Share Card"
+              >
+                <Share2 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handlePrint}
+                className="hover:bg-slate-200/80 hover:text-slate-900 transition-colors"
+                title="Print Card"
+              >
+                <Printer className="h-4 w-4" />
+              </Button>
+              {/* Save to Profile button - only show if not owner and user is logged in */}
+              {user && !isOwner && (
+                <Button
+                  variant={isSaved ? "default" : "outline"}
+                  size="sm"
+                  onClick={handleSaveToProfile}
+                  disabled={isSaving}
+                  className={isSaved ? "bg-green-600 hover:bg-green-700" : ""}
+                  title={isSaved ? "Saved to Profile" : "Save to Profile"}
+                >
+                  {isSaving ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : isSaved ? (
+                    <>
+                      <Check className="h-4 w-4 mr-1" />
+                      Saved
+                    </>
+                  ) : (
+                    "Save to Profile"
+                  )}
+                </Button>
+              )}
             </div>
           </div>
-          <Button
-            onClick={() => navigate(`/${username}`)}
-            className="bg-slate-900 hover:bg-slate-800"
-          >
-            View Full Profile
-          </Button>
-        </div>
-      </div>
-
-      {/* Header */}
-      <header className="relative z-50 px-6 py-5 border-b border-slate-200/60 bg-white/80 backdrop-blur-sm">
-        <div className="flex items-center justify-between gap-4">
-          <div className="text-2xl font-bold text-slate-900">
-            <span className="text-slate-600">P</span>atra
-          </div>
-
-          <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setFlipped(!flipped)}
-              className="hover:bg-slate-200/80 hover:text-slate-900 transition-colors"
-              title="Flip Card"
-            >
-              <FlipHorizontal className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleShare}
-              className="hover:bg-slate-200/80 hover:text-slate-900 transition-colors"
-              title="Share Card"
-            >
-              <Share2 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handlePrint}
-              className="hover:bg-slate-200/80 hover:text-slate-900 transition-colors"
-              title="Print Card"
-            >
-              <Printer className="h-4 w-4" />
-            </Button>
-            {/* Save to Profile button - only show if not owner and user is logged in */}
-            {user && !isOwner && (
-              <Button
-                variant={isSaved ? "default" : "outline"}
-                size="sm"
-                onClick={handleSaveToProfile}
-                disabled={isSaving}
-                className={isSaved ? "bg-green-600 hover:bg-green-700" : ""}
-                title={isSaved ? "Saved to Profile" : "Save to Profile"}
-              >
-                {isSaving ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : isSaved ? (
-                  <>
-                    <Check className="h-4 w-4 mr-1" />
-                    Saved
-                  </>
-                ) : (
-                  "Save to Profile"
-                )}
-              </Button>
-            )}
-          </div>
-        </div>
-      </header>
+        </header>
+      )}
 
       {/* Main Content */}
       <main className="relative flex flex-col items-center justify-center min-h-[calc(100vh-73px)] p-8">
@@ -718,32 +726,34 @@ export const MyCard: React.FC = () => {
           </p>
         </div>
 
-        {/* Buttons below the Card */}
-        <div className="flex gap-3 mt-4 justify-center">
-          <button
-            onClick={() => navigate('/editor')}
-            className="inline-flex items-center gap-2 px-5 py-2 text-sm font-medium text-gray-800 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-transform duration-150 ease-in-out"
-          >
-            <Edit className="w-4 h-4" />
-            Editor
-          </button>
+        {/* Buttons below the Card - Hide in embed */}
+        {!isEmbed && (
+          <div className="flex gap-3 mt-4 justify-center">
+            <button
+              onClick={() => navigate('/editor')}
+              className="inline-flex items-center gap-2 px-5 py-2 text-sm font-medium text-gray-800 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-transform duration-150 ease-in-out"
+            >
+              <Edit className="w-4 h-4" />
+              Editor
+            </button>
 
-          <button
-            onClick={() => navigate(`/${username}`)}
-            className="inline-flex items-center gap-2 px-5 py-2 text-sm font-medium text-gray-800 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-transform duration-150 ease-in-out"
-          >
-            <User className="w-4 h-4" />
-            Profile
-          </button>
+            <button
+              onClick={() => navigate(`/${username}`)}
+              className="inline-flex items-center gap-2 px-5 py-2 text-sm font-medium text-gray-800 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-transform duration-150 ease-in-out"
+            >
+              <User className="w-4 h-4" />
+              Profile
+            </button>
 
-          <button
-            onClick={handleShare}
-            className="inline-flex items-center gap-2 px-5 py-2 text-sm font-medium text-gray-800 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-transform duration-150 ease-in-out"
-          >
-            <Share2 className="w-4 h-4" />
-            Share
-          </button>
-        </div>
+            <button
+              onClick={handleShare}
+              className="inline-flex items-center gap-2 px-5 py-2 text-sm font-medium text-gray-800 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-transform duration-150 ease-in-out"
+            >
+              <Share2 className="w-4 h-4" />
+              Share
+            </button>
+          </div>
+        )}
       </main>
 
       <style>{`

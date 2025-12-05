@@ -54,49 +54,25 @@ export const ApiDocs: React.FC = () => {
     setApiResponse(null);
 
     try {
-      // Call the real Edge Function
+      // Call the real Edge Function using Supabase client
+      // This handles auth headers and URL construction automatically
       const { data, error } = await supabase.functions.invoke('get-card', {
         body: { vanity_url: testUsername },
-        method: 'POST' // or GET if your function supports it via query params, but invoke usually sends POST body by default unless specified
+        method: 'POST'
       });
 
-      // Note: If using GET with query params in invoke, it's a bit different. 
-      // But our function handles query params from URL. 
-      // supabase.functions.invoke sends a POST by default with the body.
-      // Let's try sending it as a query param in the URL if the function expects it there.
-      // Actually, our function checks `url.searchParams`. 
-      // `supabase.functions.invoke` doesn't easily let us append query params to the URL it constructs.
-      // However, we can pass it in the body if we modify the function to check body too.
-      // OR, we can just use the body in the function.
-
-      // WAIT: I wrote the function to ONLY check query params!
-      // I should have made it check body too.
-      // But for this interactive test, I can construct the URL manually or use fetch.
-
-      // Let's use fetch to the public URL for a true "external API" test.
-      // We need the project URL.
-      const projectUrl = import.meta.env.VITE_SUPABASE_URL; // This is usually available in Vite apps
-      const functionUrl = `${projectUrl}/functions/v1/get-card?vanity_url=${testUsername}`;
-
-      // We need the anon key for the header
-      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-      const response = await fetch(functionUrl, {
-        headers: {
-          'Authorization': `Bearer ${anonKey}`
-        }
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        setApiResponse(JSON.stringify(result, null, 2));
-      } else {
-        setApiResponse(JSON.stringify(result, null, 2));
+      if (error) {
+        throw error;
       }
 
+      setApiResponse(JSON.stringify(data, null, 2));
+
     } catch (err: any) {
-      setApiResponse(JSON.stringify({ error: 'Request Failed', message: err.message }, null, 2));
+      console.error('API Error:', err);
+      setApiResponse(JSON.stringify({
+        error: 'Request Failed',
+        message: err.message || 'Failed to fetch data'
+      }, null, 2));
     } finally {
       setIsLoading(false);
     }
@@ -269,6 +245,31 @@ export const ApiDocs: React.FC = () => {
                     </div>
                   </div>
 
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Response Schema</h3>
+                    <div className="bg-slate-950 text-slate-50 p-4 rounded-lg font-mono text-sm">
+                      <pre>{`{
+  "id": "uuid",
+  "vanity_url": "string",
+  "title": "string",
+  "owner": {
+    "name": "string",
+    "avatar_url": "url",
+    "job_title": "string"
+  },
+  "card_data": {
+    "fullName": "string",
+    "jobTitle": "string",
+    "company": "string",
+    "email": "string",
+    "phone": "string",
+    "socialLinks": [],
+    ...
+  }
+}`}</pre>
+                    </div>
+                  </div>
+
                   <Card className="border-primary/20 bg-primary/5">
                     <CardHeader>
                       <CardTitle className="text-lg flex items-center gap-2">
@@ -278,22 +279,41 @@ export const ApiDocs: React.FC = () => {
                       <CardDescription>Enter a username to fetch their details live from our database.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <div className="flex gap-4">
-                        <div className="flex-1">
-                          <Label htmlFor="username">Username (Vanity URL)</Label>
-                          <Input
-                            id="username"
-                            placeholder="e.g. abin"
-                            value={testUsername}
-                            onChange={(e) => setTestUsername(e.target.value)}
-                          />
-                        </div>
-                        <div className="flex items-end">
-                          <Button onClick={handleTestApi} disabled={isLoading}>
-                            {isLoading ? 'Fetching...' : 'Send Request'}
-                          </Button>
-                        </div>
-                      </div>
+                      <Tabs defaultValue="username" className="w-full">
+                        <TabsList className="w-full grid grid-cols-2">
+                          <TabsTrigger value="username">By Username</TabsTrigger>
+                          <TabsTrigger value="id">By Card ID</TabsTrigger>
+                        </TabsList>
+
+                        <TabsContent value="username" className="space-y-4 mt-4">
+                          <div className="flex gap-4">
+                            <div className="flex-1">
+                              <Label htmlFor="username">Username (Vanity URL)</Label>
+                              <Input
+                                id="username"
+                                placeholder="e.g. abin"
+                                value={testUsername}
+                                onChange={(e) => setTestUsername(e.target.value)}
+                              />
+                            </div>
+                            <div className="flex items-end">
+                              <Button onClick={handleTestApi} disabled={isLoading}>
+                                {isLoading ? 'Fetching...' : 'Send Request'}
+                              </Button>
+                            </div>
+                          </div>
+                        </TabsContent>
+
+                        <TabsContent value="id" className="space-y-4 mt-4">
+                          <div className="bg-muted p-4 rounded-lg text-sm text-muted-foreground">
+                            <p>Fetch a card using its unique UUID. Useful for internal tools.</p>
+                            <div className="mt-2 flex gap-2">
+                              <Input placeholder="e.g. 550e8400-e29b-41d4-a716-446655440000" disabled />
+                              <Button disabled variant="secondary">Coming Soon</Button>
+                            </div>
+                          </div>
+                        </TabsContent>
+                      </Tabs>
 
                       {apiResponse && (
                         <div className="mt-4">
@@ -365,7 +385,7 @@ export const ApiDocs: React.FC = () => {
                     <Label>Generated Code</Label>
                     <div className="bg-slate-950 text-slate-50 p-4 rounded-lg font-mono text-sm relative group">
                       <pre className="whitespace-pre-wrap break-all">
-                        {`<iframe src="https://patra.app/${embedUsername || 'USERNAME'}?card" 
+                        {`<iframe src="https://patra.app/${embedUsername || 'USERNAME'}?card&embed=true" 
   width="400" 
   height="250" 
   frameborder="0" 
@@ -378,7 +398,7 @@ export const ApiDocs: React.FC = () => {
                         variant="ghost"
                         className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
                         onClick={() => handleCopy(
-                          `<iframe src="https://patra.app/${embedUsername || 'USERNAME'}?card" width="400" height="250" frameborder="0" scrolling="no" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"></iframe>`,
+                          `<iframe src="https://patra.app/${embedUsername || 'USERNAME'}?card&embed=true" width="400" height="250" frameborder="0" scrolling="no" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"></iframe>`,
                           'embed-code'
                         )}
                       >

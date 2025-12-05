@@ -14,8 +14,20 @@ serve(async (req) => {
 
     try {
         const url = new URL(req.url);
-        const vanityUrl = url.searchParams.get('vanity_url') || url.searchParams.get('username');
-        const cardId = url.searchParams.get('id');
+        let vanityUrl = url.searchParams.get('vanity_url') || url.searchParams.get('username');
+        let cardId = url.searchParams.get('id');
+
+        // Check body if POST
+        if (req.method === 'POST' && !vanityUrl && !cardId) {
+            try {
+                const body = await req.json();
+                if (body.vanity_url) vanityUrl = body.vanity_url;
+                if (body.username) vanityUrl = body.username;
+                if (body.id) cardId = body.id;
+            } catch (e) {
+                // Ignore JSON parse error, maybe body is empty
+            }
+        }
 
         if (!vanityUrl && !cardId) {
             return new Response(
