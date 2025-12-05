@@ -5,11 +5,11 @@ import { CardPreviewNew } from '@/components/card-preview-new';
 import { MyCard } from './mycard';
 import NotFound from './NotFound';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Share2, CreditCard, Download } from 'lucide-react';
+import { ArrowLeft, Share2, CreditCard, Download, Check, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { updateOGMetaTags, generateShareText, shareProfile } from '@/lib/og-utils';
-import { AddressMapDisplay } from '@/components/AddressMapDisplay';
 import { downloadVCard } from '@/lib/vcard-utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface CardData {
   fullName: string;
@@ -67,11 +67,15 @@ export const PublicProfile: React.FC = () => {
   const { username } = useParams<{ username: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [cardData, setCardData] = useState<CardData | null>(null);
   const [cardId, setCardId] = useState<string | null>(null);
+  const [ownerUserId, setOwnerUserId] = useState<string | null>(null);
   const [ogDescription, setOgDescription] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const isCardView = searchParams.get('card') !== null;
 
@@ -118,7 +122,20 @@ export const PublicProfile: React.FC = () => {
         }
 
         setCardId(card.id);
+        setOwnerUserId(card.owner_user_id);
         setOgDescription(card.og_description);
+
+        // Check if current user has saved this profile
+        if (currentUser && !isOwner) {
+          const { data: savedProfile } = await supabase
+            .from('saved_profiles')
+            .select('id')
+            .eq('user_id', currentUser.id)
+            .eq('saved_user_id', card.owner_user_id)
+            .maybeSingle();
+
+          setIsSaved(!!savedProfile);
+        }
 
         // Generate OG description if it doesn't exist or is older than 30 days
         const needsNewDescription = !card.og_description ||
@@ -194,6 +211,7 @@ export const PublicProfile: React.FC = () => {
             interests: true,
             gallery: true,
             languages: true,
+            location: true,
           },
           address: profile?.address || '',
           showAddressMap: profile?.show_address_map || false,
@@ -238,6 +256,113 @@ export const PublicProfile: React.FC = () => {
       });
     }
   }, [cardData, username, ogDescription]);
+
+  const handleSaveToProfile = async () => {
+    if (!user || !ownerUserId) return;
+
+    setIsSaving(true);
+
+    try {
+      if (isSaved) {
+        // BIDIRECTIONAL REMOVAL
+        const { error: deleteError1 } = await supabase
+          .from('saved_profiles')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('saved_user_id', ownerUserId);
+
+        if (deleteError1) throw deleteError1;
+
+        const { error: deleteError2 } = await supabase
+          .from('saved_profiles')
+          .delete()
+          .eq('user_id', ownerUserId)
+          .eq('saved_user_id', user.id);
+
+        if (deleteError2) console.warn('Bidirectional delete failed:', deleteError2);
+
+        await supabase.from('profile_access').delete()
+          .eq('owner_user_id', ownerUserId)
+          .eq('viewer_user_id', user.id);
+
+        await supabase.from('profile_access').delete()
+          .eq('owner_user_id', user.id)
+          .eq('viewer_user_id', ownerUserId);
+
+        setIsSaved(false);
+        toast({
+          title: "Connection Removed",
+          description: "Connection has been removed for both parties.",
+        });
+      } else {
+        // BIDIRECTIONAL SAVING
+        const { data: myCard } = await supabase
+          .from('digital_cards')
+          .select('id')
+          .eq('owner_user_id', user.id)
+          .eq('is_active', true)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        const { error: saveError1 } = await supabase
+          .from('saved_profiles')
+          .insert({
+            user_id: user.id,
+            saved_user_id: ownerUserId,
+            saved_at: new Date().toISOString()
+          });
+
+        if (saveError1) throw saveError1;
+
+        const { error: saveError2 } = await supabase
+          .from('saved_profiles')
+          .insert({
+            user_id: ownerUserId,
+            saved_user_id: user.id,
+            saved_at: new Date().toISOString()
+          });
+
+        if (saveError2) console.warn('Bidirectional save failed:', saveError2);
+
+        // Create profile_access records
+        if (cardId) {
+          await supabase.from('profile_access').insert({
+            owner_user_id: ownerUserId,
+            viewer_user_id: user.id,
+            card_id: cardId,
+            sharing_method: 'profile_view',
+            shared_at: new Date().toISOString()
+          });
+        }
+
+        if (myCard) {
+          await supabase.from('profile_access').insert({
+            owner_user_id: user.id,
+            viewer_user_id: ownerUserId,
+            card_id: myCard.id,
+            sharing_method: 'profile_view',
+            shared_at: new Date().toISOString()
+          });
+        }
+
+        setIsSaved(true);
+        toast({
+          title: "Saved to Connections!",
+          description: `You and ${cardData?.fullName} are now connected.`,
+        });
+      }
+    } catch (error: any) {
+      console.error('Error saving profile:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save profile. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   // If card view is requested, render the 3D card page
   if (isCardView) {
@@ -303,6 +428,8 @@ export const PublicProfile: React.FC = () => {
     return <NotFound />;
   }
 
+  const isOwner = user && ownerUserId === user.id;
+
   return (
     <div className={`min-h-screen ${cardData.theme === 'modern' ? 'bg-gradient-to-br from-gray-900 to-gray-800' :
       cardData.theme === 'vibrant' ? 'bg-gradient-to-br from-purple-400 to-pink-600' :
@@ -327,10 +454,27 @@ export const PublicProfile: React.FC = () => {
               <CreditCard className="mr-2 h-4 w-4" />
               Card
             </Button>
-            {/* <Button variant="outline" size="sm" onClick={() => navigate('/card-editor')}>
-              <CreditCard className="mr-2 h-4 w-4" />
-              Edit Card
-            </Button> */}
+
+            {/* Save to Profile Button */}
+            {user && !isOwner && (
+              <Button
+                variant={isSaved ? "default" : "outline"}
+                size="sm"
+                onClick={handleSaveToProfile}
+                disabled={isSaving}
+                className={isSaved ? "bg-green-600 hover:bg-green-700 text-white" : ""}
+              >
+                {isSaving ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : isSaved ? (
+                  <Check className="mr-2 h-4 w-4" />
+                ) : (
+                  <Shield className="mr-2 h-4 w-4" />
+                )}
+                {isSaved ? "Saved" : "Connect"}
+              </Button>
+            )}
+
             <Button variant="outline" size="sm" onClick={handleDownloadVCard}>
               <Download className="mr-2 h-4 w-4" />
               Save Contact

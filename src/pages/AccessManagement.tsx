@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 import { Shield, ArrowLeft, Search, Loader2, UserMinus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,6 +18,7 @@ import {
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { DigitalCard, CardData } from '@/components/card/DigitalCard';
 
 interface SavedConnection {
   id: string;
@@ -243,81 +243,83 @@ export const AccessManagement: React.FC = () => {
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {filteredConnections.map((connection, index) => (
-              <motion.div
-                key={connection.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className="flex flex-col"
-              >
-                {/* Digital Card Preview - Embedded iframe */}
-                <Card 
-                  className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-shadow duration-300 border-2 hover:border-primary/50"
-                  onClick={() => navigate(`/${connection.card_vanity_url}`)}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredConnections.map((connection, index) => {
+              const cardData: CardData = {
+                fullName: connection.card_content.fullName || connection.card_title || '',
+                jobTitle: connection.card_content.jobTitle || '',
+                company: connection.card_content.company || '',
+                email: connection.card_content.email || '',
+                phone: connection.card_content.phone || '',
+                avatarUrl: connection.card_content.avatarUrl || '',
+                vanityUrl: connection.card_vanity_url,
+                cardConfig: connection.card_content.cardConfig,
+                bannerType: connection.card_content.bannerType,
+                bannerValue: connection.card_content.bannerValue
+              };
+
+              return (
+                <motion.div
+                  key={connection.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  className="flex flex-col items-center"
                 >
-                  {/* Owner Name on Top */}
-                  <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/70 to-transparent p-4 z-10">
-                    <h3 className="text-white font-bold text-lg">{connection.owner_name}</h3>
-                    {connection.owner_job_title && (
-                      <p className="text-white/80 text-sm">{connection.owner_job_title}</p>
-                    )}
-                  </div>
-                  
-                  <div className="aspect-[1.586/1] relative">
-                    <iframe
-                      src={`/${connection.card_vanity_url}?card`}
-                      className="w-full h-full border-0 pointer-events-none"
-                      title={`${connection.owner_name}'s Card`}
-                      sandbox="allow-same-origin allow-scripts"
+                  {/* Digital Card Component */}
+                  <div className="relative mb-4 transform hover:scale-105 transition-transform duration-300">
+                    <DigitalCard 
+                      cardData={cardData}
+                      username={connection.card_vanity_url}
+                      width={350}
+                      height={220}
                     />
+                    
                     {/* Overlay for saved date */}
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
-                      <div className="flex items-center justify-between text-white text-xs">
-                        <span>@{connection.card_vanity_url}</span>
-                        <span>Saved {new Date(connection.saved_at).toLocaleDateString()}</span>
-                      </div>
+                    <div className="absolute -bottom-6 left-0 right-0 text-center">
+                      <span className="text-xs text-muted-foreground">
+                        Saved {new Date(connection.saved_at).toLocaleDateString()}
+                      </span>
                     </div>
                   </div>
-                </Card>
 
-                {/* Action Buttons */}
-                <div className="flex gap-2 mt-3">
-                  <Button
-                    variant="default"
-                    className="flex-1"
-                    onClick={() => navigate(`/${connection.card_vanity_url}`)}
-                  >
-                    View Profile
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="outline" className="text-destructive border-destructive/20 hover:bg-destructive/10">
-                        <UserMinus className="w-4 h-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Remove {connection.owner_name}?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This will remove the connection for both you and {connection.owner_name}. Both parties will lose access to each other's cards. You can always reconnect by scanning their QR code again.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => handleRemoveConnection(connection.id, connection.saved_user_id, connection.owner_name)}
-                          className="bg-destructive hover:bg-destructive/90"
-                        >
-                          Remove
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </motion.div>
-            ))}
+                  {/* Action Buttons */}
+                  <div className="flex gap-2 mt-6 w-full max-w-[350px]">
+                    <Button
+                      variant="default"
+                      className="flex-1"
+                      onClick={() => navigate(`/${connection.card_vanity_url}`)}
+                    >
+                      View Profile
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" className="text-destructive border-destructive/20 hover:bg-destructive/10">
+                          <UserMinus className="w-4 h-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Remove {connection.owner_name}?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will remove the connection for both you and {connection.owner_name}. Both parties will lose access to each other's cards. You can always reconnect by scanning their QR code again.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleRemoveConnection(connection.id, connection.saved_user_id, connection.owner_name)}
+                            className="bg-destructive hover:bg-destructive/90"
+                          >
+                            Remove
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
         )}
       </main>
