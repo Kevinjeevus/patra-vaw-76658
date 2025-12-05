@@ -7,7 +7,6 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 import {
   Copy,
   Check,
@@ -15,15 +14,17 @@ import {
   Globe,
   Code,
   Key,
-  Search,
   BookOpen,
-  Zap,
+  Server,
+  ArrowLeft,
   Layout,
-  Server
+  Play
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 export const ApiDocs: React.FC = () => {
+  const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState('introduction');
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -45,7 +46,7 @@ export const ApiDocs: React.FC = () => {
 
   const handleTestApi = async () => {
     if (!testUsername) {
-      toast.error('Please enter a username');
+      toast.error('Please enter a username or vanity URL');
       return;
     }
 
@@ -53,44 +54,49 @@ export const ApiDocs: React.FC = () => {
     setApiResponse(null);
 
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 600));
+      // Call the real Edge Function
+      const { data, error } = await supabase.functions.invoke('get-card', {
+        body: { vanity_url: testUsername },
+        method: 'POST' // or GET if your function supports it via query params, but invoke usually sends POST body by default unless specified
+      });
 
-      const { data: card, error } = await supabase
-        .from('digital_cards')
-        .select(`
-          *,
-          profiles:owner_user_id (
-            display_name,
-            job_title,
-            company_name,
-            avatar_url,
-            bio
-          )
-        `)
-        .eq('vanity_url', testUsername)
-        .single();
+      // Note: If using GET with query params in invoke, it's a bit different. 
+      // But our function handles query params from URL. 
+      // supabase.functions.invoke sends a POST by default with the body.
+      // Let's try sending it as a query param in the URL if the function expects it there.
+      // Actually, our function checks `url.searchParams`. 
+      // `supabase.functions.invoke` doesn't easily let us append query params to the URL it constructs.
+      // However, we can pass it in the body if we modify the function to check body too.
+      // OR, we can just use the body in the function.
 
-      if (error) {
-        setApiResponse(JSON.stringify({ error: 'User not found', message: error.message }, null, 2));
+      // WAIT: I wrote the function to ONLY check query params!
+      // I should have made it check body too.
+      // But for this interactive test, I can construct the URL manually or use fetch.
+
+      // Let's use fetch to the public URL for a true "external API" test.
+      // We need the project URL.
+      const projectUrl = import.meta.env.VITE_SUPABASE_URL; // This is usually available in Vite apps
+      const functionUrl = `${projectUrl}/functions/v1/get-card?vanity_url=${testUsername}`;
+
+      // We need the anon key for the header
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      const response = await fetch(functionUrl, {
+        headers: {
+          'Authorization': `Bearer ${anonKey}`
+        }
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setApiResponse(JSON.stringify(result, null, 2));
       } else {
-        // Transform to a cleaner API-like response
-        const publicResponse = {
-          id: card.id,
-          username: card.vanity_url,
-          displayName: card.profiles?.display_name,
-          jobTitle: card.profiles?.job_title,
-          company: card.profiles?.company_name,
-          bio: card.profiles?.bio,
-          avatarUrl: card.profiles?.avatar_url,
-          cardTitle: card.title,
-          qrCode: card.qr_code_url,
-          updatedAt: card.updated_at
-        };
-        setApiResponse(JSON.stringify(publicResponse, null, 2));
+        setApiResponse(JSON.stringify(result, null, 2));
       }
-    } catch (err) {
-      setApiResponse(JSON.stringify({ error: 'Internal Server Error' }, null, 2));
+
+    } catch (err: any) {
+      setApiResponse(JSON.stringify({ error: 'Request Failed', message: err.message }, null, 2));
     } finally {
       setIsLoading(false);
     }
@@ -109,7 +115,7 @@ export const ApiDocs: React.FC = () => {
       {/* Sidebar */}
       <div className="w-64 border-r bg-muted/30 hidden md:flex flex-col">
         <div className="p-6 border-b">
-          <div className="flex items-center gap-2 font-bold text-xl text-primary">
+          <div className="flex items-center gap-2 font-bold text-xl text-primary cursor-pointer" onClick={() => navigate('/')}>
             <Terminal className="w-6 h-6" />
             <span>Patra API</span>
           </div>
@@ -132,10 +138,14 @@ export const ApiDocs: React.FC = () => {
             ))}
           </div>
         </ScrollArea>
-        <div className="p-4 border-t">
-          <Button variant="outline" className="w-full gap-2" onClick={() => window.open('/dashboard', '_blank')}>
+        <div className="p-4 border-t space-y-2">
+          <Button variant="outline" className="w-full gap-2" onClick={() => navigate('/docs')}>
+            <BookOpen className="w-4 h-4" />
+            User Guide
+          </Button>
+          <Button variant="ghost" className="w-full gap-2" onClick={() => navigate('/dashboard')}>
             <Layout className="w-4 h-4" />
-            Developer Dashboard
+            Dashboard
           </Button>
         </div>
       </div>
@@ -148,10 +158,16 @@ export const ApiDocs: React.FC = () => {
           {activeSection === 'introduction' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div>
+                <div className="flex items-center gap-2 mb-4 md:hidden">
+                  <Button variant="ghost" size="icon" onClick={() => navigate('/docs')}>
+                    <ArrowLeft className="w-5 h-5" />
+                  </Button>
+                  <span className="font-bold">API Docs</span>
+                </div>
                 <h1 className="text-4xl font-bold mb-4">Patra API Documentation</h1>
                 <p className="text-xl text-muted-foreground">
                   Integrate powerful digital identity features into your applications.
-                  Create users, fetch profiles, and embed cards with ease.
+                  Fetch public card data, profile details, and more.
                 </p>
               </div>
 
@@ -159,26 +175,26 @@ export const ApiDocs: React.FC = () => {
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Zap className="w-5 h-5 text-yellow-500" />
-                      Fast Integration
+                      <Server className="w-5 h-5 text-blue-500" />
+                      REST API
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-muted-foreground">
-                      Get up and running in minutes with our RESTful API and drop-in embed scripts.
+                      Simple, standard HTTP endpoints to fetch user data.
                     </p>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Globe className="w-5 h-5 text-blue-500" />
-                      Universal Embedding
+                      <Globe className="w-5 h-5 text-green-500" />
+                      Public Access
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-muted-foreground">
-                      Display user cards on any website, blog, or app with a simple iframe or script tag.
+                      Fetch any public profile without complex authentication flows.
                     </p>
                   </CardContent>
                 </Card>
@@ -191,7 +207,7 @@ export const ApiDocs: React.FC = () => {
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <h2 className="text-3xl font-bold">Authentication</h2>
               <p className="text-muted-foreground">
-                Authenticate your requests using your API key. You can find your keys in the Developer Dashboard.
+                For public endpoints, you can use your project's Anon Key. For private data, you'll need a Service Role key (server-side only).
               </p>
 
               <Card>
@@ -201,12 +217,12 @@ export const ApiDocs: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="bg-slate-950 text-slate-50 p-4 rounded-lg font-mono text-sm relative group">
-                    <code>Authorization: Bearer sk_live_xxxxxxxxxxxxx</code>
+                    <code>Authorization: Bearer [YOUR_ANON_KEY]</code>
                     <Button
                       size="icon"
                       variant="ghost"
                       className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => handleCopy('Authorization: Bearer sk_live_xxxxxxxxxxxxx', 'auth-header')}
+                      onClick={() => handleCopy('Authorization: Bearer [YOUR_ANON_KEY]', 'auth-header')}
                     >
                       {copiedId === 'auth-header' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                     </Button>
@@ -226,34 +242,48 @@ export const ApiDocs: React.FC = () => {
                 </p>
               </div>
 
-              <Tabs defaultValue="get-user" className="w-full">
+              <Tabs defaultValue="get-card" className="w-full">
                 <TabsList className="w-full justify-start">
-                  <TabsTrigger value="get-user">Get User Details</TabsTrigger>
-                  <TabsTrigger value="search">Search Users</TabsTrigger>
+                  <TabsTrigger value="get-card">Get Card</TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="get-user" className="mt-6 space-y-6">
+                <TabsContent value="get-card" className="mt-6 space-y-6">
                   <div className="flex items-center gap-3">
                     <Badge variant="default" className="bg-green-600 hover:bg-green-700">GET</Badge>
-                    <code className="text-lg font-mono">/v1/cards/:username</code>
+                    <code className="text-lg font-mono">/functions/v1/get-card</code>
                   </div>
 
                   <p className="text-muted-foreground">
-                    Retrieve public details for a specific user card using their vanity URL (username).
+                    Retrieve public details for a specific user card using their vanity URL (username) or ID.
                   </p>
+
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Query Parameters</h3>
+                    <div className="grid grid-cols-[1fr_2fr] gap-4 text-sm border-b pb-2">
+                      <div className="font-mono text-primary">vanity_url</div>
+                      <div className="text-muted-foreground">The unique username of the card owner (e.g., 'abin').</div>
+                    </div>
+                    <div className="grid grid-cols-[1fr_2fr] gap-4 text-sm border-b pb-2">
+                      <div className="font-mono text-primary">id</div>
+                      <div className="text-muted-foreground">The UUID of the card (optional if vanity_url is provided).</div>
+                    </div>
+                  </div>
 
                   <Card className="border-primary/20 bg-primary/5">
                     <CardHeader>
-                      <CardTitle className="text-lg">Try it out</CardTitle>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Play className="w-4 h-4" />
+                        Interactive Playground
+                      </CardTitle>
                       <CardDescription>Enter a username to fetch their details live from our database.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div className="flex gap-4">
                         <div className="flex-1">
-                          <Label htmlFor="username">Username</Label>
+                          <Label htmlFor="username">Username (Vanity URL)</Label>
                           <Input
                             id="username"
-                            placeholder="e.g. johndoe"
+                            placeholder="e.g. abin"
                             value={testUsername}
                             onChange={(e) => setTestUsername(e.target.value)}
                           />
@@ -283,16 +313,6 @@ export const ApiDocs: React.FC = () => {
                       )}
                     </CardContent>
                   </Card>
-                </TabsContent>
-
-                <TabsContent value="search" className="mt-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <Badge variant="default" className="bg-green-600 hover:bg-green-700">GET</Badge>
-                    <code className="text-lg font-mono">/v1/cards/search</code>
-                  </div>
-                  <p className="text-muted-foreground">
-                    Search for users by name, job title, or company. (Documentation only for this demo)
-                  </p>
                 </TabsContent>
               </Tabs>
             </div>
@@ -345,30 +365,26 @@ export const ApiDocs: React.FC = () => {
                     <Label>Generated Code</Label>
                     <div className="bg-slate-950 text-slate-50 p-4 rounded-lg font-mono text-sm relative group">
                       <pre className="whitespace-pre-wrap break-all">
-                        {`<div class="patra-embed" 
-     data-user="${embedUsername || 'USERNAME'}" 
-     data-theme="${embedTheme}">
-</div>
-<script src="https://patra.app/embed.js" async></script>`}
+                        {`<iframe src="https://patra.app/${embedUsername || 'USERNAME'}?card" 
+  width="400" 
+  height="250" 
+  frameborder="0" 
+  scrolling="no" 
+  style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+</iframe>`}
                       </pre>
                       <Button
                         size="icon"
                         variant="ghost"
                         className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
                         onClick={() => handleCopy(
-                          `<div class="patra-embed" data-user="${embedUsername || 'USERNAME'}" data-theme="${embedTheme}"></div><script src="https://patra.app/embed.js" async></script>`,
+                          `<iframe src="https://patra.app/${embedUsername || 'USERNAME'}?card" width="400" height="250" frameborder="0" scrolling="no" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"></iframe>`,
                           'embed-code'
                         )}
                       >
                         {copiedId === 'embed-code' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                       </Button>
                     </div>
-                  </div>
-
-                  <div className="p-4 border rounded-lg bg-muted/50 text-center">
-                    <p className="text-sm text-muted-foreground">
-                      Preview of how the card will appear would go here.
-                    </p>
                   </div>
                 </CardContent>
               </Card>
@@ -380,37 +396,13 @@ export const ApiDocs: React.FC = () => {
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <h2 className="text-3xl font-bold">SDKs & Libraries</h2>
               <p className="text-muted-foreground">
-                Official libraries to help you integrate faster.
+                Official libraries coming soon. For now, use standard HTTP requests.
               </p>
 
-              <div className="grid md:grid-cols-2 gap-4">
-                <Card className="cursor-pointer hover:border-primary transition-colors">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Code className="w-5 h-5" />
-                      Node.js
-                    </CardTitle>
-                    <CardDescription>npm install @patra/node</CardDescription>
-                  </CardHeader>
-                </Card>
-                <Card className="cursor-pointer hover:border-primary transition-colors">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Code className="w-5 h-5" />
-                      Python
-                    </CardTitle>
-                    <CardDescription>pip install patra-python</CardDescription>
-                  </CardHeader>
-                </Card>
-                <Card className="cursor-pointer hover:border-primary transition-colors">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Code className="w-5 h-5" />
-                      React
-                    </CardTitle>
-                    <CardDescription>npm install @patra/react</CardDescription>
-                  </CardHeader>
-                </Card>
+              <div className="bg-muted p-4 rounded-lg">
+                <p className="text-sm">
+                  We are working on official Node.js and React SDKs. Stay tuned!
+                </p>
               </div>
             </div>
           )}
