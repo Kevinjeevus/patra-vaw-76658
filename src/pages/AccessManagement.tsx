@@ -125,6 +125,8 @@ export const AccessManagement: React.FC = () => {
   };
 
   const handleRemoveConnection = async (connectionId: string, savedUserId: string, ownerName: string) => {
+    if (!user) return;
+    
     try {
       // BIDIRECTIONAL REMOVAL: Remove both directions of the connection
       // 1. Remove current user's save of the other user
@@ -251,19 +253,27 @@ export const AccessManagement: React.FC = () => {
                 className="flex flex-col"
               >
                 {/* Digital Card Preview - Embedded iframe */}
-                <Card
+                <Card 
                   className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-shadow duration-300 border-2 hover:border-primary/50"
                   onClick={() => navigate(`/${connection.card_vanity_url}`)}
                 >
+                  {/* Owner Name on Top */}
+                  <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/70 to-transparent p-4 z-10">
+                    <h3 className="text-white font-bold text-lg">{connection.owner_name}</h3>
+                    {connection.owner_job_title && (
+                      <p className="text-white/80 text-sm">{connection.owner_job_title}</p>
+                    )}
+                  </div>
+                  
                   <div className="aspect-[1.586/1] relative">
                     <iframe
-                      src={`/${connection.card_vanity_url}?embed=true`}
+                      src={`/${connection.card_vanity_url}?card`}
                       className="w-full h-full border-0 pointer-events-none"
                       title={`${connection.owner_name}'s Card`}
-                      sandbox="allow-same-origin"
+                      sandbox="allow-same-origin allow-scripts"
                     />
                     {/* Overlay for saved date */}
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-3">
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
                       <div className="flex items-center justify-between text-white text-xs">
                         <span>@{connection.card_vanity_url}</span>
                         <span>Saved {new Date(connection.saved_at).toLocaleDateString()}</span>

@@ -32,12 +32,9 @@ interface CardData {
   bannerType?: 'gradient' | 'color' | 'image' | 'blurred' | 'pattern';
   bannerValue?: string;
 }
+
 export const MyCard: React.FC = () => {
-  const {
-    username
-  } = useParams<{
-    username: string;
-  }>();
+  const { username } = useParams<{ username: string; }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -52,6 +49,7 @@ export const MyCard: React.FC = () => {
   const [isSaved, setIsSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
+
   useEffect(() => {
     if (username) {
       document.title = `${username} | Patra`;
@@ -187,6 +185,7 @@ export const MyCard: React.FC = () => {
       });
     }
   };
+
   const handlePrint = () => {
     toast({
       title: 'Print Card',
@@ -201,19 +200,45 @@ export const MyCard: React.FC = () => {
 
     try {
       if (isSaved) {
-        // Remove from saved profiles
-        const { error } = await supabase
+        // BIDIRECTIONAL REMOVAL: Remove both directions of the connection
+        // 1. Remove current user's save of the other user
+        const { error: deleteError1 } = await supabase
           .from('saved_profiles')
           .delete()
           .eq('user_id', user.id)
           .eq('saved_user_id', cardOwnerId);
 
-        if (error) throw error;
+        if (deleteError1) throw deleteError1;
+
+        // 2. Remove the other user's save of current user (bidirectional)
+        const { error: deleteError2 } = await supabase
+          .from('saved_profiles')
+          .delete()
+          .eq('user_id', cardOwnerId)
+          .eq('saved_user_id', user.id);
+
+        // Don't fail if reverse delete fails (might not exist)
+        if (deleteError2) {
+          console.warn('Bidirectional delete failed:', deleteError2);
+        }
+
+        // 3. Remove profile_access records (both directions)
+        await supabase
+          .from('profile_access')
+          .delete()
+          .eq('owner_user_id', cardOwnerId)
+          .eq('viewer_user_id', user.id);
+
+        await supabase
+          .from('profile_access')
+          .delete()
+          .eq('owner_user_id', user.id)
+          .eq('viewer_user_id', cardOwnerId);
 
         setIsSaved(false);
         toast({
-          title: "Removed from Connections",
-          description: "This card has been removed from your connections.",
+          title: "Connection Removed",
+          description: "Connection has been removed for both parties.",
         });
       } else {
         // Get current user's active card for bidirectional saving
@@ -303,6 +328,7 @@ export const MyCard: React.FC = () => {
       setIsSaving(false);
     }
   };
+
   if (loading) {
     return <div className="min-h-screen bg-[#fafafa] relative overflow-hidden">
       <div className="absolute inset-0 opacity-30" style={{
@@ -317,6 +343,7 @@ export const MyCard: React.FC = () => {
       </div>
     </div>;
   }
+
   if (!cardData) {
     return <div className="min-h-screen bg-[#fafafa] relative overflow-hidden scrollbar-thin">
       <div className="absolute inset-0 opacity-30" style={{
@@ -389,347 +416,337 @@ export const MyCard: React.FC = () => {
   };
 
   const cardUrl = `${window.location.origin}/${username}`;
-  return <div className="min-h-screen bg-[#fafafa] relative overflow-hidden scrollbar-thin">
-    {/* Micro-dotted canvas background */}
-    <div className="absolute inset-0 opacity-30" style={{
-      backgroundImage: 'radial-gradient(circle, #d1d5db 1px, transparent 1px)',
-      backgroundSize: '20px 20px'
-    }}></div>
+  
+  return (
+    <div className="min-h-screen bg-[#fafafa] relative overflow-hidden scrollbar-thin">
+      {/* Micro-dotted canvas background */}
+      <div className="absolute inset-0 opacity-30" style={{
+        backgroundImage: 'radial-gradient(circle, #d1d5db 1px, transparent 1px)',
+        backgroundSize: '20px 20px'
+      }}></div>
 
-    {/* Profile Preview - appears on scroll up */}
-    <div
-      className={`fixed top-0 left-0 right-0 z-[60] bg-white border-b border-slate-200 shadow-lg transform transition-transform duration-500 ease-out ${showProfilePreview ? 'translate-y-0' : '-translate-y-full'
-        }`}
-    >
-      <div className="px-6 py-4 flex items-center justify-between max-w-6xl mx-auto">
-        <div className="flex items-center gap-4">
-          {cardData?.avatarUrl && (
-            <img
-              src={cardData.avatarUrl}
-              alt={cardData.fullName}
-              className="w-12 h-12 rounded-full object-cover border-2 border-slate-200"
-            />
-          )}
-          <div>
-            <h3 className="font-semibold text-slate-900">{cardData?.fullName}</h3>
-            <p className="text-sm text-slate-500">{cardData?.jobTitle}</p>
+      {/* Profile Preview - appears on scroll up */}
+      <div
+        className={`fixed top-0 left-0 right-0 z-[60] bg-white border-b border-slate-200 shadow-lg transform transition-transform duration-500 ease-out ${showProfilePreview ? 'translate-y-0' : '-translate-y-full'
+          }`}
+      >
+        <div className="px-6 py-4 flex items-center justify-between max-w-6xl mx-auto">
+          <div className="flex items-center gap-4">
+            {cardData?.avatarUrl && (
+              <img
+                src={cardData.avatarUrl}
+                alt={cardData.fullName}
+                className="w-12 h-12 rounded-full object-cover border-2 border-slate-200"
+              />
+            )}
+            <div>
+              <h3 className="font-semibold text-slate-900">{cardData?.fullName}</h3>
+              <p className="text-sm text-slate-500">{cardData?.jobTitle}</p>
+            </div>
+          </div>
+          <Button
+            onClick={() => navigate(`/${username}`)}
+            className="bg-slate-900 hover:bg-slate-800"
+          >
+            View Full Profile
+          </Button>
+        </div>
+      </div>
+
+      {/* Header */}
+      <header className="relative z-50 px-6 py-5 border-b border-slate-200/60 bg-white/80 backdrop-blur-sm">
+        <div className="flex items-center justify-between gap-4">
+          <div className="text-2xl font-bold text-slate-900">
+            <span className="text-slate-600">P</span>atra
+          </div>
+
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setFlipped(!flipped)}
+              className="hover:bg-slate-200/80 hover:text-slate-900 transition-colors"
+              title="Flip Card"
+            >
+              <FlipHorizontal className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleShare}
+              className="hover:bg-slate-200/80 hover:text-slate-900 transition-colors"
+              title="Share Card"
+            >
+              <Share2 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handlePrint}
+              className="hover:bg-slate-200/80 hover:text-slate-900 transition-colors"
+              title="Print Card"
+            >
+              <Printer className="h-4 w-4" />
+            </Button>
+            {/* Save to Profile button - only show if not owner and user is logged in */}
+            {user && !isOwner && (
+              <Button
+                variant={isSaved ? "default" : "outline"}
+                size="sm"
+                onClick={handleSaveToProfile}
+                disabled={isSaving}
+                className={isSaved ? "bg-green-600 hover:bg-green-700" : ""}
+                title={isSaved ? "Saved to Profile" : "Save to Profile"}
+              >
+                {isSaving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : isSaved ? (
+                  <>
+                    <Check className="h-4 w-4 mr-1" />
+                    Saved
+                  </>
+                ) : (
+                  "Save to Profile"
+                )}
+              </Button>
+            )}
           </div>
         </div>
-        <Button
-          onClick={() => navigate(`/${username}`)}
-          className="bg-slate-900 hover:bg-slate-800"
-        >
-          View Full Profile
-        </Button>
-      </div>
-    </div>
+      </header>
 
-    {/* Header */}
-    <header className="relative z-50 px-6 py-5 border-b border-slate-200/60 bg-white/80 backdrop-blur-sm">
-      <div className="flex items-center justify-between gap-4">
-        <div className="text-2xl font-bold text-slate-900">
-          <span className="text-slate-600">P</span>atra
+      {/* Main Content */}
+      <main className="relative flex flex-col items-center justify-center min-h-[calc(100vh-73px)] p-8">
+        {/* Greeting Text */}
+        <div className="text-center mb-12">
+          <h1 className="text-3xl md:text-4xl font-semibold text-slate-900 mb-2">
+            Preview of {cardData.fullName}'s Card
+          </h1>
         </div>
 
-        <div className="flex gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
+        {/* 3D Card Container */}
+        <div className="perspective-card">
+          <div className={`card-container ${flipped ? 'flipped' : ''}`}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
             onClick={() => setFlipped(!flipped)}
-            className="hover:bg-slate-200/80 hover:text-slate-900 transition-colors"
-            title="Flip Card"
-          >
-            <FlipHorizontal className="h-4 w-4" />
-          </Button>
-          {/* <Button 
-        variant="ghost" 
-        size="icon" 
-        onClick={() => navigate('/editor')} 
-        className="hover:bg-slate-200/80 hover:text-slate-900 transition-colors" 
-        title="Edit Card"
-      >
-        <Edit className="h-4 w-4" />
-      </Button> */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleShare}
-            className="hover:bg-slate-200/80 hover:text-slate-900 transition-colors"
-            title="Share Card"
-          >
-            <Share2 className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handlePrint}
-            className="hover:bg-slate-200/80 hover:text-slate-900 transition-colors"
-            title="Print Card"
-          >
-            <Printer className="h-4 w-4" />
-          </Button>
-          {/* Save to Profile button - only show if not owner and user is logged in */}
-          {user && !isOwner && (
-            <Button
-              variant={isSaved ? "default" : "outline"}
-              size="sm"
-              onClick={handleSaveToProfile}
-              disabled={isSaving}
-              className={isSaved ? "bg-green-600 hover:bg-green-700" : ""}
-              title={isSaved ? "Saved to Profile" : "Save to Profile"}
-            >
-              {isSaving ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : isSaved ? (
-                <>
-                  <Check className="h-4 w-4 mr-1" />
-                  Saved
-                </>
-              ) : (
-                "Save to Profile"
-              )}
-            </Button>
-          )}
-        </div>
-      </div>
-    </header>
+            style={{
+              width: `${cardData.cardConfig?.cardWidth || 400}px`,
+              height: `${cardData.cardConfig?.cardHeight || 250}px`,
+              transform: isHovered && !flipped ? 'translateY(-8px) rotateX(2deg) rotateY(-2deg)' : isHovered && flipped ? 'translateY(-8px) rotateX(2deg) rotateY(182deg)' : flipped ? 'rotateY(180deg)' : 'rotateY(0deg)'
+            }}>
+            {/* Front Side */}
+            <div className="card-face card-front">
+              <div
+                className="absolute inset-0 rounded-xl overflow-hidden"
+                style={getCardBackgroundStyle(cardData.cardConfig, false)}
+              >
+                {/* Subtle texture overlay */}
+                <div className="absolute inset-0 opacity-5" style={{
+                  backgroundImage: 'url("data:image/svg+xml,%3Csvg width="100" height="100" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noise"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" /%3E%3C/filter%3E%3Crect width="100" height="100" filter="url(%23noise)" opacity="0.4"/%3E%3C/svg%3E")'
+                }}></div>
 
-    {/* Main Content */}
-    <main className="relative flex flex-col items-center justify-center min-h-[calc(100vh-73px)] p-8">
-      {/* Greeting Text */}
-      <div className="text-center mb-12">
-        <h1 className="text-3xl md:text-4xl font-semibold text-slate-900 mb-2">
-          Preview of {cardData.fullName}'s Card
-        </h1>
+                {/* Logo top left */}
+                <div className="absolute top-4 left-4 text-white/90 text-xs font-semibold tracking-wide">
+                  Patra
+                </div>
 
-      </div>
+                {/* NFC Icon top right */}
+                <div className="absolute top-4 right-4">
+                  <div className="w-8 h-8 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center border border-white/20">
+                    <Nfc className="w-4 h-4 text-white/80" />
+                  </div>
+                </div>
 
-      {/* 3D Card Container */}
-      <div className="perspective-card">
-        <div className={`card-container ${flipped ? 'flipped' : ''}`}
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
-          onClick={() => setFlipped(!flipped)}
-          style={{
-            width: `${cardData.cardConfig?.cardWidth || 400}px`,
-            height: `${cardData.cardConfig?.cardHeight || 250}px`,
-            transform: isHovered && !flipped ? 'translateY(-8px) rotateX(2deg) rotateY(-2deg)' : isHovered && flipped ? 'translateY(-8px) rotateX(2deg) rotateY(182deg)' : flipped ? 'rotateY(180deg)' : 'rotateY(0deg)'
-          }}>
-          {/* Front Side */}
-          <div className="card-face card-front">
-            <div
-              className="absolute inset-0 rounded-xl overflow-hidden"
-              style={getCardBackgroundStyle(cardData.cardConfig, false)}
-            >
-              {/* Subtle texture overlay */}
-              <div className="absolute inset-0 opacity-5" style={{
-                backgroundImage: 'url("data:image/svg+xml,%3Csvg width="100" height="100" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noise"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" /%3E%3C/filter%3E%3Crect width="100" height="100" filter="url(%23noise)" opacity="0.4"/%3E%3C/svg%3E")'
-              }}></div>
+                {/* Card Content */}
+                <div className="relative h-full p-6" style={{ position: 'relative' }}>
+                  {(() => {
+                    const content = cardData as any;
+                    const config = (content as any).cardConfig || {};
+                    const positions = config.positions || {
+                      avatar: { x: 20, y: 60 },
+                      name: { x: 140, y: 60 },
+                      jobTitle: { x: 140, y: 90 },
+                      company: { x: 140, y: 115 },
+                      email: { x: 140, y: 150 },
+                      phone: { x: 140, y: 175 },
+                    };
 
-              {/* Logo top left */}
-              <div className="absolute top-4 left-4 text-white/90 text-xs font-semibold tracking-wide">
-                Patra
-              </div>
+                    return (
+                      <>
+                        {/* Avatar */}
+                        {cardData.avatarUrl && (
+                          <div style={{ position: 'absolute', left: `${positions.avatar?.x || 20}px`, top: `${positions.avatar?.y || 60}px` }}>
+                            <img
+                              src={cardData.avatarUrl}
+                              alt={cardData.fullName}
+                              className="rounded-lg object-cover border-2 border-white/20 shadow-xl"
+                              style={{ width: `${config.avatarSize || 96}px`, height: `${config.avatarSize || 96}px` }}
+                            />
+                          </div>
+                        )}
 
-              {/* NFC Icon top right */}
-              <div className="absolute top-4 right-4">
-                <div className="w-8 h-8 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center border border-white/20">
-                  <Nfc className="w-4 h-4 text-white/80" />
+                        {/* Name */}
+                        <div style={{ position: 'absolute', left: `${positions.name?.x || 140}px`, top: `${positions.name?.y || 60}px` }}>
+                          <h2 className="font-bold" style={{
+                            fontSize: `${(config.fontSize || 16) + 4}px`,
+                            color: config.textColor || '#ffffff',
+                            fontFamily: config.fontFamily || 'Inter'
+                          }}>
+                            {cardData.fullName}
+                          </h2>
+                        </div>
+
+                        {/* Job Title */}
+                        {cardData.jobTitle && (config.showJobTitle !== false) && (
+                          <div style={{ position: 'absolute', left: `${positions.jobTitle?.x || 140}px`, top: `${positions.jobTitle?.y || 90}px` }}>
+                            <p style={{
+                              fontSize: `${(config.fontSize || 16) - 2}px`,
+                              color: config.textColor || '#ffffff',
+                              fontFamily: config.fontFamily || 'Inter',
+                              opacity: 0.8
+                            }}>
+                              {cardData.jobTitle}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Company */}
+                        {cardData.company && (config.showCompany !== false) && (
+                          <div style={{ position: 'absolute', left: `${positions.company?.x || 140}px`, top: `${positions.company?.y || 115}px` }}>
+                            <p style={{
+                              fontSize: `${(config.fontSize || 16) - 4}px`,
+                              color: config.textColor || '#ffffff',
+                              fontFamily: config.fontFamily || 'Inter',
+                              opacity: 0.6
+                            }}>
+                              {cardData.company}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Email */}
+                        {cardData.email && (config.showEmail !== false) && (
+                          <div style={{ position: 'absolute', left: `${positions.email?.x || 140}px`, top: `${positions.email?.y || 150}px` }} className="flex items-center gap-2">
+                            <Mail className="w-3 h-3 flex-shrink-0" style={{ color: config.textColor || '#ffffff', opacity: 0.9 }} />
+                            <span style={{
+                              fontSize: `${(config.fontSize || 16) - 4}px`,
+                              color: config.textColor || '#ffffff',
+                              fontFamily: config.fontFamily || 'Inter',
+                              opacity: 0.9
+                            }}>{cardData.email}</span>
+                          </div>
+                        )}
+
+                        {/* Phone */}
+                        {cardData.phone && (config.showPhone !== false) && (
+                          <div style={{ position: 'absolute', left: `${positions.phone?.x || 140}px`, top: `${positions.phone?.y || 175}px` }} className="flex items-center gap-2">
+                            <Phone className="w-3 h-3 flex-shrink-0" style={{ color: config.textColor || '#ffffff', opacity: 0.9 }} />
+                            <span style={{
+                              fontSize: `${(config.fontSize || 16) - 4}px`,
+                              color: config.textColor || '#ffffff',
+                              fontFamily: config.fontFamily || 'Inter',
+                              opacity: 0.9
+                            }}>{cardData.phone}</span>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
+            </div>
 
-              {/* Card Content */}
-              <div className="relative h-full p-6" style={{ position: 'relative' }}>
-                {(() => {
-                  const content = cardData as any;
-                  const config = (content as any).cardConfig || {};
-                  const positions = config.positions || {
-                    avatar: { x: 20, y: 60 },
-                    name: { x: 140, y: 60 },
-                    jobTitle: { x: 140, y: 90 },
-                    company: { x: 140, y: 115 },
-                    email: { x: 140, y: 150 },
-                    phone: { x: 140, y: 175 },
-                  };
+            {/* Back Side */}
+            <div className="card-face card-back">
+              <div
+                className="absolute inset-0 rounded-xl overflow-hidden"
+                style={getCardBackgroundStyle(cardData.cardConfig, true)}
+              >
+                {/* Subtle texture overlay */}
+                <div className="absolute inset-0 opacity-5" style={{
+                  backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\\"100\\" height=\\"100\\" xmlns=\\"http://www.w3.org/2000/svg\\"%3E%3Cfilter id=\\"noise\\"%3E%3CfeTurbulance type=\\"fractalNoise\\" baseFrequency=\\"0.9\\" numOctaves=\\"4\\" /%3E%3C/filter%3E%3Crect width=\\"100\\" height=\\"100\\" filter=\\"url(%23noise)\\" opacity=\\"0.4\\"/%3E%3C/svg%3E")'
+                }}></div>
 
-                  return (
-                    <>
-                      {/* Avatar */}
-                      {cardData.avatarUrl && (
-                        <div style={{ position: 'absolute', left: `${positions.avatar?.x || 20}px`, top: `${positions.avatar?.y || 60}px` }}>
-                          <img
-                            src={cardData.avatarUrl}
-                            alt={cardData.fullName}
-                            className="rounded-lg object-cover border-2 border-white/20 shadow-xl"
-                            style={{ width: `${config.avatarSize || 96}px`, height: `${config.avatarSize || 96}px` }}
+                {/* Logo top left */}
+                <div className="absolute top-4 left-4 text-white/90 text-xs font-semibold tracking-wide">
+                  Patra
+                </div>
+
+                {/* QR Code with saved position */}
+                <div className="relative h-full flex flex-col items-center justify-center p-6">
+                  {(() => {
+                    const qrPos = cardData.cardConfig?.backPositions?.qrCode || { x: 0, y: 0 };
+                    const qrSize = cardData.cardConfig?.qrCodeSize || 110;
+                    const qrStyle = cardData.cardConfig?.qrCodeStyle || 'square';
+
+                    return (
+                      <div style={{
+                        position: qrPos.x !== 0 || qrPos.y !== 0 ? 'absolute' : 'relative',
+                        left: qrPos.x !== 0 ? `${qrPos.x}px` : undefined,
+                        top: qrPos.y !== 0 ? `${qrPos.y}px` : undefined,
+                      }}>
+                        <div className={`bg-white p-4 shadow-2xl ${qrStyle === 'rounded' ? 'rounded-2xl' : 'rounded-lg'}`}>
+                          <QRCode
+                            value={cardUrl}
+                            size={qrSize}
+                            level="M"
+                            fgColor="#000000"
+                            bgColor="#ffffff"
                           />
                         </div>
-                      )}
-
-                      {/* Name */}
-                      <div style={{ position: 'absolute', left: `${positions.name?.x || 140}px`, top: `${positions.name?.y || 60}px` }}>
-                        <h2 className="font-bold" style={{
-                          fontSize: `${(config.fontSize || 16) + 4}px`,
-                          color: config.textColor || '#ffffff',
-                          fontFamily: config.fontFamily || 'Inter'
-                        }}>
-                          {cardData.fullName}
-                        </h2>
                       </div>
+                    );
+                  })()}
 
-                      {/* Job Title */}
-                      {cardData.jobTitle && (config.showJobTitle !== false) && (
-                        <div style={{ position: 'absolute', left: `${positions.jobTitle?.x || 140}px`, top: `${positions.jobTitle?.y || 90}px` }}>
-                          <p style={{
-                            fontSize: `${(config.fontSize || 16) - 2}px`,
-                            color: config.textColor || '#ffffff',
-                            fontFamily: config.fontFamily || 'Inter',
-                            opacity: 0.8
-                          }}>
-                            {cardData.jobTitle}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Company */}
-                      {cardData.company && (config.showCompany !== false) && (
-                        <div style={{ position: 'absolute', left: `${positions.company?.x || 140}px`, top: `${positions.company?.y || 115}px` }}>
-                          <p style={{
-                            fontSize: `${(config.fontSize || 16) - 4}px`,
-                            color: config.textColor || '#ffffff',
-                            fontFamily: config.fontFamily || 'Inter',
-                            opacity: 0.6
-                          }}>
-                            {cardData.company}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Email */}
-                      {cardData.email && (config.showEmail !== false) && (
-                        <div style={{ position: 'absolute', left: `${positions.email?.x || 140}px`, top: `${positions.email?.y || 150}px` }} className="flex items-center gap-2">
-                          <Mail className="w-3 h-3 flex-shrink-0" style={{ color: config.textColor || '#ffffff', opacity: 0.9 }} />
-                          <span style={{
-                            fontSize: `${(config.fontSize || 16) - 4}px`,
-                            color: config.textColor || '#ffffff',
-                            fontFamily: config.fontFamily || 'Inter',
-                            opacity: 0.9
-                          }}>{cardData.email}</span>
-                        </div>
-                      )}
-
-                      {/* Phone */}
-                      {cardData.phone && (config.showPhone !== false) && (
-                        <div style={{ position: 'absolute', left: `${positions.phone?.x || 140}px`, top: `${positions.phone?.y || 175}px` }} className="flex items-center gap-2">
-                          <Phone className="w-3 h-3 flex-shrink-0" style={{ color: config.textColor || '#ffffff', opacity: 0.9 }} />
-                          <span style={{
-                            fontSize: `${(config.fontSize || 16) - 4}px`,
-                            color: config.textColor || '#ffffff',
-                            fontFamily: config.fontFamily || 'Inter',
-                            opacity: 0.9
-                          }}>{cardData.phone}</span>
-                        </div>
-                      )}
-                    </>
-                  );
-                })()}
-              </div>
-            </div>
-          </div>
-
-          {/* Back Side */}
-          <div className="card-face card-back">
-            <div
-              className="absolute inset-0 rounded-xl overflow-hidden"
-              style={getCardBackgroundStyle(cardData.cardConfig, true)}
-            >
-              {/* Subtle texture overlay */}
-              <div className="absolute inset-0 opacity-5" style={{
-                backgroundImage: 'url("data:image/svg+xml,%3Csvg width="100" height="100" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noise"%3E%3CfeTurbulance type="fractalNoise" baseFrequency="0.9" numOctaves="4" /%3E%3C/filter%3E%3Crect width="100" height="100" filter="url(%23noise)" opacity="0.4"/%3E%3C/svg%3E")'
-              }}></div>
-
-              {/* Logo top left */}
-              <div className="absolute top-4 left-4 text-white/90 text-xs font-semibold tracking-wide">
-                Patra
-              </div>
-
-              {/* QR Code with saved position */}
-              <div className="relative h-full flex flex-col items-center justify-center p-6">
-                {(() => {
-                  const qrPos = cardData.cardConfig?.backPositions?.qrCode || { x: 0, y: 0 };
-                  const qrSize = cardData.cardConfig?.qrCodeSize || 110;
-                  const qrStyle = cardData.cardConfig?.qrCodeStyle || 'square';
-
-                  return (
-                    <div style={{
-                      position: qrPos.x !== 0 || qrPos.y !== 0 ? 'absolute' : 'relative',
-                      left: qrPos.x !== 0 ? `${qrPos.x}px` : undefined,
-                      top: qrPos.y !== 0 ? `${qrPos.y}px` : undefined,
-                    }}>
-                      <div className={`bg-white p-4 shadow-2xl ${qrStyle === 'rounded' ? 'rounded-2xl' : 'rounded-lg'}`}>
-                        <QRCode
-                          value={cardUrl}
-                          size={qrSize}
-                          level="M"
-                          fgColor="#000000"
-                          bgColor="#ffffff"
-                        />
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                {/* Thermochromic ink effect username */}
-                <p className="mt-4 text-xs text-white/30 font-mono tracking-wider" style={{
-                  textShadow: '0 0 10px rgba(255,255,255,0.1)',
-                  letterSpacing: '0.15em'
-                }}>
-                  {username}
-                </p>
+                  {/* Thermochromic ink effect username */}
+                  <p className="mt-4 text-xs text-white/30 font-mono tracking-wider" style={{
+                    textShadow: '0 0 10px rgba(255,255,255,0.1)',
+                    letterSpacing: '0.15em'
+                  }}>
+                    {username}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Subtle instruction hint */}
-      <div className="mt-12 text-center">
-        <p className="text-xs text-slate-400">
-          Click the flip button or tap the card to see both sides
-        </p>
-      </div>
+        {/* Subtle instruction hint */}
+        <div className="mt-12 text-center">
+          <p className="text-xs text-slate-400">
+            Click the flip button or tap the card to see both sides
+          </p>
+        </div>
 
-      {/* Buttons below the Card */}
-      <div className="flex gap-3 mt-4 justify-center">
-        <button
-          onClick={() => navigate('/editor')}
-          className="inline-flex items-center gap-2 px-5 py-2 text-sm font-medium text-gray-800 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-transform duration-150 ease-in-out"
-        >
-          <Edit className="w-4 h-4" />
-          Editor
-        </button>
+        {/* Buttons below the Card */}
+        <div className="flex gap-3 mt-4 justify-center">
+          <button
+            onClick={() => navigate('/editor')}
+            className="inline-flex items-center gap-2 px-5 py-2 text-sm font-medium text-gray-800 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-transform duration-150 ease-in-out"
+          >
+            <Edit className="w-4 h-4" />
+            Editor
+          </button>
 
-        <button
-          onClick={() => navigate(`/${username}`)}
-          className="inline-flex items-center gap-2 px-5 py-2 text-sm font-medium text-gray-800 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-transform duration-150 ease-in-out"
-        >
-          <User className="w-4 h-4" />
-          Profile
-        </button>
+          <button
+            onClick={() => navigate(`/${username}`)}
+            className="inline-flex items-center gap-2 px-5 py-2 text-sm font-medium text-gray-800 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-transform duration-150 ease-in-out"
+          >
+            <User className="w-4 h-4" />
+            Profile
+          </button>
 
-        <button
-          onClick={handleShare}
-          className="inline-flex items-center gap-2 px-5 py-2 text-sm font-medium text-gray-800 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-transform duration-150 ease-in-out"
-        >
-          <Share2 className="w-4 h-4" />
-          Share
-        </button>
-      </div>
+          <button
+            onClick={handleShare}
+            className="inline-flex items-center gap-2 px-5 py-2 text-sm font-medium text-gray-800 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-transform duration-150 ease-in-out"
+          >
+            <Share2 className="w-4 h-4" />
+            Share
+          </button>
+        </div>
+      </main>
 
-
-    </main>
-
-    <style>{`
+      <style>{`
         .perspective-card {
           perspective: 2000px;
           cursor: pointer;
@@ -785,7 +802,6 @@ export const MyCard: React.FC = () => {
           .card-container {
             width: 320px;
             height: 200px;
-            
           }
         }
 
@@ -796,5 +812,6 @@ export const MyCard: React.FC = () => {
           }
         }
       `}</style>
-  </div>;
+    </div>
+  );
 };
