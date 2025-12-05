@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import {
+  Shield,
   Plus,
   CreditCard,
   BarChart3,
@@ -38,7 +39,7 @@ import {
 
 // New Components
 import { QuickAccessPanel } from '@/components/dashboard/QuickAccessPanel';
-import { EnhancedStats } from '@/components/dashboard/EnhancedStats';
+
 import { SavedProfilesOverview } from '@/components/dashboard/SavedProfilesOverview';
 import { CardDropModal } from '@/components/dashboard/CardDropModal';
 
@@ -324,6 +325,7 @@ export const Dashboard: React.FC = () => {
             <SidebarItem icon={Home} label="Overview" id="overview" />
             <SidebarItem icon={CreditCard} label="My Cards" id="cards" />
             <SidebarItem icon={BarChart3} label="Analytics" id="analytics" onClick={() => navigate('/analytics')} />
+            <SidebarItem icon={Shield} label="Access" id="access" onClick={() => navigate('/dashboard/access')} />
             <SidebarItem icon={User} label="Profile" id="profile" onClick={() => navigate('/settings')} />
           </nav>
         </div>
@@ -427,19 +429,6 @@ export const Dashboard: React.FC = () => {
               onScan={handleScan}
               onCreate={handleCreate}
               onAnalytics={handleAnalytics}
-            />
-
-            {/* Enhanced Stats */}
-            <EnhancedStats
-              stats={{
-                totalViews: 0, // Placeholder for real data
-                savedProfiles: 0,
-                connections: 0,
-                viewsTrend: 0,
-                profilesTrend: 0
-              }}
-              viewData={emptyChartData}
-              onAnalyticsClick={handleAnalytics}
             />
 
             {/* Saved Profiles Overview */}

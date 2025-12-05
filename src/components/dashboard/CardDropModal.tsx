@@ -88,7 +88,13 @@ export const CardDropModal: React.FC<CardDropModalProps> = ({
                 try {
                     const scanner = new Html5QrcodeScanner(
                         "qr-reader",
-                        { fps: 10, qrbox: { width: 250, height: 250 } },
+                        {
+                            fps: 10,
+                            qrbox: { width: 250, height: 250 },
+                            videoConstraints: {
+                                facingMode: "environment"
+                            }
+                        },
             /* verbose= */ false
                     );
 
@@ -135,26 +141,107 @@ export const CardDropModal: React.FC<CardDropModalProps> = ({
     };
 
     const handleScannedCode = async (code: string) => {
-        // Mocking the fetch for now, replace with actual API call
-        // Logic: 
-        // 1. Parse code to get identifier
-        // 2. Fetch profile from Supabase
+        // Check for self-scan
+        const isSelf =
+            code.includes(userProfile?.username) ||
+            code === userProfile?.username ||
+            cards.some(c => code.includes(c.vanity_url));
 
-        setScannedData({
-            username: "john_doe",
-            displayName: "John Doe",
-            jobTitle: "Software Engineer",
-            avatarUrl: null, // Replace with actual URL if available
-            cardId: "mock-card-id",
-            userId: "mock-user-id"
-        });
+        if (isSelf) {
+            toast({
+                title: "Cannot Save Own Profile",
+                description: "You can't save your profile to the folder, Check the spelling or rescan the qr code",
+                variant: "destructive"
+            });
+            setTimeout(() => {
+                if (mode === 'receive' && !scannedData) {
+                    startScanner();
+                }
+            }, 2000);
+            return;
+        }
+
+        try {
+            // Parse the scanned code to extract username or vanity URL
+            // Expected formats:
+            // - https://patra.app/username
+            // - https://patra.app/u/username
+            // - username (direct input)
+            let identifier = code.trim();
+
+            // Extract username from URL if it's a full URL
+            if (identifier.includes('patra.app/')) {
+                const urlParts = identifier.split('patra.app/');
+                identifier = urlParts[1]?.split('?')[0]?.replace('u/', '') || identifier;
+            }
+
+            // Fetch the profile from Supabase
+            const { data: profileData, error: profileError } = await supabase
+                .from('profiles')
+                .select('id, user_id, username, display_name, job_title, avatar_url')
+                .eq('username', identifier)
+                .single();
+
+            if (profileError || !profileData) {
+                toast({
+                    title: "Profile Not Found",
+                    description: "Could not find a profile with that username. Please check and try again.",
+                    variant: "destructive"
+                });
+                setTimeout(() => {
+                    if (mode === 'receive' && !scannedData) {
+                        startScanner();
+                    }
+                }, 2000);
+                return;
+            }
+
+            // Check if already saved
+            const { data: existingSave } = await supabase
+                .from('saved_profiles')
+                .select('id')
+                .eq('user_id', userProfile.user_id)
+                .eq('saved_user_id', profileData.user_id)
+                .single();
+
+            if (existingSave) {
+                toast({
+                    title: "Already Saved",
+                    description: `You already have ${profileData.display_name} in your saved profiles.`,
+                });
+                setTimeout(() => {
+                    if (mode === 'receive' && !scannedData) {
+                        startScanner();
+                    }
+                }, 2000);
+                return;
+            }
+
+            setScannedData({
+                username: profileData.username,
+                displayName: profileData.display_name,
+                jobTitle: profileData.job_title || 'Professional',
+                avatarUrl: profileData.avatar_url,
+                userId: profileData.user_id
+            });
+        } catch (error: any) {
+            console.error('Error fetching profile:', error);
+            toast({
+                title: "Error",
+                description: "Failed to load profile. Please try again.",
+                variant: "destructive"
+            });
+            setTimeout(() => {
+                if (mode === 'receive' && !scannedData) {
+                    startScanner();
+                }
+            }, 2000);
+        }
     };
 
     const handleManualSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!manualEntry.trim()) return;
-
-        // Simulate finding a user
         handleScannedCode(manualEntry);
     };
 
@@ -163,15 +250,48 @@ export const CardDropModal: React.FC<CardDropModalProps> = ({
 
         setIsSaving(true);
 
-        // Simulate API call to save profile
-        setTimeout(() => {
+        try {
+            // Save to saved_profiles table
+            const { error: saveError } = await supabase
+                .from('saved_profiles')
+                .insert({
+                    user_id: userProfile.user_id,
+                    saved_user_id: scannedData.userId,
+                    saved_at: new Date().toISOString()
+                });
+
+            if (saveError) throw saveError;
+
+            // Create profile_access record (bidirectional access)
+            const { error: accessError } = await supabase
+                .from('profile_access')
+                .insert({
+                    owner_user_id: scannedData.userId,
+                    viewer_user_id: userProfile.user_id,
+                    sharing_method: 'qr_scan',
+                    shared_at: new Date().toISOString()
+                });
+
+            if (accessError) {
+                console.warn('Access record creation failed:', accessError);
+                // Don't fail the whole operation if access record fails
+            }
+
             setIsSaving(false);
             setSaveSuccess(true);
             toast({
                 title: "Profile Saved!",
                 description: `You have successfully connected with ${scannedData.displayName}.`,
             });
-        }, 1500);
+        } catch (error: any) {
+            console.error('Error saving profile:', error);
+            setIsSaving(false);
+            toast({
+                title: "Error",
+                description: "Failed to save profile. Please try again.",
+                variant: "destructive"
+            });
+        }
     };
 
     const selectedCard = cards.find(c => c.id === selectedCardId);
@@ -279,8 +399,8 @@ export const CardDropModal: React.FC<CardDropModalProps> = ({
                                 </TabsContent>
 
                                 <TabsContent value="receive" className="space-y-4">
-                                    <div className="relative overflow-hidden rounded-xl bg-black aspect-square flex items-center justify-center">
-                                        <div id="qr-reader" className="w-full h-full"></div>
+                                    <div className="relative overflow-hidden rounded-xl bg-black aspect-square flex items-center justify-center shadow-inner">
+                                        <div id="qr-reader" className="w-full h-full object-cover"></div>
 
                                         {!isScanning && !scanError && (
                                             <div className="absolute inset-0 flex items-center justify-center text-white/50">
@@ -289,58 +409,34 @@ export const CardDropModal: React.FC<CardDropModalProps> = ({
                                         )}
 
                                         {scanError && (
-                                            <div className="absolute inset-0 flex flex-col items-center justify-center text-white p-4 text-center">
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center text-white p-4 text-center bg-black/80">
                                                 <Camera className="w-12 h-12 mb-2 opacity-50" />
-                                                <p className="text-sm">{scanError}</p>
+                                                <p className="text-sm mb-4">{scanError}</p>
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
-                                                    className="mt-4 bg-white/10 border-white/20 text-white hover:bg-white/20"
+                                                    className="bg-white/10 border-white/20 text-white hover:bg-white/20"
                                                     onClick={startScanner}
                                                 >
                                                     Retry Camera
                                                 </Button>
                                             </div>
                                         )}
-
-                                        {/* Scanning Overlay Frame */}
-                                        {isScanning && (
-                                            <div className="absolute inset-0 pointer-events-none">
-                                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 border-2 border-primary/50 rounded-lg">
-                                                    <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-primary"></div>
-                                                    <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-primary"></div>
-                                                    <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-primary"></div>
-                                                    <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-primary"></div>
-                                                </div>
-                                                <motion.div
-                                                    className="absolute top-1/2 left-1/2 w-64 h-0.5 bg-primary shadow-[0_0_10px_rgba(59,130,246,0.8)]"
-                                                    initial={{ y: -128, x: -128, opacity: 0.5 }}
-                                                    animate={{ y: 128 }}
-                                                    transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
-                                                />
-                                            </div>
-                                        )}
                                     </div>
 
-                                    <div className="relative">
-                                        <div className="absolute inset-0 flex items-center">
-                                            <span className="w-full border-t" />
-                                        </div>
-                                        <div className="relative flex justify-center text-xs uppercase">
-                                            <span className="bg-card px-2 text-muted-foreground">Or enter manually</span>
-                                        </div>
+                                    <div className="pt-2">
+                                        <form onSubmit={handleManualSubmit} className="flex gap-2">
+                                            <Input
+                                                placeholder="Enter username or code manually"
+                                                value={manualEntry}
+                                                onChange={(e) => setManualEntry(e.target.value)}
+                                                className="bg-muted/50"
+                                            />
+                                            <Button type="submit" disabled={!manualEntry.trim()}>
+                                                Connect
+                                            </Button>
+                                        </form>
                                     </div>
-
-                                    <form onSubmit={handleManualSubmit} className="flex gap-2">
-                                        <Input
-                                            placeholder="Enter username or code"
-                                            value={manualEntry}
-                                            onChange={(e) => setManualEntry(e.target.value)}
-                                        />
-                                        <Button type="submit" disabled={!manualEntry.trim()}>
-                                            Connect
-                                        </Button>
-                                    </form>
                                 </TabsContent>
                             </Tabs>
                         ) : (

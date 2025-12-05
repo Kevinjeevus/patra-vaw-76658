@@ -30,6 +30,7 @@ import Admin from "./pages/Admin";
 import { Feedback } from "./pages/Feedback";
 import { ProfileCollection } from "./pages/ProfileCollection";
 import { ProfileView } from "./pages/ProfileView";
+import { AccessManagement } from "./pages/AccessManagement";
 // import PrintCard from "./pages/Printcard";
 
 const queryClient = new QueryClient();
@@ -177,6 +178,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <ProfileView />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/access"
+              element={
+                <ProtectedRoute>
+                  <AccessManagement />
                 </ProtectedRoute>
               }
             />
