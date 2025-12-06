@@ -14,11 +14,15 @@ export default defineConfig({
         },
     },
     build: {
-        outDir: 'dist-sdk',
+        outDir: 'dist',
+        emptyOutDir: false, // Don't clear dist, as main build does that
         lib: {
             entry: path.resolve(__dirname, 'src/sdk/main.tsx'),
             name: 'PatraSDK',
-            fileName: (format) => `patra-sdk.${format}.js`,
+            fileName: (format) => {
+                if (format === 'es') return 'patra-sdk.js';
+                return `patra-sdk.${format}.js`;
+            },
             formats: ['umd', 'es']
         },
         rollupOptions: {
