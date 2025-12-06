@@ -37,7 +37,10 @@ class PatraCard extends HTMLElement {
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZmcHFoZ2l1Y29xam1reWVldnFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3MjY3NjcsImV4cCI6MjA3NDMwMjc2N30.9Vb7U2X0nT1dG8PP0x9LtGy3iPEkYeVMhEyvB6ZqQ6Q";
 
     try {
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/get-card?vanity_url=${username}`, {
+      const url = `${SUPABASE_URL}/functions/v1/get-card?vanity_url=${username}`;
+      console.log('[Patra SDK] Fetching:', url);
+
+      const response = await fetch(url, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -45,28 +48,19 @@ class PatraCard extends HTMLElement {
         }
       });
 
-      if (!response.ok) return null;
+      console.log('[Patra SDK] Response Status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[Patra SDK] Fetch failed:', response.status, errorText);
+        return null;
+      }
+
       const data = await response.json();
+      console.log('[Patra SDK] Data received:', data);
       
-      // Transform API response to CardData
-      const content = data.card_data || data; // Handle different response structures
+      const content = data.card_data || data;
       
-      // If the edge function returns the raw DB row (which it seems to do based on my previous analysis)
-      // We need to map it correctly.
-      // Let's assume the edge function returns { id, vanity_url, content_json, profiles: {...} }
-      
-      // Actually, let's use the same logic as EmbedCard.tsx for robustness
-      // But we can't use the supabase client here easily without bundling it all.
-      // So we rely on the Edge Function returning a usable JSON.
-      
-      // If the Edge Function returns the formatted response (which we saw in ApiDocs it might not),
-      // we might need to do some mapping.
-      
-      // Let's assume the standard structure we saw in EmbedCard.tsx
-      // But since we are fetching from the Edge Function, let's hope it returns the processed data.
-      // If not, we might need to adjust.
-      
-      // For now, let's map what we likely get.
       return {
           fullName: content.fullName || content.name || 'User',
           jobTitle: content.jobTitle || '',
@@ -80,7 +74,7 @@ class PatraCard extends HTMLElement {
           bannerValue: content.bannerValue
       };
     } catch (err) {
-      console.error('Patra SDK: Failed to fetch card', err);
+      console.error('[Patra SDK] Error:', err);
       return null;
     }
   }
