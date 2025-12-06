@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { 
-  ArrowLeft, 
+import {
+  ArrowLeft,
   Menu,
   BookOpen,
   Rocket,
@@ -82,10 +82,10 @@ interface DocsLayoutProps {
   onSectionChange?: (sectionId: string) => void;
 }
 
-export const DocsLayout: React.FC<DocsLayoutProps> = ({ 
-  children, 
+export const DocsLayout: React.FC<DocsLayoutProps> = ({
+  children,
   activeSection,
-  onSectionChange 
+  onSectionChange
 }) => {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -102,11 +102,10 @@ export const DocsLayout: React.FC<DocsLayoutProps> = ({
                   onSectionChange?.(section.id);
                   setOpen(false);
                 }}
-                className={`w-full flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-colors ${
-                  activeSection === section.id
+                className={`w-full flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-colors ${activeSection === section.id
                     ? 'bg-primary text-primary-foreground'
                     : 'hover:bg-muted'
-                }`}
+                  }`}
               >
                 {section.icon}
                 {section.title}
@@ -120,11 +119,10 @@ export const DocsLayout: React.FC<DocsLayoutProps> = ({
                         onSectionChange?.(sub.id);
                         setOpen(false);
                       }}
-                      className={`w-full text-left px-4 py-1.5 text-xs rounded-lg transition-colors ${
-                        activeSection === sub.id
+                      className={`w-full text-left px-4 py-1.5 text-xs rounded-lg transition-colors ${activeSection === sub.id
                           ? 'bg-primary/10 text-primary font-medium'
                           : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                      }`}
+                        }`}
                     >
                       {sub.title}
                     </button>
@@ -158,7 +156,9 @@ export const DocsLayout: React.FC<DocsLayoutProps> = ({
               </SheetContent>
             </Sheet>
             <div className="flex-1">
-              <h1 className="text-2xl font-bold">Patra Documentation</h1>
+              <h1 className="text-2xl font-bold text-foreground">
+                <span className="text-muted-foreground">P</span>atra Documentation
+              </h1>
               <p className="text-sm text-muted-foreground">Complete guide to using Patra</p>
             </div>
             <Button

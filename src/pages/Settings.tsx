@@ -141,6 +141,11 @@ export const Settings: React.FC = () => {
             <h1 className="text-xl font-semibold">Settings</h1>
           </div>
           <div className="flex items-center gap-2">
+            <div className="mr-4 hidden md:block">
+              <div className="text-xl font-bold text-foreground">
+                <span className="text-muted-foreground">P</span>atra
+              </div>
+            </div>
             <Button variant="ghost" onClick={handleSignOut} className="text-destructive hover:text-destructive hover:bg-destructive/10">
               <LogOut className="w-4 h-4 mr-2" />
               Sign Out
@@ -161,8 +166,8 @@ export const Settings: React.FC = () => {
                   key={item.id}
                   onClick={() => handleTabChange(item.id)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-200 group ${isActive
-                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
-                      : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+                    ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
+                    : 'hover:bg-muted text-muted-foreground hover:text-foreground'
                     }`}
                 >
                   <Icon className={`w-5 h-5 ${isActive ? 'text-primary-foreground' : 'text-muted-foreground group-hover:text-foreground'}`} />
@@ -189,8 +194,8 @@ export const Settings: React.FC = () => {
                     key={item.id}
                     onClick={() => handleTabChange(item.id)}
                     className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all ${isActive
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'bg-background border-border text-muted-foreground'
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-background border-border text-muted-foreground'
                       }`}
                   >
                     <Icon className="w-4 h-4" />

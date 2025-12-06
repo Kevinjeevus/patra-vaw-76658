@@ -31,6 +31,7 @@ interface SavedConnection {
   owner_name: string;
   owner_job_title: string;
   owner_avatar: string;
+  is_shared_with_them: boolean;
 }
 
 export const AccessManagement: React.FC = () => {
@@ -78,6 +79,14 @@ export const AccessManagement: React.FC = () => {
         (profilesData || []).map(p => [p.user_id, p])
       );
 
+      // Fetch people who have saved ME (to check mutual status)
+      const { data: sharedWithMe } = await supabase
+        .from('saved_profiles')
+        .select('user_id')
+        .eq('saved_user_id', user.id);
+
+      const sharedWithMeSet = new Set((sharedWithMe || []).map(s => s.user_id));
+
       // For each saved profile, fetch their active card
       const connectionsWithCards = await Promise.all(
         savedProfiles.map(async (profile) => {
@@ -106,7 +115,8 @@ export const AccessManagement: React.FC = () => {
             card_content: card.content_json,
             owner_name: profileData.display_name || 'User',
             owner_job_title: profileData.job_title || '',
-            owner_avatar: profileData.avatar_url || ''
+            owner_avatar: profileData.avatar_url || '',
+            is_shared_with_them: sharedWithMeSet.has(profile.saved_user_id)
           };
         })
       );
@@ -126,52 +136,74 @@ export const AccessManagement: React.FC = () => {
 
   const handleRemoveConnection = async (connectionId: string, savedUserId: string, ownerName: string) => {
     if (!user) return;
-    
+
     try {
-      // BIDIRECTIONAL REMOVAL: Remove both directions of the connection
-      // 1. Remove current user's save of the other user
-      const { error: deleteError1 } = await supabase
+      // Remove ONLY my save of them (I stop seeing them)
+      const { error: deleteError } = await supabase
         .from('saved_profiles')
         .delete()
         .eq('id', connectionId);
 
-      if (deleteError1) throw deleteError1;
+      if (deleteError) throw deleteError;
 
-      // 2. Remove the other user's save of current user (bidirectional)
-      const { error: deleteError2 } = await supabase
-        .from('saved_profiles')
-        .delete()
-        .eq('user_id', savedUserId)
-        .eq('saved_user_id', user.id);
-
-      // Don't fail if reverse delete fails (might not exist)
-      if (deleteError2) {
-        console.warn('Bidirectional delete failed:', deleteError2);
-      }
-
-      // 3. Remove profile_access records (both directions)
+      // Remove my access to them
       await supabase
         .from('profile_access')
         .delete()
         .eq('owner_user_id', savedUserId)
         .eq('viewer_user_id', user.id);
 
-      await supabase
-        .from('profile_access')
-        .delete()
-        .eq('owner_user_id', user.id)
-        .eq('viewer_user_id', savedUserId);
-
       setConnections(prev => prev.filter(c => c.id !== connectionId));
       toast({
         title: "Connection Removed",
-        description: `Connection with ${ownerName} has been removed for both parties.`,
+        description: `You have removed ${ownerName} from your connections.`,
       });
     } catch (error: any) {
       console.error('Error removing connection:', error);
       toast({
         title: "Error",
         description: "Failed to remove connection",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleRevokeAccess = async (savedUserId: string, ownerName: string) => {
+    if (!user) return;
+
+    try {
+      // Remove THEIR save of ME (They stop seeing me)
+      const { error: deleteError } = await supabase
+        .from('saved_profiles')
+        .delete()
+        .eq('user_id', savedUserId)
+        .eq('saved_user_id', user.id);
+
+      if (deleteError) throw deleteError;
+
+      // Remove their access to me
+      await supabase
+        .from('profile_access')
+        .delete()
+        .eq('owner_user_id', user.id)
+        .eq('viewer_user_id', savedUserId);
+
+      // Update local state to reflect they no longer see me
+      setConnections(prev => prev.map(c =>
+        c.saved_user_id === savedUserId
+          ? { ...c, is_shared_with_them: false }
+          : c
+      ));
+
+      toast({
+        title: "Access Revoked",
+        description: `You have revoked ${ownerName}'s access to your profile.`,
+      });
+    } catch (error: any) {
+      console.error('Error revoking access:', error);
+      toast({
+        title: "Error",
+        description: "Failed to revoke access",
         variant: "destructive"
       });
     }
@@ -212,6 +244,11 @@ export const AccessManagement: React.FC = () => {
                 <p className="text-sm text-muted-foreground hidden md:block">
                   Cards you've saved from others
                 </p>
+              </div>
+            </div>
+            <div className="hidden md:block">
+              <div className="text-xl font-bold text-foreground">
+                <span className="text-muted-foreground">P</span>atra
               </div>
             </div>
           </div>
@@ -268,13 +305,13 @@ export const AccessManagement: React.FC = () => {
                 >
                   {/* Digital Card Component */}
                   <div className="relative mb-4 transform hover:scale-105 transition-transform duration-300">
-                    <DigitalCard 
+                    <DigitalCard
                       cardData={cardData}
                       username={connection.card_vanity_url}
                       width={350}
                       height={220}
                     />
-                    
+
                     {/* Overlay for saved date */}
                     <div className="absolute -bottom-6 left-0 right-0 text-center">
                       <span className="text-xs text-muted-foreground">
@@ -283,39 +320,83 @@ export const AccessManagement: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Action Buttons */}
-                  <div className="flex gap-2 mt-6 w-full max-w-[350px]">
-                    <Button
-                      variant="default"
-                      className="flex-1"
-                      onClick={() => navigate(`/${connection.card_vanity_url}`)}
-                    >
-                      View Profile
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="outline" className="text-destructive border-destructive/20 hover:bg-destructive/10">
-                          <UserMinus className="w-4 h-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Remove {connection.owner_name}?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This will remove the connection for both you and {connection.owner_name}. Both parties will lose access to each other's cards. You can always reconnect by scanning their QR code again.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleRemoveConnection(connection.id, connection.saved_user_id, connection.owner_name)}
-                            className="bg-destructive hover:bg-destructive/90"
-                          >
-                            Remove
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                  {/* Action Buttons & Status Text */}
+                  <div className="flex flex-col gap-3 mt-6 w-full max-w-[350px]">
+                    {/* Status Message */}
+                    <div className="bg-muted/50 p-3 rounded-lg text-sm text-muted-foreground text-center">
+                      {connection.is_shared_with_them ? (
+                        <p>
+                          Your profile is shared to {connection.owner_name}, therefore you now have access to {connection.owner_name}'s profile.
+                          If you no longer want to share your profile with {connection.owner_name}, you can revoke access.
+                        </p>
+                      ) : (
+                        <p>
+                          {connection.owner_name}'s profile is saved.
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button
+                        variant="default"
+                        className="flex-1"
+                        onClick={() => navigate(`/${connection.card_vanity_url}`)}
+                      >
+                        View Profile
+                      </Button>
+
+                      {connection.is_shared_with_them && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="outline" className="text-orange-600 border-orange-200 hover:bg-orange-50">
+                              Revoke Access
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Revoke access for {connection.owner_name}?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will stop sharing your profile with {connection.owner_name}. They will no longer see your card in their connections. You will still retain access to their profile.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleRevokeAccess(connection.saved_user_id, connection.owner_name)}
+                                className="bg-orange-600 hover:bg-orange-700"
+                              >
+                                Revoke Access
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="outline" className="text-destructive border-destructive/20 hover:bg-destructive/10" title="Remove from my connections">
+                            <UserMinus className="w-4 h-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Remove {connection.owner_name}?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will remove {connection.owner_name} from your connections list. You will lose access to their card.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleRemoveConnection(connection.id, connection.saved_user_id, connection.owner_name)}
+                              className="bg-destructive hover:bg-destructive/90"
+                            >
+                              Remove
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </div>
                 </motion.div>
               );
