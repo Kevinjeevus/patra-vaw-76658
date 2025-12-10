@@ -289,6 +289,13 @@ export const PublicProfile: React.FC = () => {
           .eq('owner_user_id', user.id)
           .eq('viewer_user_id', ownerUserId);
 
+        // Log the removal
+        await supabase.from('access_logs').insert({
+          actor_id: user.id,
+          target_id: ownerUserId,
+          action_type: 'removed_access'
+        });
+
         setIsSaved(false);
         toast({
           title: "Connection Removed",
@@ -345,6 +352,13 @@ export const PublicProfile: React.FC = () => {
             shared_at: new Date().toISOString()
           });
         }
+
+        // Log the save
+        await supabase.from('access_logs').insert({
+          actor_id: user.id,
+          target_id: ownerUserId,
+          action_type: 'saved_profile'
+        });
 
         setIsSaved(true);
         toast({

@@ -19,6 +19,7 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { DigitalCard, CardData } from '@/components/card/DigitalCard';
+import { LogViewer } from '@/components/dashboard/LogViewer';
 
 interface SavedConnection {
   id: string;
@@ -153,6 +154,13 @@ export const AccessManagement: React.FC = () => {
         .eq('owner_user_id', savedUserId)
         .eq('viewer_user_id', user.id);
 
+      // Log the removal
+      await supabase.from('access_logs').insert({
+        actor_id: user.id,
+        target_id: savedUserId,
+        action_type: 'removed_access'
+      });
+
       setConnections(prev => prev.filter(c => c.id !== connectionId));
       toast({
         title: "Connection Removed",
@@ -187,6 +195,13 @@ export const AccessManagement: React.FC = () => {
         .delete()
         .eq('owner_user_id', user.id)
         .eq('viewer_user_id', savedUserId);
+
+      // Log the revocation
+      await supabase.from('access_logs').insert({
+        actor_id: user.id,
+        target_id: savedUserId,
+        action_type: 'revoked_access'
+      });
 
       // Update local state to reflect they no longer see me
       setConnections(prev => prev.map(c =>
@@ -236,6 +251,7 @@ export const AccessManagement: React.FC = () => {
               <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')} className="rounded-full hover:bg-muted">
                 <ArrowLeft className="w-5 h-5" />
               </Button>
+              <LogViewer />
               <div>
                 <h1 className="text-2xl font-bold flex items-center gap-2">
                   <Shield className="w-6 h-6 text-primary" />
