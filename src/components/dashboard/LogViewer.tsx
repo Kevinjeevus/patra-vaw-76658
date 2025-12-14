@@ -159,9 +159,27 @@ export const LogViewer: React.FC = () => {
                                 const otherPerson = isActor ? log.target : log.actor;
 
                                 return (
-                                    <div key={log.id} className="flex gap-3 items-start p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer" onClick={() => {
-                                        // Navigate to dashboard access for now as it lists connections
-                                        navigate('/dashboard/access');
+                                    <div key={log.id} className="flex gap-3 items-start p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer" onClick={async () => {
+                                        const isActor = user?.id === log.actor_id;
+                                        const otherPersonId = isActor ? log.target_id : log.actor_id;
+                                        
+                                        try {
+                                            const { data } = await supabase
+                                                .from('digital_cards')
+                                                .select('vanity_url')
+                                                .eq('owner_user_id', otherPersonId)
+                                                .eq('is_active', true)
+                                                .limit(1)
+                                                .maybeSingle();
+                                                
+                                            if (data?.vanity_url) {
+                                                navigate(`/${data.vanity_url}`);
+                                            } else {
+                                                navigate('/dashboard/access');
+                                            }
+                                        } catch (e) {
+                                            navigate('/dashboard/access');
+                                        }
                                     }}>
                                         <Avatar className="h-10 w-10 border">
                                             <AvatarImage src={otherPerson?.avatar_url} />
