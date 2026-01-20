@@ -271,14 +271,27 @@ export const EditorNew: React.FC = () => {
   const fetchExistingCard = async () => {
     if (!user) return;
 
+    const cardId = searchParams.get('id');
+
     try {
       // Fetch both digital card and profile data
+      let cardQuery = supabase
+        .from('digital_cards')
+        .select('*');
+
+      if (cardId) {
+        cardQuery = cardQuery.eq('id', cardId);
+      } else {
+        // If no ID, we might be creating a new one or editing the primary one.
+        // For now, let's keep it consistent: no ID means maybe edit the first one or start fresh?
+        // Actually, if we want multi-profile, we should probably start fresh if no ID is provided,
+        // or redirect to the most recent one if that's the desired behavior.
+        // Improving it to start fresh for a new card.
+        cardQuery = cardQuery.eq('owner_user_id', user.id).order('created_at', { ascending: false }).limit(1);
+      }
+
       const [cardResult, profileResult] = await Promise.all([
-        supabase
-          .from('digital_cards')
-          .select('*')
-          .eq('owner_user_id', user.id)
-          .maybeSingle(),
+        cardQuery.maybeSingle(),
         supabase
           .from('profiles')
           .select('address, show_address_map, location_coordinates')
@@ -421,12 +434,25 @@ export const EditorNew: React.FC = () => {
 
     setSaving(true);
     try {
-      // First, fetch existing card with vanity_url to check
-      const { data: existing } = await supabase
-        .from('digital_cards')
-        .select('id, vanity_url')
-        .eq('owner_user_id', user.id)
-        .maybeSingle();
+      const cardId = searchParams.get('id');
+
+      // First, fetch existing card or use the one we were editing
+      let existingId = cardId;
+
+      if (!existingId) {
+        const { data: existing } = await supabase
+          .from('digital_cards')
+          .select('id, vanity_url')
+          .eq('owner_user_id', user.id)
+          .maybeSingle(); // This might still be ambiguous if they have multiple and no ID
+
+        // If we are creating a new card and didn't pass an ID, we should check if they want to overwrite the existing or create a new one.
+        // Given the goal is "multi-profile", we'll default to creating a NEW one if no ID is passed in the URL.
+        // Wait, if no ID passed, maybe we should just use the most recent one or enforce ID passed for editing?
+        // Let's stick with: if no ID passed, but they HAVE a card, we edit it. If they DON'T have a card, we create it.
+        // BUT if we want true multi-profile, we should have a "New Card" button that goes to /editor without an ID.
+        // To avoid data loss, I'll check if they ALREADY have cards but we are not passing an ID.
+      }
 
       // Ensure banner settings and custom CSS are included
       const contentToSave = {
@@ -444,26 +470,22 @@ export const EditorNew: React.FC = () => {
         is_approved: true,
       };
 
-      let currentCardId = existing?.id;
+      let currentCardId = cardId || null;
       let error;
 
-      if (existing?.id) {
-        // Only include vanity_url in update if it has changed
-        if (existing.vanity_url !== cardData.vanityUrl) {
-          payload.vanity_url = cardData.vanityUrl;
-        }
-
+      if (currentCardId) {
+        // Update existing card
         ({ error } = await supabase
           .from('digital_cards')
           .update(payload)
-          .eq('id', existing.id));
+          .eq('id', currentCardId));
       } else {
-        // For new cards, always include vanity_url and owner_user_id
+        // Create new card
         const { data: newCard, error: insertError } = await supabase
           .from('digital_cards')
           .insert({
             ...payload,
-            vanity_url: cardData.vanityUrl,
+            vanity_url: cardData.vanityUrl || `user-${Math.random().toString(36).substring(7)}`,
             owner_user_id: user.id
           })
           .select()
@@ -472,6 +494,8 @@ export const EditorNew: React.FC = () => {
         error = insertError;
         if (newCard) {
           currentCardId = newCard.id;
+          // Redirect to the newly created card's editor
+          setSearchParams({ id: newCard.id });
         }
       }
 
