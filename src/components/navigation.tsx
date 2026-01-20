@@ -76,9 +76,9 @@ export const Navigation: React.FC = () => {
             <a href="#templates" className="text-foreground-muted hover:text-foreground transition-colors">
               Templates
             </a>
-            <a href="#pricing" className="text-foreground-muted hover:text-foreground transition-colors">
+            <Link to="/pricing" className="text-foreground-muted hover:text-foreground transition-colors">
               Pricing
-            </a>
+            </Link>
             <a href="#about" className="text-foreground-muted hover:text-foreground transition-colors">
               About
             </a>
@@ -113,9 +113,9 @@ export const Navigation: React.FC = () => {
               <a href="#templates" className="text-foreground-muted hover:text-foreground transition-colors px-4 py-2">
                 Templates
               </a>
-              <a href="#pricing" className="text-foreground-muted hover:text-foreground transition-colors px-4 py-2">
+              <Link to="/pricing" className="text-foreground-muted hover:text-foreground transition-colors px-4 py-2">
                 Pricing
-              </a>
+              </Link>
               <a href="#about" className="text-foreground-muted hover:text-foreground transition-colors px-4 py-2">
                 About
               </a>

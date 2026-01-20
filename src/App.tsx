@@ -32,6 +32,7 @@ import { ProfileCollection } from "./pages/ProfileCollection";
 import { ProfileView } from "./pages/ProfileView";
 import { AccessManagement } from "./pages/AccessManagement";
 import { EmbedCard } from "./pages/EmbedCard";
+import Pricing from "./pages/Pricing";
 // import PrintCard from "./pages/Printcard";
 
 const queryClient = new QueryClient();
@@ -55,6 +56,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<LandingPageWrapper />} />
             <Route path="/yourself-ai" element={<YourselfAI />} />
+            <Route path="/pricing" element={<Pricing />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
