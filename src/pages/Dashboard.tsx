@@ -23,6 +23,7 @@ import {
   Copy,
   Check,
   QrCode,
+  Camera,
   LayoutDashboard,
   Users as UsersIcon,
   History,
