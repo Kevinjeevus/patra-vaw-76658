@@ -27,19 +27,26 @@ export const Navigation: React.FC = () => {
   const isLandingPage = location.pathname === '/';
 
   const handleBackClick = () => {
-    // Check if there's history to go back to (length > 2 because first page is 1, and we likely came from somewhere)
-    // However, window.history.length can be unreliable. 
-    // Let's check if we have a state or just try navigate(-1).
     if (window.history.length > 2) {
       navigate(-1);
+    } else if (user) {
+      // Fallback only if we have a user, and wait for accountType if possible
+      if (accountType === 'company') navigate('/dashboard');
+      else if (accountType === 'individual') navigate('/editor');
+      else {
+        // If accountType not loaded yet, just go to root or wait
+        navigate('/');
+      }
     } else {
-      navigate(accountType === 'company' ? '/dashboard' : '/editor');
+      navigate('/');
     }
   };
 
   const handleLogoClick = () => {
     if (user) {
-      navigate(accountType === 'company' ? '/dashboard' : '/editor');
+      if (accountType === 'company') navigate('/dashboard');
+      else if (accountType === 'individual') navigate('/editor');
+      else navigate('/');
     } else {
       navigate('/');
     }

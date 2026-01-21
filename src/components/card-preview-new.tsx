@@ -197,7 +197,8 @@ export const CardPreviewNew: React.FC<CardPreviewNewProps> = ({ cardData, onOpen
   // Truncate about text
   const aboutText = cardData.about || '';
   const shouldTruncate = aboutText.length > 250;
-  const displayAbout = showFullAbout || !shouldTruncate
+  const displayAbout = (showFullAbout || !shouldTruncate)
+    ? aboutText
     : aboutText.slice(0, 250) + '...';
 
 return (

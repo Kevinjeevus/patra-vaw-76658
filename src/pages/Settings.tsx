@@ -228,10 +228,10 @@ export const Settings: React.FC = () => {
   };
 
   const menuItems = [
-    { id: 'account', label: 'Account', icon: User, description: 'Profile details & personal info' },
+    { id: 'account', label: profile?.account_type === 'company' ? 'Company Info' : 'Account', icon: profile?.account_type === 'company' ? Building2 : User, description: profile?.account_type === 'company' ? 'Organization details' : 'Profile details & personal info' },
     { id: 'security', label: 'Security', icon: Shield, description: 'Password & authentication' },
     { id: 'notifications', label: 'Notifications', icon: Bell, description: 'Email & push preferences' },
-    { id: 'billing', label: 'Billing', icon: CreditCard, description: 'Plans & payment methods' },
+    ...(profile?.account_type !== 'company' ? [{ id: 'billing', label: 'Billing', icon: CreditCard, description: 'Plans & payment methods' }] : []),
     { id: 'developer', label: 'Developer', icon: Code, description: 'API keys & webhooks' },
   ];
 
@@ -241,7 +241,10 @@ export const Settings: React.FC = () => {
       <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/editor')}>
+            <Button variant="ghost" size="icon" onClick={() => {
+              if (window.history.length > 2) navigate(-1);
+              else navigate(profile?.account_type === 'company' ? '/dashboard' : '/editor');
+            }}>
               <ChevronRight className="w-5 h-5 rotate-180" />
             </Button>
             <h1 className="text-xl font-semibold">Settings</h1>
@@ -318,53 +321,66 @@ export const Settings: React.FC = () => {
               <div className="space-y-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Profile Information</CardTitle>
-                    <CardDescription>Update your photo and personal details here.</CardDescription>
+                    <CardTitle>{profile?.account_type === 'company' ? 'Company Details' : 'Profile Information'}</CardTitle>
+                    <CardDescription>
+                      {profile?.account_type === 'company'
+                        ? 'Details of your registered organization.'
+                        : 'Update your photo and personal details here.'}
+                    </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                    <div className="flex items-center gap-6">
-                      <Avatar className="h-24 w-24 border-4 border-background shadow-xl">
-                        <AvatarImage src={profile?.avatar_url} />
-                        <AvatarFallback className="text-2xl">{profile?.display_name?.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <div className="space-y-2">
-                        <div className="relative">
-                          <input
-                            type="file"
-                            id="avatar-upload-settings"
-                            accept="image/*"
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                            onChange={handleAvatarUpload}
-                            disabled={uploading}
-                          />
-                          <Button variant="outline" size="sm" disabled={uploading}>
-                            {uploading ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <Camera className="w-3 h-3 mr-2" />}
-                            Change Avatar
-                          </Button>
+                    {profile?.account_type !== 'company' && (
+                      <div className="flex items-center gap-6">
+                        <Avatar className="h-24 w-24 border-4 border-background shadow-xl">
+                          <AvatarImage src={profile?.avatar_url} />
+                          <AvatarFallback className="text-2xl">{profile?.display_name?.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div className="space-y-2">
+                          <div className="relative">
+                            <input
+                              type="file"
+                              id="avatar-upload-settings"
+                              accept="image/*"
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                              onChange={handleAvatarUpload}
+                              disabled={uploading}
+                            />
+                            <Button variant="outline" size="sm" disabled={uploading}>
+                              {uploading ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <Camera className="w-3 h-3 mr-2" />}
+                              Change Avatar
+                            </Button>
+                          </div>
+                          <p className="text-xs text-muted-foreground">JPG, GIF or PNG. Max size of 800K</p>
                         </div>
-                        <p className="text-xs text-muted-foreground">JPG, GIF or PNG. Max size of 800K</p>
                       </div>
-                    </div>
+                    )}
                     <div className="grid gap-4 md:grid-cols-2">
                       <div className="space-y-2">
-                        <Label>Display Name</Label>
+                        <Label>{profile?.account_type === 'company' ? 'Organization Name' : 'Display Name'}</Label>
                         <Input
-                          value={fullName}
+                          value={profile?.account_type === 'company' ? profile?.company_name : fullName}
+                          disabled={profile?.account_type === 'company'}
                           onChange={(e) => setFullName(e.target.value)}
-                          placeholder="Your name"
+                          placeholder={profile?.account_type === 'company' ? 'Company Name' : 'Your name'}
+                          className={profile?.account_type === 'company' ? 'bg-muted font-bold' : ''}
                         />
+                        {profile?.account_type === 'company' && (
+                          <p className="text-[10px] text-muted-foreground">Company name can only be changed via support.</p>
+                        )}
                       </div>
                       <div className="space-y-2">
-                        <Label>Email</Label>
+                        <Label>Login Email</Label>
                         <Input value={user?.email} disabled className="bg-muted" />
                       </div>
                     </div>
                   </CardContent>
-                  <CardFooter className="border-t bg-muted/50 px-6 py-4">
-                    <Button onClick={handleUpdateProfile} disabled={loading}>
-                      {loading ? 'Saving...' : 'Save Changes'}
-                    </Button>
-                  </CardFooter>
+                  {profile?.account_type !== 'company' && (
+                    <CardFooter className="border-t bg-muted/50 px-6 py-4">
+                      <Button onClick={handleUpdateProfile} disabled={loading}>
+                        {loading ? 'Saving...' : 'Save Changes'}
+                      </Button>
+                    </CardFooter>
+                  )}
                 </Card>
 
                 <Card className="border-destructive/20">

@@ -139,6 +139,17 @@ export const EditorNew: React.FC = () => {
     mapUrl: '',
   });
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [accountType, setAccountType] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      const fetchType = async () => {
+        const { data } = await supabase.from('profiles').select('account_type').eq('user_id', user.id).single();
+        if (data) setAccountType(data.account_type);
+      };
+      fetchType();
+    }
+  }, [user]);
   const [showAIConsent, setShowAIConsent] = useState(false);
   const [aiEnabled, setAiEnabled] = useState(false);
   const [aiProfileExpanded, setAiProfileExpanded] = useState(false);
@@ -713,11 +724,28 @@ export const EditorNew: React.FC = () => {
       {/* Header */}
       <header className="border-b border-border bg-card sticky top-0 z-50 overflow-x-auto">
         <div className="px-4 h-16 flex items-center justify-between min-w-max">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <CreditCard className="w-5 h-5 text-primary-foreground" />
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full"
+              onClick={() => {
+                if (window.history.length > 2) navigate(-1);
+                else navigate(accountType === 'company' ? '/dashboard' : '/editor');
+              }}
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+
+            <div
+              className="flex items-center space-x-2 cursor-pointer group"
+              onClick={() => navigate(accountType === 'company' ? '/dashboard' : '/editor')}
+            >
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center group-hover:bg-primary/90 transition-colors">
+                <CreditCard className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <h1 className="text-xl font-bold group-hover:text-primary transition-colors hidden sm:block">Patra</h1>
             </div>
-            <h1 className="text-xl font-semibold hidden sm:block">Patra</h1>
             {isMobile && cardData.vanityUrl && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

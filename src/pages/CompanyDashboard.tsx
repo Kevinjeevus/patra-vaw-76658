@@ -253,21 +253,37 @@ export const CompanyDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50/50">
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white">
-              <ShieldCheck className="w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-slate-900">{profile?.company_name} Dashboard</h1>
-              <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">Corporate Control Panel</p>
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full"
+              onClick={() => {
+                if (window.history.length > 2) navigate(-1);
+                else navigate('/');
+              }}
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/dashboard')}>
+              <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-200">
+                <ShieldCheck className="w-6 h-6" />
+              </div>
+              <div className="hidden sm:block">
+                <h1 className="text-xl font-bold text-slate-900">{profile?.company_name || 'Company'} Dashboard</h1>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest leading-none">Corporate Control Panel</p>
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => navigate('/settings')}>
+            <Button variant="outline" size="sm" className="hidden sm:flex" onClick={() => navigate('/settings')}>
               <Settings className="w-4 h-4 mr-2" />
               Settings
+            </Button>
+            <Button variant="ghost" size="icon" className="sm:hidden" onClick={() => navigate('/settings')}>
+              <Settings className="w-5 h-5 text-slate-500" />
             </Button>
             <Button variant="ghost" size="icon" onClick={() => signOut()}>
               <LogOut className="w-5 h-5 text-slate-500" />
@@ -277,7 +293,7 @@ export const CompanyDashboard: React.FC = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8 max-w-7xl">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           <Card className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white border-none shadow-lg">
             <CardHeader className="pb-2">
               <CardTitle className="text-indigo-100 text-sm font-medium uppercase tracking-wider">Total Staff</CardTitle>
@@ -309,140 +325,150 @@ export const CompanyDashboard: React.FC = () => {
 
 
         <Tabs defaultValue="staff" className="space-y-6">
-          <TabsList className="bg-white border border-slate-200 p-1 rounded-xl shadow-sm">
-            <TabsTrigger value="staff" className="rounded-lg px-6">Staff Directory</TabsTrigger>
-            <TabsTrigger value="directors" className="rounded-lg px-6">Director ID Cards</TabsTrigger>
-            <TabsTrigger value="invites" className="rounded-lg px-6">Invite Links</TabsTrigger>
-            <TabsTrigger value="parameters" className="rounded-lg px-6">Data Collection</TabsTrigger>
-            <TabsTrigger value="display" className="rounded-lg px-6">ID Card Design</TabsTrigger>
-            <TabsTrigger value="branding" className="rounded-lg px-6">Branding</TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto pb-2 scrollbar-none">
+            <TabsList className="bg-white border border-slate-200 p-1 rounded-xl shadow-sm inline-flex min-w-max">
+              <TabsTrigger value="staff" className="rounded-lg px-6">Staff Directory</TabsTrigger>
+              <TabsTrigger value="directors" className="rounded-lg px-6">Director ID Cards</TabsTrigger>
+              <TabsTrigger value="invites" className="rounded-lg px-6">Invite Links</TabsTrigger>
+              <TabsTrigger value="parameters" className="rounded-lg px-6">Data Collection</TabsTrigger>
+              <TabsTrigger value="display" className="rounded-lg px-6">ID Card Design</TabsTrigger>
+              <TabsTrigger value="branding" className="rounded-lg px-6">Branding</TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="staff">
             <Card className="shadow-md border-none overflow-hidden">
-              <CardHeader className="bg-white border-b border-slate-100 flex flex-row items-center justify-between">
+              <CardHeader className="bg-white border-b border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                   <CardTitle>Employee Directory</CardTitle>
                   <CardDescription>Manage your staff, their designations, and access.</CardDescription>
                 </div>
-                <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Member Manually
-                </Button>
+                <div className="flex w-full sm:w-auto gap-2">
+                  <Button variant="outline" size="sm" onClick={() => fetchEmployees()} className="flex-1 sm:flex-initial">
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Refresh
+                  </Button>
+                  <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 flex-1 sm:flex-initial">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add
+                  </Button>
+                </div>
               </CardHeader>
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-slate-50/50">
-                    <TableHead>Employee</TableHead>
-                    <TableHead>Designation</TableHead>
-                    <TableHead>Joined Date</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {employees.map((emp) => (
-                    <TableRow key={emp.id} className="hover:bg-slate-50/50 transition-colors">
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 bg-slate-200 rounded-full flex items-center justify-center overflow-hidden">
-                            {emp.profiles?.avatar_url ? (
-                              <img src={emp.profiles.avatar_url} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              <Users className="w-5 h-5 text-slate-400" />
-                            )}
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-slate-50/50">
+                      <TableHead className="min-w-[200px]">Employee</TableHead>
+                      <TableHead className="min-w-[150px]">Designation</TableHead>
+                      <TableHead className="min-w-[150px]">Joined Date</TableHead>
+                      <TableHead className="min-w-[120px]">Status</TableHead>
+                      <TableHead className="text-right min-w-[150px]">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {employees.map((emp) => (
+                      <TableRow key={emp.id} className="hover:bg-slate-50/50 transition-colors">
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 bg-slate-200 rounded-full flex items-center justify-center overflow-hidden">
+                              {emp.profiles?.avatar_url ? (
+                                <img src={emp.profiles.avatar_url} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                <Users className="w-5 h-5 text-slate-400" />
+                              )}
+                            </div>
+                            <div>
+                              <div className="text-slate-900">{emp.profiles?.display_name || 'New User'}</div>
+                              <div className="text-xs text-slate-500">{emp.data_submitted?.email || 'No email provided'}</div>
+                            </div>
                           </div>
-                          <div>
-                            <div className="text-slate-900">{emp.profiles?.display_name || 'New User'}</div>
-                            <div className="text-xs text-slate-500">{emp.data_submitted?.email || 'No email provided'}</div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <span className="text-slate-600">{emp.designation || 'Not Assigned'}</span>
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400" onClick={() => setEditingDesignation({ id: emp.id, value: emp.designation || '' })}>
-                                <Edit3 className="w-3.5 h-3.5" />
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>Update Designation</DialogTitle>
-                                <DialogDescription>Assign a professional title for {emp.profiles?.display_name}.</DialogDescription>
-                              </DialogHeader>
-                              <Input
-                                value={editingDesignation?.value || ''}
-                                onChange={(e) => setEditingDesignation(prev => prev ? { ...prev, value: e.target.value } : null)}
-                                placeholder="e.g. Senior Software Engineer"
-                              />
-                              <DialogFooter>
-                                <Button onClick={handleUpdateDesignation}>Save Changes</Button>
-                              </DialogFooter>
-                            </DialogContent>
-                          </Dialog>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-slate-500 text-sm">
-                        {new Date(emp.joined_at).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        {emp.is_approved ? (
-                          <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none">Active</Badge>
-                        ) : emp.status === 'rejected' ? (
-                          <Badge className="bg-red-100 text-red-700 hover:bg-red-100 border-none">Rejected</Badge>
-                        ) : (
-                          <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-none animate-pulse">Pending</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {!emp.is_approved && emp.status !== 'rejected' ? (
-                          <div className="flex justify-end gap-2">
-                            <Button size="sm" variant="outline" className="text-green-600 border-green-200 hover:bg-green-50" onClick={() => handleApproveEmployee(emp.id, true)}>
-                              <UserCheck className="w-4 h-4 mr-1" /> Approve
-                            </Button>
-                            <Button size="sm" variant="outline" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => handleApproveEmployee(emp.id, false)}>
-                              <UserX className="w-4 h-4 mr-1" /> Reject
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="flex justify-end gap-2">
-                            {emp.profiles?.vanity_url ? (
-                              <Button size="sm" variant="ghost" className="text-indigo-600" onClick={() => window.open(`/${profile?.vanity_url}?userid=${emp.profiles.vanity_url}`, '_blank')}>
-                                <LinkIcon className="w-4 h-4 mr-1" /> View ID
-                              </Button>
-                            ) : (
-                              <span className="text-xs text-slate-400 italic mr-3">Pending Activation</span>
-                            )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <span className="text-slate-600">{emp.designation || 'Not Assigned'}</span>
                             <Dialog>
                               <DialogTrigger asChild>
-                                <Button size="sm" variant="ghost" className="text-slate-500">View Data</Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400" onClick={() => setEditingDesignation({ id: emp.id, value: emp.designation || '' })}>
+                                  <Edit3 className="w-3.5 h-3.5" />
+                                </Button>
                               </DialogTrigger>
                               <DialogContent>
                                 <DialogHeader>
-                                  <DialogTitle>Collected Data: {emp.profiles?.display_name}</DialogTitle>
+                                  <DialogTitle>Update Designation</DialogTitle>
+                                  <DialogDescription>Assign a professional title for {emp.profiles?.display_name}.</DialogDescription>
                                 </DialogHeader>
-                                <div className="space-y-4 py-4">
-                                  {Object.entries(emp.data_submitted || {}).map(([key, value]) => (
-                                    <div key={key} className="flex flex-col border-b border-slate-100 pb-2">
-                                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{key.replace('_', ' ')}</span>
-                                      <span className="text-slate-900">{String(value)}</span>
-                                    </div>
-                                  ))}
-                                  {Object.keys(emp.data_submitted || {}).length === 0 && (
-                                    <p className="text-center text-slate-500 italic">No data collected yet</p>
-                                  )}
-                                </div>
+                                <Input
+                                  value={editingDesignation?.value || ''}
+                                  onChange={(e) => setEditingDesignation(prev => prev ? { ...prev, value: e.target.value } : null)}
+                                  placeholder="e.g. Senior Software Engineer"
+                                />
+                                <DialogFooter>
+                                  <Button onClick={handleUpdateDesignation}>Save Changes</Button>
+                                </DialogFooter>
                               </DialogContent>
                             </Dialog>
                           </div>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                        </TableCell>
+                        <TableCell className="text-slate-500 text-sm">
+                          {new Date(emp.joined_at).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          {emp.is_approved ? (
+                            <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none">Active</Badge>
+                          ) : emp.status === 'rejected' ? (
+                            <Badge className="bg-red-100 text-red-700 hover:bg-red-100 border-none">Rejected</Badge>
+                          ) : (
+                            <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-none animate-pulse">Pending</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {!emp.is_approved && emp.status !== 'rejected' ? (
+                            <div className="flex justify-end gap-2">
+                              <Button size="sm" variant="outline" className="text-green-600 border-green-200 hover:bg-green-50" onClick={() => handleApproveEmployee(emp.id, true)}>
+                                <UserCheck className="w-4 h-4 mr-1" /> Approve
+                              </Button>
+                              <Button size="sm" variant="outline" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => handleApproveEmployee(emp.id, false)}>
+                                <UserX className="w-4 h-4 mr-1" /> Reject
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="flex justify-end gap-2">
+                              {emp.profiles?.vanity_url ? (
+                                <Button size="sm" variant="ghost" className="text-indigo-600" onClick={() => window.open(`/${profile?.vanity_url}?userid=${emp.profiles.vanity_url}`, '_blank')}>
+                                  <LinkIcon className="w-4 h-4 mr-1" /> View ID
+                                </Button>
+                              ) : (
+                                <span className="text-xs text-slate-400 italic mr-3">Pending Activation</span>
+                              )}
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button size="sm" variant="ghost" className="text-slate-500">View Data</Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>Collected Data: {emp.profiles?.display_name}</DialogTitle>
+                                  </DialogHeader>
+                                  <div className="space-y-4 py-4">
+                                    {Object.entries(emp.data_submitted || {}).map(([key, value]) => (
+                                      <div key={key} className="flex flex-col border-b border-slate-100 pb-2">
+                                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{key.replace('_', ' ')}</span>
+                                        <span className="text-slate-900">{String(value)}</span>
+                                      </div>
+                                    ))}
+                                    {Object.keys(emp.data_submitted || {}).length === 0 && (
+                                      <p className="text-center text-slate-500 italic">No data collected yet</p>
+                                    )}
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                            </div>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </Card>
           </TabsContent>
 
@@ -456,8 +482,8 @@ export const CompanyDashboard: React.FC = () => {
                 <Button
                   size="sm"
                   disabled={cards.length >= 2}
-                  className="bg-indigo-600 hover:bg-indigo-700"
-                  onClick={() => navigate('/editor')}
+                  className="bg-indigo-600 hover:bg-indigo-700 w-full sm:w-auto"
+                  onClick={() => navigate('/corporate-editor')}
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Create Director Card
@@ -477,7 +503,7 @@ export const CompanyDashboard: React.FC = () => {
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => navigate(`/editor?id=${card.id}`)}>
+                        <Button variant="ghost" size="icon" onClick={() => navigate(`/corporate-editor?id=${card.id}`)}>
                           <Edit3 className="w-4 h-4" />
                         </Button>
                         <Button variant="ghost" size="icon" onClick={() => window.open(`/${card.vanity_url}`, '_blank')}>
@@ -508,11 +534,11 @@ export const CompanyDashboard: React.FC = () => {
                 <div className="p-6 bg-slate-900 rounded-2xl text-white relative overflow-hidden">
                   <div className="relative z-10">
                     <Label className="text-slate-400 text-xs uppercase font-bold tracking-widest mb-4 block">Active Invite Link</Label>
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1 bg-white/10 backdrop-blur-md rounded-xl p-4 font-mono text-lg border border-white/10 select-all overflow-hidden text-ellipsis whitespace-nowrap">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                      <div className="flex-1 bg-white/10 backdrop-blur-md rounded-xl p-4 font-mono text-sm sm:text-lg border border-white/10 select-all overflow-hidden text-ellipsis break-all">
                         {currentInviteLink}
                       </div>
-                      <Button className="h-full py-4 bg-white text-slate-900 hover:bg-slate-100" onClick={() => {
+                      <Button className="h-12 sm:h-full py-4 bg-white text-slate-900 hover:bg-slate-100" onClick={() => {
                         navigator.clipboard.writeText(currentInviteLink);
                         toast({ title: "Copied!", description: "Invite link copied to clipboard" });
                       }}>

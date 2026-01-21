@@ -37,6 +37,7 @@ import { EmbedCard } from "./pages/EmbedCard";
 import Pricing from "./pages/Pricing";
 // import PrintCard from "./pages/Printcard";
 import { InvitePage } from "./pages/InvitePage";
+import { CorporateEditor } from "./pages/CorporateEditor";
 
 
 const queryClient = new QueryClient();
@@ -109,6 +110,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <EditorNew />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/corporate-editor"
+              element={
+                <ProtectedRoute>
+                  <CorporateEditor />
                 </ProtectedRoute>
               }
             />
