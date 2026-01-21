@@ -27,15 +27,13 @@ export const Navigation: React.FC = () => {
   const isLandingPage = location.pathname === '/';
 
   const handleBackClick = () => {
-    if (user) {
-      // Check if there's history to go back
-      if (window.history.length > 1) {
-        navigate(-1);
-      } else {
-        navigate(accountType === 'company' ? '/dashboard' : '/editor');
-      }
+    // Check if there's history to go back to (length > 2 because first page is 1, and we likely came from somewhere)
+    // However, window.history.length can be unreliable. 
+    // Let's check if we have a state or just try navigate(-1).
+    if (window.history.length > 2) {
+      navigate(-1);
     } else {
-      navigate('/auth');
+      navigate(accountType === 'company' ? '/dashboard' : '/editor');
     }
   };
 
@@ -51,34 +49,33 @@ export const Navigation: React.FC = () => {
     <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-glass-border">
       <div className="container mx-auto px-4 bg-slate-50">
         <div className="flex items-center justify-between h-16">
-          {/* Logo - Left aligned on landing, back button on other pages */}
-          {isLandingPage ? (
+          <div className="flex items-center gap-4">
+            {/* Back Button (only on non-landing pages) */}
+            {!isLandingPage && (
+              <button
+                onClick={handleBackClick}
+                className="flex items-center gap-2 text-foreground-muted hover:text-foreground transition-colors group"
+              >
+                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center group-hover:bg-slate-200 transition-colors">
+                  <ArrowLeft className="w-4 h-4" />
+                </div>
+                <span className="hidden sm:inline font-medium">Back</span>
+              </button>
+            )}
+
+            {/* Logo */}
             <div
-              className="flex items-center cursor-pointer"
+              className="flex items-center cursor-pointer group"
               onClick={handleLogoClick}
             >
-              <div className="text-2xl font-bold text-slate-900">
-                <span className="text-slate-600">P</span>atra
+              <div className="text-2xl font-bold text-slate-900 flex items-center gap-1">
+                <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center">
+                  <span className="text-white text-lg">P</span>
+                </div>
+                <span className="group-hover:text-slate-600 transition-colors">atra</span>
               </div>
             </div>
-          ) : (
-            <button
-              onClick={handleBackClick}
-              className="flex items-center gap-2 text-foreground-muted hover:text-foreground transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              <span className="hidden sm:inline">Back</span>
-            </button>
-          )}
-
-          {/* Center Logo (only on non-landing pages) */}
-          {!isLandingPage && (
-            <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center">
-              <div className="text-2xl font-bold text-slate-900">
-                <span className="text-slate-600">P</span>atra
-              </div>
-            </div>
-          )}
+          </div>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">

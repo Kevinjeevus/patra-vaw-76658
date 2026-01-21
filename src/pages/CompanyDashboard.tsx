@@ -119,6 +119,15 @@ export const CompanyDashboard: React.FC = () => {
         return null;
       }
 
+      if (data.account_type === 'company' && !data.invite_code) {
+        const newCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ invite_code: newCode })
+          .eq('id', data.id);
+        if (!updateError) data.invite_code = newCode;
+      }
+
       setProfile(data);
       setCompanyVanity(data.vanity_url || '');
 

@@ -352,8 +352,13 @@ export const OnboardingNew: React.FC = () => {
         avatar_url: finalAvatarUrl || null,
         bio: data.bio || null,
         job_title: data.job_title || null,
-        company_name: data.company || null,
+        company_name: data.company || data.company_name || null,
       };
+
+      // Generate invite code for company if not exists
+      if (data.accountType === 'company') {
+        updateData.invite_code = Math.random().toString(36).substring(2, 8).toUpperCase();
+      }
 
       const { error: profileError } = await supabase
         .from('profiles')
