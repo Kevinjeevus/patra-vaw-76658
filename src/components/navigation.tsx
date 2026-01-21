@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { HeroButton } from '@/components/ui/hero-button';
 import { Menu, X, ArrowLeft } from 'lucide-react';
 
@@ -9,6 +10,20 @@ export const Navigation: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const [accountType, setAccountType] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (user) {
+      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl('test'); // Just dummy to trigger some effect? No.
+
+      const fetchType = async () => {
+        const { data } = await supabase.from('profiles').select('account_type').eq('user_id', user.id).single();
+        if (data) setAccountType(data.account_type);
+      };
+      fetchType();
+    }
+  }, [user]);
+
   const isLandingPage = location.pathname === '/';
 
   const handleBackClick = () => {
@@ -17,7 +32,7 @@ export const Navigation: React.FC = () => {
       if (window.history.length > 1) {
         navigate(-1);
       } else {
-        navigate('/editor');
+        navigate(accountType === 'company' ? '/dashboard' : '/editor');
       }
     } else {
       navigate('/auth');
@@ -26,7 +41,7 @@ export const Navigation: React.FC = () => {
 
   const handleLogoClick = () => {
     if (user) {
-      navigate('/editor');
+      navigate(accountType === 'company' ? '/dashboard' : '/editor');
     } else {
       navigate('/');
     }

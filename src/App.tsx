@@ -1,3 +1,5 @@
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -42,9 +44,25 @@ const queryClient = new QueryClient();
 // Landing page wrapper to redirect logged-in users
 const LandingPageWrapper = () => {
   const { user, loading } = useAuth();
+  const [accountType, setAccountType] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      const fetchType = async () => {
+        const { data } = await supabase.from('profiles').select('account_type').eq('user_id', user.id).single();
+        if (data) setAccountType(data.account_type);
+      };
+      fetchType();
+    }
+  }, [user]);
 
   if (loading) return null;
-  if (user) return <Navigate to="/editor" replace />;
+  if (user) {
+    if (accountType === 'company') return <Navigate to="/dashboard" replace />;
+    if (accountType === 'individual') return <Navigate to="/editor" replace />;
+    // If accountType is not yet loaded, wait
+    if (!accountType) return null;
+  }
   return <Index />;
 };
 

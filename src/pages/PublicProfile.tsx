@@ -64,6 +64,7 @@ interface CardData {
   cardImageUrl?: string;
   corporateDesignation?: string;
   corporateCompany?: string;
+  displayParameters?: string[];
 }
 
 
@@ -129,16 +130,19 @@ export const PublicProfile: React.FC = () => {
           const { data: membership } = await supabase
             .from('invited_employees')
             .select(`
-              designation,
-              company_profile_id,
-              profiles:company_profile_id (
-                company_name,
-                vanity_url
-              )
-            `)
+            designation,
+            company_profile_id,
+            profiles:company_profile_id (
+              company_name,
+              vanity_url,
+              display_parameters
+            )
+          `)
             .eq('employee_user_id', card.owner_user_id)
             .eq('is_approved', true)
             .maybeSingle();
+
+          let displayParams: string[] | undefined;
 
           if (membership) {
             const companyInfo = Array.isArray(membership.profiles) ? membership.profiles[0] : membership.profiles;
@@ -148,12 +152,14 @@ export const PublicProfile: React.FC = () => {
                 designation: membership.designation || '',
                 company_name: companyInfo?.company_name || ''
               });
+              displayParams = Array.isArray(companyInfo?.display_parameters) ? companyInfo.display_parameters as string[] : undefined;
             } else if (!userid) {
               // Also set it for regular vanity if available (optional)
               setCorporateInfo({
                 designation: membership.designation || '',
                 company_name: companyInfo?.company_name || ''
               });
+              displayParams = Array.isArray(companyInfo?.display_parameters) ? companyInfo.display_parameters as string[] : undefined;
             }
           }
         }
@@ -267,6 +273,7 @@ export const PublicProfile: React.FC = () => {
           cardImageUrl: (card as any).card_image_url,
           corporateDesignation: corporateInfo?.designation,
           corporateCompany: corporateInfo?.company_name,
+          displayParameters: displayParams,
         });
 
 

@@ -38,6 +38,7 @@ interface Profile {
   board_member_count: number;
   employee_invite_count: number;
   invite_parameters: Json;
+  display_parameters: Json;
   payment_due_date: string | null;
   vanity_url: string | null;
 }
@@ -84,19 +85,27 @@ export const CompanyDashboard: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedParameters, setSelectedParameters] = useState<string[]>([]);
+  const [displayParameters, setDisplayParameters] = useState<string[]>([]);
   const [companyVanity, setCompanyVanity] = useState('');
   const [editingDesignation, setEditingDesignation] = useState<{ id: string, value: string } | null>(null);
 
   useEffect(() => {
     if (user) {
-      fetchProfile();
-      fetchCards();
-      fetchEmployees();
+      const loadAll = async () => {
+        setLoading(true);
+        const fetchedProfile = await fetchProfile();
+        await fetchCards();
+        if (fetchedProfile) {
+          await fetchEmployees(fetchedProfile.id);
+        }
+        setLoading(false);
+      };
+      loadAll();
     }
   }, [user]);
 
   const fetchProfile = async () => {
-    if (!user) return;
+    if (!user) return null;
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -107,17 +116,26 @@ export const CompanyDashboard: React.FC = () => {
       if (error) throw error;
       if (data.account_type !== 'company') {
         navigate('/dashboard');
-        return;
+        return null;
       }
 
       setProfile(data);
       setCompanyVanity(data.vanity_url || '');
-      const params = Array.isArray(data.invite_parameters)
+
+      const inviteParams = Array.isArray(data.invite_parameters)
         ? data.invite_parameters as string[]
         : ['display_name', 'email'];
-      setSelectedParameters(params);
+      setSelectedParameters(inviteParams);
+
+      const displayParams = Array.isArray(data.display_parameters)
+        ? data.display_parameters as string[]
+        : ['display_name', 'email', 'job_title'];
+      setDisplayParameters(displayParams);
+
+      return data;
     } catch (error: any) {
       console.error('Error fetching profile:', error);
+      return null;
     }
   };
 
@@ -136,8 +154,10 @@ export const CompanyDashboard: React.FC = () => {
     }
   };
 
-  const fetchEmployees = async () => {
-    if (!profile) return;
+  const fetchEmployees = async (companyId?: string) => {
+    const idToUse = companyId || profile?.id;
+    if (!idToUse) return;
+
     try {
       const { data, error } = await supabase
         .from('invited_employees')
@@ -149,15 +169,13 @@ export const CompanyDashboard: React.FC = () => {
             vanity_url
           )
         `)
-        .eq('company_profile_id', profile.id)
+        .eq('company_profile_id', idToUse)
         .order('joined_at', { ascending: false });
 
       if (error) throw error;
       setEmployees(data || []);
     } catch (error: any) {
       console.error('Error fetching employees:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -273,8 +291,10 @@ export const CompanyDashboard: React.FC = () => {
         <Tabs defaultValue="staff" className="space-y-6">
           <TabsList className="bg-white border border-slate-200 p-1 rounded-xl shadow-sm">
             <TabsTrigger value="staff" className="rounded-lg px-6">Staff Directory</TabsTrigger>
+            <TabsTrigger value="directors" className="rounded-lg px-6">Director ID Cards</TabsTrigger>
             <TabsTrigger value="invites" className="rounded-lg px-6">Invite Links</TabsTrigger>
-            <TabsTrigger value="parameters" className="rounded-lg px-6">Onboarding</TabsTrigger>
+            <TabsTrigger value="parameters" className="rounded-lg px-6">Data Collection</TabsTrigger>
+            <TabsTrigger value="display" className="rounded-lg px-6">ID Card Design</TabsTrigger>
             <TabsTrigger value="branding" className="rounded-lg px-6">Branding</TabsTrigger>
           </TabsList>
 
@@ -368,12 +388,34 @@ export const CompanyDashboard: React.FC = () => {
                           </div>
                         ) : (
                           <div className="flex justify-end gap-2">
-                            {emp.profiles?.vanity_url && (
+                            {emp.profiles?.vanity_url ? (
                               <Button size="sm" variant="ghost" className="text-indigo-600" onClick={() => window.open(`/${profile?.vanity_url}?userid=${emp.profiles.vanity_url}`, '_blank')}>
-                                <LinkIcon className="w-4 h-4 mr-1" /> ID Link
+                                <LinkIcon className="w-4 h-4 mr-1" /> View ID
                               </Button>
+                            ) : (
+                              <span className="text-xs text-slate-400 italic mr-3">Pending Activation</span>
                             )}
-                            <Button size="sm" variant="ghost" className="text-slate-400">Manage</Button>
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button size="sm" variant="ghost" className="text-slate-500">View Data</Button>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>Collected Data: {emp.profiles?.display_name}</DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-4 py-4">
+                                  {Object.entries(emp.data_submitted || {}).map(([key, value]) => (
+                                    <div key={key} className="flex flex-col border-b border-slate-100 pb-2">
+                                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{key.replace('_', ' ')}</span>
+                                      <span className="text-slate-900">{String(value)}</span>
+                                    </div>
+                                  ))}
+                                  {Object.keys(emp.data_submitted || {}).length === 0 && (
+                                    <p className="text-center text-slate-500 italic">No data collected yet</p>
+                                  )}
+                                </div>
+                              </DialogContent>
+                            </Dialog>
                           </div>
                         )}
                       </TableCell>
@@ -381,6 +423,58 @@ export const CompanyDashboard: React.FC = () => {
                   ))}
                 </TableBody>
               </Table>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="directors">
+            <Card className="shadow-md border-none">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Director & Executive Cards</CardTitle>
+                  <CardDescription>Manage cards for your board of directors. (Limited to 2 free cards)</CardDescription>
+                </div>
+                <Button
+                  size="sm"
+                  disabled={cards.length >= 2}
+                  className="bg-indigo-600 hover:bg-indigo-700"
+                  onClick={() => navigate('/editor')}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Director Card
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {cards.map((card) => (
+                    <div key={card.id} className="p-4 border border-slate-200 rounded-2xl bg-white shadow-sm flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-indigo-600">
+                          <CreditCard className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-slate-900">{card.title}</h4>
+                          <p className="text-xs text-slate-500 font-mono">{window.location.host}/{card.vanity_url}</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="ghost" size="icon" onClick={() => navigate(`/editor?id=${card.id}`)}>
+                          <Edit3 className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => window.open(`/${card.vanity_url}`, '_blank')}>
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  {cards.length === 0 && (
+                    <div className="col-span-2 py-12 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50">
+                      <CreditCard className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                      <p className="text-slate-500 font-medium">No director cards created yet</p>
+                      <p className="text-xs text-slate-400 mt-1">Create up to 2 high-priority cards for your board</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
             </Card>
           </TabsContent>
 
@@ -500,7 +594,7 @@ export const CompanyDashboard: React.FC = () => {
             <Card className="shadow-md border-none">
               <CardHeader>
                 <CardTitle>Onboarding Requirements</CardTitle>
-                <CardDescription>Select what data points employees must provide when joining.</CardDescription>
+                <CardDescription>Select what data points employees must provide when joining your organization.</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -508,7 +602,7 @@ export const CompanyDashboard: React.FC = () => {
                     <div key={param.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
                       <div className="flex items-center gap-3">
                         <Checkbox
-                          id={param.id}
+                          id={`collect-${param.id}`}
                           checked={selectedParameters.includes(param.id)}
                           onCheckedChange={(checked) => {
                             if (param.required) return;
@@ -520,7 +614,7 @@ export const CompanyDashboard: React.FC = () => {
                           }}
                           disabled={param.required}
                         />
-                        <Label htmlFor={param.id} className="font-medium cursor-pointer">{param.label}</Label>
+                        <Label htmlFor={`collect-${param.id}`} className="font-medium cursor-pointer">{param.label}</Label>
                       </div>
                       {param.required && <Badge variant="secondary" className="bg-slate-200 text-slate-600 border-none">Required</Badge>}
                     </div>
@@ -528,9 +622,53 @@ export const CompanyDashboard: React.FC = () => {
                 </div>
                 <Button className="mt-8 bg-indigo-600 hover:bg-indigo-700 px-8" onClick={async () => {
                   const { error } = await supabase.from('profiles').update({ invite_parameters: selectedParameters }).eq('id', profile!.id);
-                  if (!error) toast({ title: "Onboarding updated" });
+                  if (!error) toast({ title: "Requirements updated" });
                 }}>
-                  Deploy Requirements
+                  Save Requirements
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="display">
+            <Card className="shadow-md border-none">
+              <CardHeader>
+                <CardTitle>Digital ID Card Display</CardTitle>
+                <CardDescription>Choose which pieces of collected data should be visible on the public ID card.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {AVAILABLE_PARAMETERS.map(param => (
+                    <div key={param.id} className={`flex items-center justify-between p-4 rounded-xl border transition-colors ${selectedParameters.includes(param.id) ? 'bg-slate-50 border-slate-200' : 'bg-slate-50/30 border-dashed border-slate-200 opacity-50'}`}>
+                      <div className="flex items-center gap-3">
+                        <Checkbox
+                          id={`show-${param.id}`}
+                          checked={displayParameters.includes(param.id)}
+                          disabled={!selectedParameters.includes(param.id)}
+                          onCheckedChange={(checked) => {
+                            setDisplayParameters(prev =>
+                              checked
+                                ? [...prev, param.id]
+                                : prev.filter(p => p !== param.id)
+                            );
+                          }}
+                        />
+                        <div className="flex flex-col">
+                          <Label htmlFor={`show-${param.id}`} className="font-medium cursor-pointer">{param.label}</Label>
+                          {!selectedParameters.includes(param.id) && <span className="text-[10px] text-amber-600 font-bold">Not being collected</span>}
+                        </div>
+                      </div>
+                      <Badge variant="outline" className={`${displayParameters.includes(param.id) ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                        {displayParameters.includes(param.id) ? 'Visible' : 'Hidden'}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+                <Button className="mt-8 bg-indigo-600 hover:bg-indigo-700 px-8" onClick={async () => {
+                  const { error } = await supabase.from('profiles').update({ display_parameters: displayParameters }).eq('id', profile!.id);
+                  if (!error) toast({ title: "Card design updated" });
+                }}>
+                  Update ID Cards
                 </Button>
               </CardContent>
             </Card>

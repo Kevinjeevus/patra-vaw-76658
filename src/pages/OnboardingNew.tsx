@@ -504,11 +504,11 @@ export const OnboardingNew: React.FC = () => {
 
               <div className="grid gap-4 pt-4">
                 <Button
-                  onClick={() => navigate('/editor')}
+                  onClick={() => navigate(data.accountType === 'company' ? '/dashboard' : '/editor')}
                   className="w-full h-12 text-lg bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all"
                 >
                   <Palette className="w-5 h-5 mr-2" />
-                  Customize in Editor
+                  {data.accountType === 'company' ? 'Go to Dashboard' : 'Customize in Editor'}
                 </Button>
 
                 <Button
@@ -1100,11 +1100,11 @@ export const OnboardingNew: React.FC = () => {
                         <p className="font-medium">Company Account Features:</p>
                         <ul className="space-y-1 ml-4 list-disc text-xs">
                           <li>Create digital IDs for employees in bulk</li>
-                          <li>Up to 5 Board of Directors cards (free)</li>
+                          <li>Up to 2 Board of Directors cards (free)</li>
                           <li>Unique invite code for employees</li>
                           <li>Customizable data collection parameters</li>
                           <li>Company-branded templates</li>
-                          <li>₹2 per employee invite (payable within 2 months)</li>
+                          <li>Unlimited employee invites (No fee)</li>
                         </ul>
                       </div>
                     </div>
@@ -1174,7 +1174,7 @@ export const OnboardingNew: React.FC = () => {
                   <li>Centralized employee profile management</li>
                   <li>Request printing services for physical ID cards</li>
                   <li>Specialized dashboard tailored for HR/Admin teams</li>
-                  <li>Board of Directors cards (up to 5 members included)</li>
+                  <li>Board of Directors cards (up to 2 members included)</li>
                 </ul>
               </div>
 
@@ -1185,7 +1185,7 @@ export const OnboardingNew: React.FC = () => {
                   <li><strong>Verification fee: ₹999</strong> (required during account creation)</li>
                   <li>Account will be <strong>active within 1-2 hours</strong> after payment verification</li>
                   <li>Must <strong>verify company status</strong> - individual users cannot use this</li>
-                  <li><strong>Employee invite fee: ₹2 per employee</strong> (payable within 2 months)</li>
+                  <li><strong>Unlimited employee invites</strong> - No additional fees per employee</li>
                 </ul>
               </div>
 
@@ -1193,7 +1193,7 @@ export const OnboardingNew: React.FC = () => {
               <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg border border-green-200 dark:border-green-800 space-y-2">
                 <h4 className="font-semibold text-slate-900">✨ Company Account Benefits:</h4>
                 <ul className="text-sm space-y-1 list-disc list-inside text-slate-700">
-                  <li>Create up to 5 Board of Directors cards (FREE)</li>
+                  <li>Create up to 2 Board of Directors cards (FREE)</li>
                   <li>Generate unique invite codes for employees</li>
                   <li>Customize data collection parameters per employee</li>
                   <li>Access specialized company dashboard</li>

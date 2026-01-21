@@ -21,7 +21,8 @@ import {
   Award,
   ImageIcon,
   Play,
-  Pause
+  Pause,
+  Download
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useToast } from '@/hooks/use-toast';
@@ -101,8 +102,10 @@ interface CardData {
   customCSS?: string;
   bannerType?: 'gradient' | 'color' | 'image' | 'blurred' | 'pattern';
   bannerValue?: string;
+  cardImageUrl?: string;
   corporateDesignation?: string;
   corporateCompany?: string;
+  displayParameters?: string[];
 }
 
 
@@ -185,441 +188,502 @@ export const CardPreviewNew: React.FC<CardPreviewNewProps> = ({ cardData, onOpen
   const displayTitle = cardData.jobTitle || 'Your Title';
   const displayCompany = cardData.company || 'Your Company';
 
+  // Helper to check if a field should be shown
+  const shouldShow = (fieldId: string) => {
+    if (!cardData.displayParameters) return true; // Default to show everything if no corporate policy
+    return cardData.displayParameters.includes(fieldId);
+  };
+
   // Truncate about text
   const aboutText = cardData.about || '';
   const shouldTruncate = aboutText.length > 250;
   const displayAbout = showFullAbout || !shouldTruncate
-    ? aboutText
     : aboutText.slice(0, 250) + '...';
 
-  return (
-    <div className="w-full max-w-2xl mx-auto space-y-4 p-4">
-      {/* Custom CSS Injection */}
-      {cardData.customCSS && (
-        <style dangerouslySetInnerHTML={{ __html: cardData.customCSS }} />
-      )}
+return (
+  <div className="w-full max-w-2xl mx-auto space-y-4 p-4">
+    {/* Custom CSS Injection */}
+    {cardData.customCSS && (
+      <style dangerouslySetInnerHTML={{ __html: cardData.customCSS }} />
+    )}
 
-      {/* Main Profile Card */}
-      <Card className="overflow-hidden card-container">
-        {/* Header Banner - Dynamic based on banner settings */}
-        <div
-          className="relative h-32"
-          style={{
-            ...(cardData.bannerType === 'color' && cardData.bannerValue
-              ? { backgroundColor: cardData.bannerValue }
-              : cardData.bannerType === 'image' && cardData.bannerValue
+    {/* Main Profile Card */}
+    <Card className="overflow-hidden card-container">
+      {/* Header Banner - Dynamic based on banner settings */}
+      <div
+        className="relative h-32"
+        style={{
+          ...(cardData.bannerType === 'color' && cardData.bannerValue
+            ? { backgroundColor: cardData.bannerValue }
+            : cardData.bannerType === 'image' && cardData.bannerValue
+              ? {
+                backgroundImage: `url(${cardData.bannerValue})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center'
+              }
+              : cardData.bannerType === 'blurred' && cardData.avatarUrl
                 ? {
-                  backgroundImage: `url(${cardData.bannerValue})`,
+                  backgroundImage: `url(${cardData.avatarUrl})`,
                   backgroundSize: 'cover',
-                  backgroundPosition: 'center'
+                  backgroundPosition: 'center',
+                  filter: 'blur(20px)',
+                  transform: 'scale(1.1)'
                 }
-                : cardData.bannerType === 'blurred' && cardData.avatarUrl
-                  ? {
-                    backgroundImage: `url(${cardData.avatarUrl})`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    filter: 'blur(20px)',
-                    transform: 'scale(1.1)'
-                  }
-                  : cardData.bannerType === 'pattern' && cardData.bannerValue
+                : cardData.bannerType === 'pattern' && cardData.bannerValue
+                  ? (() => {
+                    const [pattern, fgColor, bgColor] = cardData.bannerValue.includes('|')
+                      ? cardData.bannerValue.split('|')
+                      : [cardData.bannerValue, 'hsl(var(--primary) / 0.3)', 'transparent'];
+
+                    const fg = fgColor || 'hsl(var(--primary) / 0.3)';
+                    const bg = bgColor || 'transparent';
+
+                    const styles: React.CSSProperties = { backgroundColor: bg };
+
+                    if (pattern === 'dots') {
+                      styles.backgroundImage = `radial-gradient(circle, ${fg} 1px, transparent 1px)`;
+                      styles.backgroundSize = '20px 20px';
+                    } else if (pattern === 'lines') {
+                      styles.backgroundImage = `repeating-linear-gradient(45deg, ${fg}, ${fg} 1px, transparent 1px, transparent 10px)`;
+                    } else if (pattern === 'waves') {
+                      styles.backgroundImage = `linear-gradient(135deg, ${fg} 25%, transparent 25%), linear-gradient(225deg, ${fg} 25%, transparent 25%)`;
+                      styles.backgroundSize = '40px 40px';
+                    } else if (pattern === 'grid') {
+                      styles.backgroundImage = `linear-gradient(${fg} 1px, transparent 1px), linear-gradient(90deg, ${fg} 1px, transparent 1px)`;
+                      styles.backgroundSize = '20px 20px';
+                    } else if (pattern === 'checker') {
+                      styles.backgroundImage = `linear-gradient(45deg, ${fg} 25%, transparent 25%), linear-gradient(-45deg, ${fg} 25%, transparent 25%), linear-gradient(45deg, transparent 75%, ${fg} 75%), linear-gradient(-45deg, transparent 75%, ${fg} 75%)`;
+                      styles.backgroundSize = '20px 20px';
+                      styles.backgroundPosition = '0 0, 0 10px, 10px -10px, -10px 0px';
+                    }
+                    return styles;
+                  })()
+                  : cardData.bannerType === 'gradient' && cardData.bannerValue
                     ? (() => {
-                      const [pattern, fgColor, bgColor] = cardData.bannerValue.includes('|')
+                      const [direction, colorsStr] = cardData.bannerValue.includes('|')
                         ? cardData.bannerValue.split('|')
-                        : [cardData.bannerValue, 'hsl(var(--primary) / 0.3)', 'transparent'];
-
-                      const fg = fgColor || 'hsl(var(--primary) / 0.3)';
-                      const bg = bgColor || 'transparent';
-
-                      const styles: React.CSSProperties = { backgroundColor: bg };
-
-                      if (pattern === 'dots') {
-                        styles.backgroundImage = `radial-gradient(circle, ${fg} 1px, transparent 1px)`;
-                        styles.backgroundSize = '20px 20px';
-                      } else if (pattern === 'lines') {
-                        styles.backgroundImage = `repeating-linear-gradient(45deg, ${fg}, ${fg} 1px, transparent 1px, transparent 10px)`;
-                      } else if (pattern === 'waves') {
-                        styles.backgroundImage = `linear-gradient(135deg, ${fg} 25%, transparent 25%), linear-gradient(225deg, ${fg} 25%, transparent 25%)`;
-                        styles.backgroundSize = '40px 40px';
-                      } else if (pattern === 'grid') {
-                        styles.backgroundImage = `linear-gradient(${fg} 1px, transparent 1px), linear-gradient(90deg, ${fg} 1px, transparent 1px)`;
-                        styles.backgroundSize = '20px 20px';
-                      } else if (pattern === 'checker') {
-                        styles.backgroundImage = `linear-gradient(45deg, ${fg} 25%, transparent 25%), linear-gradient(-45deg, ${fg} 25%, transparent 25%), linear-gradient(45deg, transparent 75%, ${fg} 75%), linear-gradient(-45deg, transparent 75%, ${fg} 75%)`;
-                        styles.backgroundSize = '20px 20px';
-                        styles.backgroundPosition = '0 0, 0 10px, 10px -10px, -10px 0px';
-                      }
-                      return styles;
+                        : ['to bottom right', cardData.bannerValue];
+                      const colors = (colorsStr || '').split(',').filter(Boolean);
+                      const validColors = colors.length > 0 ? colors : ['#3b82f6', '#8b5cf6'];
+                      return {
+                        background: `linear-gradient(${direction}, ${validColors.join(', ')})`
+                      };
                     })()
-                    : cardData.bannerType === 'gradient' && cardData.bannerValue
-                      ? (() => {
-                        const [direction, colorsStr] = cardData.bannerValue.includes('|')
-                          ? cardData.bannerValue.split('|')
-                          : ['to bottom right', cardData.bannerValue];
-                        const colors = (colorsStr || '').split(',').filter(Boolean);
-                        const validColors = colors.length > 0 ? colors : ['#3b82f6', '#8b5cf6'];
-                        return {
-                          background: `linear-gradient(${direction}, ${validColors.join(', ')})`
-                        };
-                      })()
-                      : cardData.bannerType === 'gradient'
-                        ? { background: 'linear-gradient(135deg, hsl(var(--primary) / 0.2), hsl(var(--accent) / 0.1))' }
-                        : { backgroundColor: 'hsl(var(--muted))' })
-          }}
-        ></div>
+                    : cardData.bannerType === 'gradient'
+                      ? { background: 'linear-gradient(135deg, hsl(var(--primary) / 0.2), hsl(var(--accent) / 0.1))' }
+                      : { backgroundColor: 'hsl(var(--muted))' })
+        }}
+      ></div>
 
-        <div className="px-6 pb-6">
-          {/* Avatar overlapping header - with Profile URL flip */}
-          <div className="-mt-16 mb-4">
-            <div
-              className="relative w-28 h-28 cursor-pointer perspective-1000"
-              onClick={() => setShowQR(!showQR)}
-            >
-              <div className={`relative w-full h-full transition-transform duration-500 transform-style-3d ${showQR ? 'rotate-y-180' : ''}`}>
-                {/* Front - Avatar */}
-                <Avatar className="absolute w-full h-full border-4 border-card shadow-lg backface-hidden">
-                  <AvatarImage src={cardData.avatarUrl} />
-                  <AvatarFallback className="text-3xl bg-secondary">
-                    {displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                {/* Back - Profile URL */}
-                <div className="absolute w-full h-full border-4 border-card shadow-lg rounded-full bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center backface-hidden rotate-y-180 p-3">
-                  <div className="w-full h-full rounded-full flex flex-col items-center justify-center text-center">
-                    <Globe className="w-6 h-6 text-primary mb-1" />
-                    <span className="text-[9px] font-mono font-semibold text-foreground leading-tight break-all px-1">
-                      patra.me/{cardData.vanityUrl || 'url'}
-                    </span>
-                  </div>
+      <div className="px-6 pb-6">
+        {/* Avatar overlapping header - with Profile URL flip */}
+        <div className="-mt-16 mb-4">
+          <div
+            className="relative w-28 h-28 cursor-pointer perspective-1000"
+            onClick={() => setShowQR(!showQR)}
+          >
+            <div className={`relative w-full h-full transition-transform duration-500 transform-style-3d ${showQR ? 'rotate-y-180' : ''}`}>
+              {/* Front - Avatar */}
+              <Avatar className="absolute w-full h-full border-4 border-card shadow-lg backface-hidden">
+                <AvatarImage src={cardData.avatarUrl} />
+                <AvatarFallback className="text-3xl bg-secondary">
+                  {displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              {/* Back - Profile URL */}
+              <div className="absolute w-full h-full border-4 border-card shadow-lg rounded-full bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center backface-hidden rotate-y-180 p-3">
+                <div className="w-full h-full rounded-full flex flex-col items-center justify-center text-center">
+                  <Globe className="w-6 h-6 text-primary mb-1" />
+                  <span className="text-[9px] font-mono font-semibold text-foreground leading-tight break-all px-1">
+                    patra.me/{cardData.vanityUrl || 'url'}
+                  </span>
                 </div>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Name and basic info */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-bold text-card-foreground">{displayName}</h2>
+        {/* Name and basic info */}
+        <div className="mb-6">
+          <div className="flex items-center gap-2">
+            <h2 className="text-2xl font-bold text-card-foreground">{displayName}</h2>
 
-              {/* Audio Pronunciation Player with Circular Progress */}
-              {cardData.audioPronunciation && (
-                <AudioPlayer audioUrl={cardData.audioPronunciation} />
-              )}
-            </div>
-
-            {cardData.corporateDesignation && (
-              <div className="flex items-center gap-2 mb-2 p-2 bg-indigo-50 rounded-lg border border-indigo-100 w-fit">
-                <Badge className="bg-indigo-600 hover:bg-indigo-600 text-white border-0">{cardData.corporateDesignation}</Badge>
-                {cardData.corporateCompany && (
-                  <span className="text-sm font-semibold text-indigo-700">@ {cardData.corporateCompany}</span>
-                )}
-              </div>
+            {/* Audio Pronunciation Player with Circular Progress */}
+            {cardData.audioPronunciation && (
+              <AudioPlayer audioUrl={cardData.audioPronunciation} />
             )}
-
-            {cardData.jobTitle && !cardData.corporateDesignation && (
-              <p className="text-base text-muted-foreground mb-2 mt-1">
-                {displayTitle}
-                {cardData.company && <span className="font-medium"> at {displayCompany}</span>}
-              </p>
-            )}
-
-
-            <div className="flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
-              {cardData.pronoun && (
-                <span className="text-foreground/70">{cardData.pronoun}</span>
-              )}
-            </div>
           </div>
 
-          {/* Social Links - Inline icons */}
-          {cardData.socialLinks.length > 0 && (
-            <div className="flex items-center gap-2 mb-6 pb-6 border-b">
-              <Globe className="w-4 h-4 text-primary" />
-              <span className="text-sm text-muted-foreground mr-2">—</span>
-              <div className="flex gap-3">
-                {cardData.socialLinks.slice(0, 6).map((link, index) => (
+          {cardData.corporateDesignation && (
+            <div className="flex items-center gap-2 mb-2 p-2 bg-indigo-50 rounded-lg border border-indigo-100 w-fit">
+              <Badge className="bg-indigo-600 hover:bg-indigo-600 text-white border-0">{cardData.corporateDesignation}</Badge>
+              {cardData.corporateCompany && (
+                <span className="text-sm font-semibold text-indigo-700">@ {cardData.corporateCompany}</span>
+              )}
+            </div>
+          )}
+
+          {shouldShow('job_title') && displayTitle && !cardData.corporateDesignation && (
+            <p className="text-base text-muted-foreground mb-2 mt-1">
+              {displayTitle}
+              {shouldShow('company') && cardData.company && <span className="font-medium"> at {displayCompany}</span>}
+            </p>
+          )}
+
+          <div className="flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
+            {shouldShow('pronoun') && cardData.pronoun && (
+              <span className="text-foreground/70">{cardData.pronoun}</span>
+            )}
+          </div>
+        </div>
+
+        {/* Action buttons including QR */}
+        <div className="flex items-center gap-2 mb-6">
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1 h-10 border-indigo-200 text-indigo-600 hover:bg-indigo-50"
+            onClick={() => setShowQR(true)}
+          >
+            <QrCode className="w-4 h-4 mr-2" />
+            ID QR Code
+          </Button>
+          <Button
+            variant="default"
+            size="sm"
+            className="flex-1 h-10 shadow-md"
+            onClick={() => setShowPaymentDialog(true)}
+          >
+            <Wallet className="w-4 h-4 mr-2" />
+            Send money
+          </Button>
+        </div>
+
+        {/* Social Links - Inline icons */}
+        {cardData.socialLinks.length > 0 && (
+          <div className="flex items-center gap-2 mb-6 pb-6 border-b">
+            <Globe className="w-4 h-4 text-primary" />
+            <span className="text-sm text-muted-foreground mr-2">—</span>
+            <div className="flex gap-3">
+              {cardData.socialLinks.slice(0, 6).map((link, index) => (
+                <a
+                  key={index}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-foreground hover:text-primary transition-colors"
+                >
+                  {getSocialIcon(link.platform)}
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* About */}
+        {shouldShow('bio') && aboutText && (
+          <div className="mb-6">
+            <p className="text-sm text-card-foreground leading-relaxed">
+              {displayAbout}
+            </p>
+            {shouldTruncate && (
+              <button
+                onClick={() => setShowFullAbout(!showFullAbout)}
+                className="text-sm text-primary hover:underline mt-2"
+              >
+                {showFullAbout ? 'Show less' : 'Show more'}
+              </button>
+            )}
+          </div>
+        )}
+
+
+      </div>
+    </Card>
+
+    {/* Dynamic Card Sections Based on Order and Visibility */}
+    {(() => {
+      const defaultOrder = ['contact', 'verified', 'links', 'achievements', 'testimonials', 'interests', 'gallery', 'languages'];
+      const defaultVisibility = {
+        contact: true,
+        verified: true,
+        links: true,
+        achievements: true,
+        testimonials: true,
+        interests: true,
+        gallery: true,
+        languages: true,
+        location: true,
+      };
+
+      const order = cardData.cardOrder || defaultOrder;
+      const visibility = cardData.cardVisibility || defaultVisibility;
+
+      // Check if sections have content
+      const hasContent = (sectionId: string) => {
+        switch (sectionId) {
+          case 'contact':
+            return cardData.email || cardData.phone || cardData.contactForm || cardData.calendar;
+          case 'verified':
+            return cardData.socialLinks && cardData.socialLinks.length > 0;
+          case 'links':
+            return cardData.customLinks && cardData.customLinks.length > 0;
+          case 'achievements':
+            return cardData.achievements && cardData.achievements.length > 0;
+          case 'testimonials':
+            return cardData.testimonials && cardData.testimonials.length > 0;
+          case 'interests':
+            return cardData.interests && cardData.interests.length > 0;
+          case 'gallery':
+            return cardData.photos && cardData.photos.length > 0;
+          case 'languages':
+            return cardData.languages && cardData.languages.length > 0;
+          case 'location':
+            return cardData.address || (cardData.latitude && cardData.longitude);
+          default:
+            return false;
+        }
+      };
+
+      const sectionMap: Record<string, React.ReactNode> = {
+        contact: visibility.contact && <ContactSection key="contact" cardData={cardData} showAIButton={showAIButton} getSocialIcon={getSocialIcon} />,
+        verified: visibility.verified && <VerifiedSection key="verified" cardData={cardData} getSocialIcon={getSocialIcon} />,
+        links: visibility.links && <LinksSection key="links" cardData={cardData} getSocialIcon={getSocialIcon} />,
+        achievements: visibility.achievements && <AchievementsSection key="achievements" cardData={cardData} getSocialIcon={getSocialIcon} />,
+        testimonials: visibility.testimonials && <TestimonialsSection key="testimonials" cardData={cardData} getSocialIcon={getSocialIcon} />,
+        interests: visibility.interests && <InterestsSection key="interests" cardData={cardData} getSocialIcon={getSocialIcon} />,
+        gallery: visibility.gallery && <GallerySection key="gallery" cardData={cardData} getSocialIcon={getSocialIcon} />,
+        languages: visibility.languages && <LanguagesSection key="languages" cardData={cardData} getSocialIcon={getSocialIcon} />,
+        location: visibility.location && <LocationSection key="location" cardData={cardData} getSocialIcon={getSocialIcon} />,
+      };
+
+      // Separate filled and empty sections
+      const filledSections = order.filter(sectionId => hasContent(sectionId) && sectionMap[sectionId]);
+      const emptySections = order.filter(sectionId => !hasContent(sectionId) && visibility[sectionId as keyof typeof visibility]);
+
+      return (
+        <>
+          {/* Render filled sections */}
+          {filledSections.map(sectionId => sectionMap[sectionId])}
+
+          {/* Note: Empty sections "Add More Information" removed - only show in editor */}
+        </>
+      );
+    })()}
+
+
+    {/* Fallback for old structure - Contact Information Card (only show if cardOrder is not set) */}
+    {(!cardData.cardOrder || !Array.isArray(cardData.cardOrder) || cardData.cardOrder.length === 0) && (cardData.email || cardData.phone || cardData.contactForm || cardData.calendar || (showAIButton && cardData.aiEnabled)) && (
+      <Card className="p-6">
+        <h3 className="font-semibold text-base mb-4">Contact Information</h3>
+        <div className="space-y-3">
+          {cardData.email && (
+            <div className="flex items-center gap-3">
+              <Mail className="w-4 h-4 text-muted-foreground" />
+              <a href={`mailto:${cardData.email}`} className="text-sm text-primary hover:underline">
+                {cardData.email}
+              </a>
+            </div>
+          )}
+          {cardData.phone && (
+            <div className="flex items-center gap-3">
+              <Phone className="w-4 h-4 text-muted-foreground" />
+              <a href={`tel:${cardData.phone}`} className="text-sm text-primary hover:underline">
+                {cardData.phone}
+              </a>
+            </div>
+          )}
+          {cardData.contactForm && (
+            <div className="flex items-center gap-3">
+              <Globe className="w-4 h-4 text-muted-foreground" />
+              <a href={cardData.contactForm} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline break-all">
+                {cardData.contactForm}
+              </a>
+            </div>
+          )}
+          {cardData.calendar && (
+            <div className="flex items-center gap-3">
+              <Calendar className="w-4 h-4 text-muted-foreground" />
+              <a href={cardData.calendar} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
+                Book a meeting
+              </a>
+            </div>
+          )}
+          {showAIButton && cardData.aiEnabled && cardData.vanityUrl && (
+
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full mt-3 relative group border border-violet-400/40 bg-transparent hover:bg-blue-600 hover:border-blue-500 transition-all duration-300"
+              onClick={() => window.location.href = `/${cardData.vanityUrl}/ai`}
+            >
+              {/* Simple fading sparkles */}
+              <Icon
+                icon="proicons:sparkle-2"
+                className="absolute top-1.5 left-6 w-2.5 h-2.5 text-violet-400 animate-sparkle-fade-1"
+              />
+              <Icon
+                icon="proicons:sparkle-2"
+                className="absolute top-1.5 right-6 w-3 h-3 text-fuchsia-400 animate-sparkle-fade-2"
+              />
+              <Icon
+                icon="proicons:sparkle-2"
+                className="absolute bottom-1.5 left-1/3 w-2.5 h-2.5 text-purple-400 animate-sparkle-fade-3"
+              />
+              <MessageCircle className="w-4 h-4 mr-2 relative z-10 group-hover:text-white transition-colors duration-300" />
+              <span className="relative z-10 font-medium group-hover:text-white transition-colors duration-300">
+                Chat with mini me - AI
+              </span>
+            </Button>
+
+
+          )}
+        </div>
+      </Card>
+    )}
+
+    {/* Payment Dialog */}
+    <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Wallet className="w-5 h-5" />
+            Send Money to {cardData.fullName || 'User'}
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4 pt-4">
+          {/* UPI ID Section */}
+          {cardData.upiId && (
+            <div className="space-y-3">
+              <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+                <Label className="text-xs text-muted-foreground mb-2 block">UPI ID</Label>
+                <div className="flex items-center justify-between">
+                  <code className="text-sm font-mono font-semibold">{cardData.upiId}</code>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleCopyUPI}
+                  >
+                    Copy
+                  </Button>
+                </div>
+              </div>
+
+              {/* QR and Pay Now Buttons */}
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowUPIQR(!showUPIQR)}
+                  className="w-full"
+                >
+                  <QrCode className="w-4 h-4 mr-2" />
+                  {showUPIQR ? 'Hide QR' : 'Show QR'}
+                </Button>
+
+                <Button
+                  variant="default"
+                  onClick={handlePayNow}
+                  className="w-full"
+                >
+                  <Smartphone className="w-4 h-4 mr-2" />
+                  Pay Now
+                </Button>
+              </div>
+
+              {/* UPI QR Code Display */}
+              {showUPIQR && (
+                <div className="flex justify-center p-4 bg-white rounded-lg border">
+                  <QRCodeSVG
+                    value={generateUPILink(cardData.upiId, cardData.fullName || 'User')}
+                    size={200}
+                    level="M"
+                    includeMargin={true}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Other Payment Links */}
+          {cardData.paymentLinks.length > 0 && (
+            <div className="space-y-3">
+              <h4 className="text-sm font-semibold text-muted-foreground">Other Payment Links</h4>
+              <div className="space-y-2">
+                {cardData.paymentLinks.map((link, index) => (
                   <a
                     key={index}
                     href={link.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-foreground hover:text-primary transition-colors"
+                    className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent/50 transition-colors group"
                   >
-                    {getSocialIcon(link.platform)}
+                    <div className="flex items-center gap-2">
+                      {getSocialIcon(link.platform)}
+                      <span className="text-sm font-medium">{link.platform}</span>
+                    </div>
+                    <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
                   </a>
                 ))}
               </div>
             </div>
           )}
 
-          {/* About */}
-          {aboutText && (
-            <div className="mb-6">
-              <p className="text-sm text-card-foreground leading-relaxed">
-                {displayAbout}
-              </p>
-              {shouldTruncate && (
-                <button
-                  onClick={() => setShowFullAbout(!showFullAbout)}
-                  className="text-sm text-primary hover:underline mt-2"
-                >
-                  {showFullAbout ? 'Show less' : 'Show more'}
-                </button>
-              )}
-            </div>
+          {!cardData.upiId && cardData.paymentLinks.length === 0 && (
+            <p className="text-sm text-muted-foreground text-center py-8">
+              No payment methods available
+            </p>
           )}
-
-          {/* Action buttons */}
-          <div className="grid grid-cols-1 gap-2">
-            <Button
-              variant="default"
-              size="sm"
-              className="h-9"
-              onClick={() => setShowPaymentDialog(true)}
-            >
-              <Wallet className="w-4 h-4 mr-2" />
-              Send money
-            </Button>
-          </div>
         </div>
-      </Card>
-
-      {/* Dynamic Card Sections Based on Order and Visibility */}
-      {(() => {
-        const defaultOrder = ['contact', 'verified', 'links', 'achievements', 'testimonials', 'interests', 'gallery', 'languages'];
-        const defaultVisibility = {
-          contact: true,
-          verified: true,
-          links: true,
-          achievements: true,
-          testimonials: true,
-          interests: true,
-          gallery: true,
-          languages: true,
-          location: true,
-        };
-
-        const order = cardData.cardOrder || defaultOrder;
-        const visibility = cardData.cardVisibility || defaultVisibility;
-
-        // Check if sections have content
-        const hasContent = (sectionId: string) => {
-          switch (sectionId) {
-            case 'contact':
-              return cardData.email || cardData.phone || cardData.contactForm || cardData.calendar;
-            case 'verified':
-              return cardData.socialLinks && cardData.socialLinks.length > 0;
-            case 'links':
-              return cardData.customLinks && cardData.customLinks.length > 0;
-            case 'achievements':
-              return cardData.achievements && cardData.achievements.length > 0;
-            case 'testimonials':
-              return cardData.testimonials && cardData.testimonials.length > 0;
-            case 'interests':
-              return cardData.interests && cardData.interests.length > 0;
-            case 'gallery':
-              return cardData.photos && cardData.photos.length > 0;
-            case 'languages':
-              return cardData.languages && cardData.languages.length > 0;
-            case 'location':
-              return cardData.address || (cardData.latitude && cardData.longitude);
-            default:
-              return false;
-          }
-        };
-
-        const sectionMap: Record<string, React.ReactNode> = {
-          contact: visibility.contact && <ContactSection key="contact" cardData={cardData} showAIButton={showAIButton} getSocialIcon={getSocialIcon} />,
-          verified: visibility.verified && <VerifiedSection key="verified" cardData={cardData} getSocialIcon={getSocialIcon} />,
-          links: visibility.links && <LinksSection key="links" cardData={cardData} getSocialIcon={getSocialIcon} />,
-          achievements: visibility.achievements && <AchievementsSection key="achievements" cardData={cardData} getSocialIcon={getSocialIcon} />,
-          testimonials: visibility.testimonials && <TestimonialsSection key="testimonials" cardData={cardData} getSocialIcon={getSocialIcon} />,
-          interests: visibility.interests && <InterestsSection key="interests" cardData={cardData} getSocialIcon={getSocialIcon} />,
-          gallery: visibility.gallery && <GallerySection key="gallery" cardData={cardData} getSocialIcon={getSocialIcon} />,
-          languages: visibility.languages && <LanguagesSection key="languages" cardData={cardData} getSocialIcon={getSocialIcon} />,
-          location: visibility.location && <LocationSection key="location" cardData={cardData} getSocialIcon={getSocialIcon} />,
-        };
-
-        // Separate filled and empty sections
-        const filledSections = order.filter(sectionId => hasContent(sectionId) && sectionMap[sectionId]);
-        const emptySections = order.filter(sectionId => !hasContent(sectionId) && visibility[sectionId as keyof typeof visibility]);
-
-        return (
-          <>
-            {/* Render filled sections */}
-            {filledSections.map(sectionId => sectionMap[sectionId])}
-
-            {/* Note: Empty sections "Add More Information" removed - only show in editor */}
-          </>
-        );
-      })()}
-
-
-      {/* Fallback for old structure - Contact Information Card (only show if cardOrder is not set) */}
-      {(!cardData.cardOrder || !Array.isArray(cardData.cardOrder) || cardData.cardOrder.length === 0) && (cardData.email || cardData.phone || cardData.contactForm || cardData.calendar || (showAIButton && cardData.aiEnabled)) && (
-        <Card className="p-6">
-          <h3 className="font-semibold text-base mb-4">Contact Information</h3>
-          <div className="space-y-3">
-            {cardData.email && (
-              <div className="flex items-center gap-3">
-                <Mail className="w-4 h-4 text-muted-foreground" />
-                <a href={`mailto:${cardData.email}`} className="text-sm text-primary hover:underline">
-                  {cardData.email}
-                </a>
-              </div>
-            )}
-            {cardData.phone && (
-              <div className="flex items-center gap-3">
-                <Phone className="w-4 h-4 text-muted-foreground" />
-                <a href={`tel:${cardData.phone}`} className="text-sm text-primary hover:underline">
-                  {cardData.phone}
-                </a>
-              </div>
-            )}
-            {cardData.contactForm && (
-              <div className="flex items-center gap-3">
-                <Globe className="w-4 h-4 text-muted-foreground" />
-                <a href={cardData.contactForm} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline break-all">
-                  {cardData.contactForm}
-                </a>
-              </div>
-            )}
-            {cardData.calendar && (
-              <div className="flex items-center gap-3">
-                <Calendar className="w-4 h-4 text-muted-foreground" />
-                <a href={cardData.calendar} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
-                  Book a meeting
-                </a>
-              </div>
-            )}
-            {showAIButton && cardData.aiEnabled && cardData.vanityUrl && (
-
-
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full mt-3 relative group border border-violet-400/40 bg-transparent hover:bg-blue-600 hover:border-blue-500 transition-all duration-300"
-                onClick={() => window.location.href = `/${cardData.vanityUrl}/ai`}
-              >
-                {/* Simple fading sparkles */}
-                <Icon
-                  icon="proicons:sparkle-2"
-                  className="absolute top-1.5 left-6 w-2.5 h-2.5 text-violet-400 animate-sparkle-fade-1"
-                />
-                <Icon
-                  icon="proicons:sparkle-2"
-                  className="absolute top-1.5 right-6 w-3 h-3 text-fuchsia-400 animate-sparkle-fade-2"
-                />
-                <Icon
-                  icon="proicons:sparkle-2"
-                  className="absolute bottom-1.5 left-1/3 w-2.5 h-2.5 text-purple-400 animate-sparkle-fade-3"
-                />
-                <MessageCircle className="w-4 h-4 mr-2 relative z-10 group-hover:text-white transition-colors duration-300" />
-                <span className="relative z-10 font-medium group-hover:text-white transition-colors duration-300">
-                  Chat with mini me - AI
-                </span>
-              </Button>
-
-
-            )}
+      </DialogContent>
+    </Dialog>
+    {/* Profile QR Dialog */}
+    <Dialog open={showQR} onOpenChange={setShowQR}>
+      <DialogContent className="max-w-xs p-6 overflow-hidden">
+        <DialogHeader>
+          <DialogTitle className="text-center">Digital ID QR Code</DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-col items-center gap-6 pt-4">
+          <div className="p-4 bg-white rounded-2xl shadow-inner border border-slate-100">
+            <QRCodeSVG
+              value={window.location.href}
+              size={200}
+              level="H"
+              includeMargin={false}
+              imageSettings={{
+                src: cardData.avatarUrl || "/favicon.ico",
+                x: undefined,
+                y: undefined,
+                height: 40,
+                width: 40,
+                excavate: true,
+              }}
+            />
           </div>
-        </Card>
-      )}
-
-      {/* Payment Dialog */}
-      <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Wallet className="w-5 h-5" />
-              Send Money to {cardData.fullName || 'User'}
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-4 pt-4">
-            {/* UPI ID Section */}
-            {cardData.upiId && (
-              <div className="space-y-3">
-                <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
-                  <Label className="text-xs text-muted-foreground mb-2 block">UPI ID</Label>
-                  <div className="flex items-center justify-between">
-                    <code className="text-sm font-mono font-semibold">{cardData.upiId}</code>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleCopyUPI}
-                    >
-                      Copy
-                    </Button>
-                  </div>
-                </div>
-
-                {/* QR and Pay Now Buttons */}
-                <div className="grid grid-cols-2 gap-3">
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowUPIQR(!showUPIQR)}
-                    className="w-full"
-                  >
-                    <QrCode className="w-4 h-4 mr-2" />
-                    {showUPIQR ? 'Hide QR' : 'Show QR'}
-                  </Button>
-
-                  <Button
-                    variant="default"
-                    onClick={handlePayNow}
-                    className="w-full"
-                  >
-                    <Smartphone className="w-4 h-4 mr-2" />
-                    Pay Now
-                  </Button>
-                </div>
-
-                {/* UPI QR Code Display */}
-                {showUPIQR && (
-                  <div className="flex justify-center p-4 bg-white rounded-lg border">
-                    <QRCodeSVG
-                      value={generateUPILink(cardData.upiId, cardData.fullName || 'User')}
-                      size={200}
-                      level="M"
-                      includeMargin={true}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Other Payment Links */}
-            {cardData.paymentLinks.length > 0 && (
-              <div className="space-y-3">
-                <h4 className="text-sm font-semibold text-muted-foreground">Other Payment Links</h4>
-                <div className="space-y-2">
-                  {cardData.paymentLinks.map((link, index) => (
-                    <a
-                      key={index}
-                      href={link.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent/50 transition-colors group"
-                    >
-                      <div className="flex items-center gap-2">
-                        {getSocialIcon(link.platform)}
-                        <span className="text-sm font-medium">{link.platform}</span>
-                      </div>
-                      <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                    </a>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {!cardData.upiId && cardData.paymentLinks.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-8">
-                No payment methods available
-              </p>
-            )}
+          <div className="text-center space-y-1">
+            <p className="font-bold text-slate-900">{displayName}</p>
+            <p className="text-xs text-slate-500 font-mono break-all">{window.location.host}/{cardData.vanityUrl}</p>
           </div>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
+          <Button variant="outline" className="w-full" onClick={() => {
+            const canvas = document.querySelector('canvas');
+            if (canvas) {
+              const url = canvas.toDataURL('image/png');
+              const link = document.createElement('a');
+              link.download = `${cardData.vanityUrl}-qr.png`;
+              link.href = url;
+              link.click();
+            } else {
+              // If using SVG, we might need to convert it, but for now just toast
+              toast({ title: "Right-click to save QR code" });
+            }
+          }}>
+            <Download className="w-4 h-4 mr-2" />
+            Download QR
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  </div>
+);
 };
