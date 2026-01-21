@@ -46,7 +46,7 @@ import { CardData } from '@/components/editor/types';
 const corporateNavItems = [
     { id: 'avatar', label: 'Identity', icon: UserCircle },
     { id: 'about', label: 'Professional Bio', icon: User },
-    { id: 'verified', label: 'Company Credentials', icon: verified_icon }, // verified icon exists below
+    { id: 'verified', label: 'Company Credentials', icon: Verified }, // verified icon exists below
     { id: 'links', label: 'Corporate Links', icon: Link2 },
     { id: 'achievements', label: 'Milestones', icon: Award },
     { id: 'design', label: 'Corporate Branding', icon: Palette },
@@ -227,8 +227,8 @@ export const CorporateEditor: React.FC = () => {
                                     key={item.id}
                                     onClick={() => setActiveSection(item.id)}
                                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${activeSection === item.id
-                                            ? 'bg-indigo-50 text-indigo-700 shadow-sm ring-1 ring-indigo-100'
-                                            : 'text-slate-600 hover:bg-slate-50'
+                                        ? 'bg-indigo-50 text-indigo-700 shadow-sm ring-1 ring-indigo-100'
+                                        : 'text-slate-600 hover:bg-slate-50'
                                         }`}
                                 >
                                     <item.icon className={`w-4 h-4 ${activeSection === item.id ? 'text-indigo-600' : 'text-slate-400'}`} />
