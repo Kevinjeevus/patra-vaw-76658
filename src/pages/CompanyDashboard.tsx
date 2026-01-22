@@ -276,7 +276,7 @@ export const CompanyDashboard: React.FC = () => {
   };
 
   const handleDeleteCard = async (cardId: string) => {
-    if (!confirm('Are you sure you want to delete this director card? This action cannot be undone.')) return;
+    if (!confirm('Are you sure you want to delete this Leadership card? This action cannot be undone.')) return;
 
     try {
       const { error } = await supabase
@@ -285,7 +285,7 @@ export const CompanyDashboard: React.FC = () => {
         .eq('id', cardId);
 
       if (error) throw error;
-      toast({ title: "Success", description: "Director card deleted successfully" });
+      toast({ title: "Success", description: "Leadership card deleted successfully" });
       fetchCards();
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -466,7 +466,7 @@ export const CompanyDashboard: React.FC = () => {
           <div className="overflow-x-auto pb-2 scrollbar-none">
             <TabsList className="bg-white border border-slate-200 p-1 rounded-xl shadow-sm inline-flex min-w-max">
               <TabsTrigger value="staff" className="rounded-lg px-6">Staff Directory</TabsTrigger>
-              <TabsTrigger value="directors" className="rounded-lg px-6">Director ID Cards</TabsTrigger>
+              <TabsTrigger value="directors" className="rounded-lg px-6">Leadership Cards</TabsTrigger>
               <TabsTrigger value="invites" className="rounded-lg px-6">Invite Links</TabsTrigger>
               <TabsTrigger value="parameters" className="rounded-lg px-6">Data Collection</TabsTrigger>
               <TabsTrigger value="display" className="rounded-lg px-6">ID Card Design</TabsTrigger>
@@ -626,8 +626,8 @@ export const CompanyDashboard: React.FC = () => {
             <Card className="shadow-md border-none">
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle>Director & Executive Cards</CardTitle>
-                  <CardDescription>Manage cards for your board of directors. (Limited to 2 free cards)</CardDescription>
+                  <CardTitle>Leadership & Executive Cards</CardTitle>
+                  <CardDescription>Manage cards for your leadership team and key personnel. (Limited to 2 free cards)</CardDescription>
                 </div>
                 <Button
                   size="sm"
@@ -636,7 +636,7 @@ export const CompanyDashboard: React.FC = () => {
                   onClick={() => navigate('/editor?new=true')}
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  Create Director Card
+                  Create Leadership Card
                 </Button>
               </CardHeader>
               <CardContent>
@@ -668,8 +668,8 @@ export const CompanyDashboard: React.FC = () => {
                   {cards.length === 0 && (
                     <div className="col-span-2 py-12 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50">
                       <CreditCard className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                      <p className="text-slate-500 font-medium">No director cards created yet</p>
-                      <p className="text-xs text-slate-400 mt-1">Create up to 2 high-priority cards for your board</p>
+                      <p className="text-slate-500 font-medium">No leadership cards created yet</p>
+                      <p className="text-xs text-slate-400 mt-1">Create up to 2 high-priority cards for your leadership team</p>
                     </div>
                   )}
                 </div>

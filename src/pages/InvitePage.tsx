@@ -65,9 +65,14 @@ export const InvitePage: React.FC = () => {
                 .from('profiles')
                 .select('id, company_name, company_logo_url, invite_parameters, email, phone, vanity_url')
                 .eq('invite_code', inviteId)
-                .single();
+                .maybeSingle();
 
             if (error) throw error;
+            
+            if (!data) {
+                throw new Error('Company not found');
+            }
+            
             setCompany(data);
 
             // Initialize form data based on parameters
