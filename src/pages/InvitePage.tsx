@@ -46,7 +46,7 @@ export const InvitePage: React.FC = () => {
                 .from('digital_cards')
                 .select('*')
                 .eq('owner_user_id', user!.id);
-            
+
             if (error) throw error;
             setUserProfiles(data || []);
             if (data && data.length > 0) {
@@ -99,14 +99,14 @@ export const InvitePage: React.FC = () => {
         setSelectedProfileId(card.id);
         const content = card.content_json || {};
         const newFormData = { ...formData };
-        
+
         // Map common fields from profile
         if (content.fullName) newFormData['display_name'] = content.fullName;
         if (content.email) newFormData['email'] = content.email;
         if (content.phone) newFormData['phone'] = content.phone;
         if (content.jobTitle) newFormData['job_title'] = content.jobTitle;
         if (content.avatarUrl) newFormData['avatar_url'] = content.avatarUrl;
-        
+
         setFormData(newFormData);
     };
 
@@ -159,8 +159,8 @@ export const InvitePage: React.FC = () => {
                 .from('invited_employees')
                 .select('*')
                 .eq('company_profile_id', company.id)
-                .eq('employee_user_id', user.id)
-                .single();
+                .eq('actual_user_id', user.id)
+                .maybeSingle();
 
             if (existing) {
                 toast({
@@ -178,11 +178,12 @@ export const InvitePage: React.FC = () => {
                 .eq('user_id', user.id)
                 .single();
 
+            // Database will auto-generate employee_display_id and profile_display_id via trigger
             const { error } = await supabase
                 .from('invited_employees')
                 .insert({
                     company_profile_id: company.id,
-                    employee_user_id: user.id,
+                    actual_user_id: user.id,
                     employee_profile_id: userProfile?.id,
                     invite_code: inviteId!,
                     status: 'joined',
@@ -259,9 +260,9 @@ export const InvitePage: React.FC = () => {
             <div className="w-full md:w-5/12 lg:w-4/12 bg-white md:bg-slate-900 md:text-white p-6 md:p-12 flex flex-col justify-between overflow-y-auto">
                 <div className="space-y-8 animate-in fade-in slide-in-from-left duration-700">
                     <div className="flex items-center gap-4">
-                        <Button 
-                            variant="ghost" 
-                            size="icon" 
+                        <Button
+                            variant="ghost"
+                            size="icon"
                             className="rounded-full md:text-white md:hover:bg-white/10"
                             onClick={() => navigate(-1)}
                         >
@@ -281,7 +282,7 @@ export const InvitePage: React.FC = () => {
                                 <Building2 className="w-12 h-12 text-white" />
                             </div>
                         )}
-                        
+
                         <div>
                             <h1 className="text-4xl font-black tracking-tight leading-none mb-4">{company.company_name}</h1>
                             <div className="flex flex-wrap gap-4 text-sm opacity-80">
@@ -312,7 +313,7 @@ export const InvitePage: React.FC = () => {
                                 <div className="space-y-1">
                                     <p className="font-bold">Data Access Notice</p>
                                     <p className="text-sm opacity-70 leading-relaxed">
-                                        This company/organisation can see and manage the data you share via this invite. 
+                                        This company/organisation can see and manage the data you share via this invite.
                                         {entryMode === 'selection' ? ' Selected profile data will be synchronized for your corporate ID.' : ''}
                                     </p>
                                 </div>
@@ -341,9 +342,9 @@ export const InvitePage: React.FC = () => {
                             <p className="text-slate-500">Complete your profile to join the team</p>
                         </div>
                         {user && userProfiles.length > 0 && (
-                            <Button 
-                                variant="outline" 
-                                size="sm" 
+                            <Button
+                                variant="outline"
+                                size="sm"
                                 onClick={() => setEntryMode(entryMode === 'selection' ? 'manual' : 'selection')}
                                 className="rounded-full gap-2 border-indigo-200 text-indigo-700 hover:bg-indigo-50"
                             >
@@ -362,11 +363,10 @@ export const InvitePage: React.FC = () => {
                                             <button
                                                 key={profile.id}
                                                 onClick={() => handleProfileSelect(profile)}
-                                                className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all text-left ${
-                                                    selectedProfileId === profile.id 
-                                                    ? 'border-indigo-600 bg-indigo-50 shadow-md transform scale-[1.02]' 
+                                                className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all text-left ${selectedProfileId === profile.id
+                                                    ? 'border-indigo-600 bg-indigo-50 shadow-md transform scale-[1.02]'
                                                     : 'border-slate-100 hover:border-slate-200 bg-white'
-                                                }`}
+                                                    }`}
                                             >
                                                 <Avatar className="w-12 h-12 border-2 border-white shadow-sm">
                                                     <AvatarImage src={profile.content_json?.avatarUrl} />
@@ -384,7 +384,7 @@ export const InvitePage: React.FC = () => {
                                             </button>
                                         ))}
                                     </div>
-                                    
+
                                     {selectedProfileId && (
                                         <div className="pt-4 border-t border-slate-100 animate-in slide-in-from-top-2">
                                             <p className="text-xs font-bold text-slate-400 mb-4 uppercase tracking-widest">Syncing following data:</p>
@@ -416,19 +416,19 @@ export const InvitePage: React.FC = () => {
                                             </label>
                                         </div>
                                         <div className="text-center">
-                                            <Button 
-                                                variant="outline" 
-                                                size="sm" 
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
                                                 className="relative overflow-hidden group"
                                                 disabled={isUploading}
                                             >
                                                 {isUploading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Upload className="w-4 h-4 mr-2" />}
                                                 Upload Avatar
-                                                <input 
-                                                    type="file" 
-                                                    className="absolute inset-0 opacity-0 cursor-pointer" 
-                                                    onChange={handleAvatarUpload} 
-                                                    accept="image/*" 
+                                                <input
+                                                    type="file"
+                                                    className="absolute inset-0 opacity-0 cursor-pointer"
+                                                    onChange={handleAvatarUpload}
+                                                    accept="image/*"
                                                 />
                                             </Button>
                                             <p className="text-[10px] text-slate-400 mt-2">Max 5MB. Jpeg, Png or Webp</p>
@@ -451,7 +451,7 @@ export const InvitePage: React.FC = () => {
                                             </div>
                                         ))}
                                     </div>
-                                    
+
                                     <div className="pt-4">
                                         <Label className="text-xs font-black uppercase text-slate-400 tracking-tighter">Avatar URL (Optional)</Label>
                                         <Input
@@ -465,9 +465,8 @@ export const InvitePage: React.FC = () => {
                             )}
 
                             <Button
-                                className={`w-full h-14 text-lg font-black shadow-xl rounded-2xl transition-all transform hover:scale-[1.01] active:scale-[0.98] ${
-                                    joined ? 'bg-green-600 hover:bg-green-700' : 'bg-indigo-600 hover:bg-indigo-700'
-                                }`}
+                                className={`w-full h-14 text-lg font-black shadow-xl rounded-2xl transition-all transform hover:scale-[1.01] active:scale-[0.98] ${joined ? 'bg-green-600 hover:bg-green-700' : 'bg-indigo-600 hover:bg-indigo-700'
+                                    }`}
                                 onClick={handleJoin}
                                 disabled={submitting || isUploading || (entryMode === 'selection' && !selectedProfileId)}
                             >

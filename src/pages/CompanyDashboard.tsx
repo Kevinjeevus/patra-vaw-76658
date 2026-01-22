@@ -57,6 +57,8 @@ interface DigitalCard {
 interface Employee {
   id: string;
   employee_user_id: string;
+  employee_display_id: string;
+  profile_display_id: string;
   status: string;
   joined_at: string;
   designation: string;
@@ -249,6 +251,42 @@ export const CompanyDashboard: React.FC = () => {
       toast({ title: "Designation updated" });
       setEditingDesignation(null);
       fetchEmployees();
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const handleRegenerateInviteCode = async () => {
+    if (!profile) return;
+    if (!confirm('Are you sure you want to regenerate the invite code? This will invalidate all existing invite links.')) return;
+
+    try {
+      const newCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+      const { error } = await supabase
+        .from('profiles')
+        .update({ invite_code: newCode })
+        .eq('id', profile.id);
+
+      if (error) throw error;
+      toast({ title: "Success", description: "Invite code regenerated successfully" });
+      fetchProfile();
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const handleDeleteCard = async (cardId: string) => {
+    if (!confirm('Are you sure you want to delete this director card? This action cannot be undone.')) return;
+
+    try {
+      const { error } = await supabase
+        .from('digital_cards')
+        .delete()
+        .eq('id', cardId);
+
+      if (error) throw error;
+      toast({ title: "Success", description: "Director card deleted successfully" });
+      fetchCards();
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     }
@@ -463,6 +501,8 @@ export const CompanyDashboard: React.FC = () => {
                   <TableHeader>
                     <TableRow className="bg-slate-50/50">
                       <TableHead className="min-w-[200px]">Employee</TableHead>
+                      <TableHead className="min-w-[100px]">Employee ID</TableHead>
+                      <TableHead className="min-w-[100px]">Profile ID</TableHead>
                       <TableHead className="min-w-[150px]">Designation</TableHead>
                       <TableHead className="min-w-[150px]">Joined Date</TableHead>
                       <TableHead className="min-w-[120px]">Status</TableHead>
@@ -486,6 +526,12 @@ export const CompanyDashboard: React.FC = () => {
                               <div className="text-xs text-slate-500">{emp.data_submitted?.email || 'No email provided'}</div>
                             </div>
                           </div>
+                        </TableCell>
+                        <TableCell className="text-slate-600 text-sm font-mono">
+                          {emp.employee_display_id || '—'}
+                        </TableCell>
+                        <TableCell className="text-slate-600 text-sm font-mono">
+                          {emp.profile_display_id || '—'}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
@@ -587,7 +633,7 @@ export const CompanyDashboard: React.FC = () => {
                   size="sm"
                   disabled={cards.length >= 2}
                   className="bg-indigo-600 hover:bg-indigo-700 w-full sm:w-auto"
-                  onClick={() => navigate('/corporate-editor')}
+                  onClick={() => navigate('/editor?new=true')}
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Create Director Card
@@ -607,11 +653,14 @@ export const CompanyDashboard: React.FC = () => {
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => navigate(`/corporate-editor?id=${card.id}`)}>
+                        <Button variant="ghost" size="icon" onClick={() => navigate(`/editor?id=${card.id}`)}>
                           <Edit3 className="w-4 h-4" />
                         </Button>
                         <Button variant="ghost" size="icon" onClick={() => window.open(`/${card.vanity_url}`, '_blank')}>
                           <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => handleDeleteCard(card.id)}>
+                          <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
                     </div>
@@ -662,7 +711,7 @@ export const CompanyDashboard: React.FC = () => {
                     </div>
                     <h4 className="font-bold text-slate-900">Security Control</h4>
                     <p className="text-sm text-slate-500">Regenerating the link will invalidate all previous invite codes immediately.</p>
-                    <Button variant="outline" className="w-full" onClick={() => { }}>Regenerate Code</Button>
+                    <Button variant="outline" className="w-full" onClick={handleRegenerateInviteCode}>Regenerate Code</Button>
                   </div>
                   <div className="p-6 border border-slate-200 rounded-2xl space-y-4">
                     <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center text-green-600 mb-2">
@@ -862,7 +911,7 @@ export const CompanyDashboard: React.FC = () => {
 
       {/* Bulk Import Dialog */}
       <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-2xl font-black">
               <FileSpreadsheet className="w-6 h-6 text-emerald-600" />
