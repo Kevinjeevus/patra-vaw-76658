@@ -1,3 +1,12 @@
+import React, { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { toast } from '@/hooks/use-toast';
 import { Building2, UserPlus, ArrowRight, Loader2, CheckCircle2, Upload, User, Globe, Mail, Phone, Info, AlertTriangle, ShieldCheck, ChevronRight, ChevronLeft } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
@@ -7,6 +16,11 @@ export const InvitePage: React.FC = () => {
     const navigate = useNavigate();
     const { user, loading: authLoading } = useAuth();
 
+    const [company, setCompany] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
+    const [joined, setJoined] = useState(false);
+    const [formData, setFormData] = useState<Record<string, string>>({});
     const [userProfiles, setUserProfiles] = useState<any[]>([]);
     const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
     const [entryMode, setEntryMode] = useState<'selection' | 'manual'>('selection');
