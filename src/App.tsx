@@ -38,6 +38,8 @@ import Pricing from "./pages/Pricing";
 // import PrintCard from "./pages/Printcard";
 import { InvitePage } from "./pages/InvitePage";
 import { CorporateEditor } from "./pages/CorporateEditor";
+import { AlertCircle, Clock, Shield } from "lucide-react";
+import { Button as UIButton } from "@/components/ui/button";
 
 
 const queryClient = new QueryClient();
@@ -67,154 +69,274 @@ const LandingPageWrapper = () => {
   return <Index />;
 };
 
+const AppContent = () => {
+  const { user } = useAuth();
+  const [maintenanceSettings, setMaintenanceSettings] = useState<{ enabled: boolean, until: string | null } | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkStatus = async () => {
+      try {
+        // Check maintenance mode
+        const { data: settings } = await supabase
+          .from('system_settings')
+          .select('value')
+          .eq('key', 'global_settings')
+          .maybeSingle();
+
+        if (settings?.value) {
+          const val = settings.value as any;
+          setMaintenanceSettings({
+            enabled: val.maintenanceMode || false,
+            until: val.maintenanceUntil || null
+          });
+        }
+
+        // Check if current user is admin
+        if (user) {
+          const { data: roleData } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', user.id)
+            .eq('role', 'admin')
+            .maybeSingle();
+
+          if (roleData) setIsAdmin(true);
+        }
+      } catch (err) {
+        console.error("Error checking system status:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkStatus();
+
+    // Subscribe to settings changes
+    const channel = supabase
+      .channel('system_settings_changes')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'system_settings' }, (payload) => {
+        if (payload.new && (payload.new as any).key === 'global_settings') {
+          const val = (payload.new as any).value;
+          setMaintenanceSettings({
+            enabled: val.maintenanceMode || false,
+            until: val.maintenanceUntil || null
+          });
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
+  if (loading) return null;
+
+  // Show maintenance screen if enabled and user is not an admin
+  if (maintenanceSettings?.enabled && !isAdmin) {
+    const finishTime = maintenanceSettings.until ? new Date(maintenanceSettings.until) : null;
+    const isPast = finishTime && finishTime < new Date();
+
+    if (!isPast) {
+      return (
+        <div className="fixed inset-0 z-[9999] bg-background flex items-center justify-center p-6 text-center">
+          <div className="max-w-md space-y-6 animate-in fade-in zoom-in duration-500">
+            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Clock className="w-10 h-10 text-primary animate-pulse" />
+            </div>
+            <h1 className="text-4xl font-bold tracking-tight">Under Maintenance</h1>
+            <p className="text-xl text-muted-foreground">
+              We are under maintenance please try again after some time.
+            </p>
+
+            {finishTime && (
+              <div className="p-4 bg-muted rounded-xl space-y-2">
+                <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Estimated Completion</p>
+                <p className="text-2xl font-bold">
+                  {finishTime.toLocaleString(undefined, {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false,
+                    day: '2-digit',
+                    month: 'short'
+                  })}
+                </p>
+                <div className="text-xs text-muted-foreground">
+                  {Math.max(0, Math.ceil((finishTime.getTime() - new Date().getTime()) / (1000 * 60 * 60)))} hours remaining
+                </div>
+              </div>
+            )}
+
+            <div className="pt-8">
+              <UIButton variant="ghost" onClick={() => window.location.reload()} className="gap-2">
+                Check Again
+              </UIButton>
+            </div>
+
+            <p className="text-xs text-muted-foreground pt-12">
+              &copy; {new Date().getFullYear()} Patra Digital Identity Platform.
+            </p>
+          </div>
+        </div>
+      );
+    }
+  }
+
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<LandingPageWrapper />} />
+        <Route path="/yourself-ai" element={<YourselfAI />} />
+        <Route path="/pricing" element={<Pricing />} />
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route
+          path="/onboarding"
+          element={
+            <ProtectedRoute>
+              <OnboardingNew />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <DashboardRouter />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/analytics"
+          element={
+            <ProtectedRoute>
+              <Analytics />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/editor"
+          element={
+            <ProtectedRoute>
+              <EditorNew />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/corporate-editor"
+          element={
+            <ProtectedRoute>
+              <CorporateEditor />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/card-editor"
+          element={
+            <ProtectedRoute>
+              <CardEditorNew />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/card-templates"
+          element={
+            <ProtectedRoute>
+              <CardTemplates />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/email-signature"
+          element={
+            <ProtectedRoute>
+              <EmailSignature />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/api-docs" element={<ApiDocs />} />
+        <Route
+          path="/developer"
+          element={
+            <ProtectedRoute>
+              <DeveloperPortal />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/docs" element={<Docs />} />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <Admin />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings/:type"
+          element={
+            <ProtectedRoute>
+              <Feedback />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <Settings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/templates"
+          element={
+            <ProtectedRoute>
+              <Templates />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* <Route
+          path="/printcard"
+          element={
+            <ProtectedRoute>
+              <PrintCard />
+            </ProtectedRoute>
+          }
+        /> */}
+
+        <Route
+          path="/dashboard/access"
+          element={
+            <ProtectedRoute>
+              <AccessManagement />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+        <Route path="/invite" element={<InvitePage />} />
+        <Route path="/embed/:username" element={<EmbedCard />} />
+
+        <Route path="/:username/ai" element={<AIChat />} />
+        <Route path="/:username" element={<PublicProfile />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </BrowserRouter>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<LandingPageWrapper />} />
-            <Route path="/yourself-ai" element={<YourselfAI />} />
-            <Route path="/pricing" element={<Pricing />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route
-              path="/onboarding"
-              element={
-                <ProtectedRoute>
-                  <OnboardingNew />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <DashboardRouter />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/analytics"
-              element={
-                <ProtectedRoute>
-                  <Analytics />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/editor"
-              element={
-                <ProtectedRoute>
-                  <EditorNew />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/corporate-editor"
-              element={
-                <ProtectedRoute>
-                  <CorporateEditor />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/card-editor"
-              element={
-                <ProtectedRoute>
-                  <CardEditorNew />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/card-templates"
-              element={
-                <ProtectedRoute>
-                  <CardTemplates />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/email-signature"
-              element={
-                <ProtectedRoute>
-                  <EmailSignature />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/api-docs" element={<ApiDocs />} />
-            <Route
-              path="/developer"
-              element={
-                <ProtectedRoute>
-                  <DeveloperPortal />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/docs" element={<Docs />} />
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute>
-                  <Admin />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/settings/:type"
-              element={
-                <ProtectedRoute>
-                  <Feedback />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/settings"
-              element={
-                <ProtectedRoute>
-                  <Settings />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/templates"
-              element={
-                <ProtectedRoute>
-                  <Templates />
-                </ProtectedRoute>
-              }
-            />
-
-            {/* <Route
-              path="/printcard"
-              element={
-                <ProtectedRoute>
-                  <PrintCard />
-                </ProtectedRoute>
-              }
-            /> */}
-
-            <Route
-              path="/dashboard/access"
-              element={
-                <ProtectedRoute>
-                  <AccessManagement />
-                </ProtectedRoute>
-              }
-            />
-
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="/invite" element={<InvitePage />} />
-            <Route path="/embed/:username" element={<EmbedCard />} />
-
-            <Route path="/:username/ai" element={<AIChat />} />
-            <Route path="/:username" element={<PublicProfile />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+        <AppContent />
       </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>

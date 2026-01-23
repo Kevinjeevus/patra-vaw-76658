@@ -36,8 +36,31 @@ export function Docs() {
     fetchChangelog();
   }, []);
 
+  const [dynamicPages, setDynamicPages] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchDynamicPages();
+  }, []);
+
+  const fetchDynamicPages = async () => {
+    try {
+      const { data } = await supabase
+        .from('documentation_pages')
+        .select('*')
+        .eq('is_published', true)
+        .order('order_index', { ascending: true });
+
+      if (data) {
+        setDynamicPages(data.filter(p => p.slug !== 'changelog')); // Changelog is handled separately
+      }
+    } catch (error) {
+      console.error('Error fetching dynamic pages:', error);
+    }
+  };
+
   const fetchChangelog = async () => {
     setLoadingChangelog(true);
+    // ... rest of fetchChangelog
     try {
       const { data } = await supabase
         .from('documentation_pages')
@@ -81,6 +104,16 @@ export function Docs() {
         { id: 'api-embeds', label: 'API & Embeds', icon: Code },
         { id: 'security', label: 'Privacy & Security', icon: Shield },
       ]
+    },
+    {
+      title: "Guides & Resources",
+      items: dynamicPages.map(page => ({
+        id: page.id, // Use ID for dynamic pages
+        label: page.title,
+        icon: BookOpen,
+        isDynamic: true,
+        content: page.content
+      }))
     },
     {
       title: "Updates",
@@ -162,7 +195,7 @@ export function Docs() {
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto h-[calc(100vh-65px)] md:h-screen">
         <div className="max-w-4xl mx-auto px-6 py-10 space-y-8">
-          
+
           {/* Getting Started */}
           {activeSection === 'getting-started' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -172,7 +205,7 @@ export function Docs() {
                   The next-generation digital identity platform. Create, share, and manage your professional presence with style.
                 </p>
               </div>
-              
+
               <div className="grid md:grid-cols-2 gap-6 mt-8">
                 <Card className="border-primary/20 bg-primary/5">
                   <CardHeader>
@@ -479,6 +512,29 @@ export function Docs() {
                   <strong>Data Encryption:</strong> All data is encrypted at rest and in transit using industry-standard protocols.
                 </p>
               </div>
+            </div>
+          )}
+
+          {/* Dynamic Pages */}
+          {dynamicPages.find(p => p.id === activeSection) && (
+            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              {(() => {
+                const page = dynamicPages.find(p => p.id === activeSection);
+                return (
+                  <>
+                    <div>
+                      <h1 className="text-3xl font-bold mb-4">{page.title}</h1>
+                    </div>
+                    <Card>
+                      <CardContent className="pt-6">
+                        <div className="prose prose-slate dark:prose-invert max-w-none">
+                          <ReactMarkdown>{page.content}</ReactMarkdown>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </>
+                );
+              })()}
             </div>
           )}
 

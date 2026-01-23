@@ -25,7 +25,8 @@ import {
     CreditCard,
     ChevronLeft,
     ChevronRight,
-    Smartphone
+    Smartphone,
+    Building2
 } from 'lucide-react';
 import { CardPreviewNew } from '@/components/card-preview-new';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -41,9 +42,11 @@ import { InterestsEditor } from '@/components/editor/InterestsEditor';
 import { LocationEditor } from '@/components/editor/LocationEditor';
 import { BasicInfoEditor } from '@/components/editor/BasicInfoEditor';
 import { CustomLinksEditor } from '@/components/editor/CustomLinksEditor';
+import { CompanyProfileEditor } from '@/components/editor/CompanyProfileEditor';
 import { CardData } from '@/components/editor/types';
 
 const corporateNavItems = [
+    { id: 'company', label: 'Company Profile', icon: Building2 },
     { id: 'avatar', label: 'Identity', icon: UserCircle },
     { id: 'about', label: 'Professional Bio', icon: User },
     { id: 'verified', label: 'Company Credentials', icon: Verified }, // verified icon exists below
@@ -166,6 +169,7 @@ export const CorporateEditor: React.FC = () => {
 
     const renderSection = () => {
         switch (activeSection) {
+            case 'company': return <CompanyProfileEditor user={user} />;
             case 'avatar': return <BasicInfoEditor cardData={cardData} setCardData={setCardData} user={user} />;
             case 'about': return <ProfileInfoEditor cardData={cardData} setCardData={setCardData} />;
             case 'verified': return <SocialLinksEditor cardData={cardData} setCardData={setCardData} />;
@@ -215,6 +219,7 @@ export const CorporateEditor: React.FC = () => {
                     <aside className="w-64 bg-white border-r border-slate-200 flex flex-col">
                         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
                             {[
+                                { id: 'company', label: 'Company Profile', icon: Building2 },
                                 { id: 'avatar', label: 'Basic Identity', icon: UserCircle },
                                 { id: 'about', label: 'Biography', icon: User },
                                 { id: 'verified', label: 'Company Verified', icon: Verified },

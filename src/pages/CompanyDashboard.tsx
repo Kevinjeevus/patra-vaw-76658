@@ -602,7 +602,20 @@ export const CompanyDashboard: React.FC = () => {
                                     {Object.entries(emp.data_submitted || {}).map(([key, value]) => (
                                       <div key={key} className="flex flex-col border-b border-slate-100 pb-2">
                                         <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{key.replace('_', ' ')}</span>
-                                        <span className="text-slate-900">{String(value)}</span>
+                                        {key === 'avatar_url' ? (
+                                          <div className="mt-2 w-[200px] h-[200px] bg-slate-100 rounded-[40px] overflow-hidden shadow-sm border border-slate-200">
+                                            <img
+                                              src={String(value)}
+                                              alt="Avatar"
+                                              className="w-full h-full object-cover"
+                                              onError={(e) => {
+                                                (e.target as HTMLImageElement).src = 'https://ui-avatars.com/api/?name=User&background=random';
+                                              }}
+                                            />
+                                          </div>
+                                        ) : (
+                                          <span className="text-slate-900 break-all">{String(value)}</span>
+                                        )}
                                       </div>
                                     ))}
                                     {Object.keys(emp.data_submitted || {}).length === 0 && (

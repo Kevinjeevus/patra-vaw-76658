@@ -111,10 +111,13 @@ const Admin: React.FC = () => {
   // System Settings (Persisted in LocalStorage for demo)
   const [systemSettings, setSystemSettings] = useState({
     maintenanceMode: false,
+    maintenanceUntil: null as string | null,
     allowRegistrations: true,
     requireEmailVerification: true,
     enableAiFeatures: true,
     maxCardsPerUser: 5,
+    showCardBgTemplate: true,
+    showBannerBgTemplate: true,
   });
 
   // Mock Chart Data (since we don't have historical data API)
@@ -156,17 +159,46 @@ const Admin: React.FC = () => {
     }
   }, [isAdmin]);
 
-  const loadSystemSettings = () => {
-    const saved = localStorage.getItem('patra_system_settings');
-    if (saved) {
-      setSystemSettings(JSON.parse(saved));
+  const loadSystemSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('system_settings')
+        .select('value')
+        .eq('key', 'global_settings')
+        .single();
+
+      if (data && data.value) {
+        setSystemSettings(data.value as any);
+      }
+    } catch (error) {
+      console.error('Error loading settings:', error);
+      // Fallback to localStorage if DB fails or table doesn't exist yet
+      const saved = localStorage.getItem('patra_system_settings');
+      if (saved) {
+        setSystemSettings(JSON.parse(saved));
+      }
     }
   };
 
-  const saveSystemSettings = (newSettings: any) => {
+  const saveSystemSettings = async (newSettings: any) => {
     setSystemSettings(newSettings);
     localStorage.setItem('patra_system_settings', JSON.stringify(newSettings));
-    toast({ title: 'Settings Saved', description: 'System configuration updated.' });
+
+    try {
+      const { error } = await supabase
+        .from('system_settings')
+        .upsert({
+          key: 'global_settings',
+          value: newSettings,
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) throw error;
+      toast({ title: 'Settings Saved', description: 'System configuration updated.' });
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      toast({ title: 'Local Save Only', description: 'Failed to sync with database.', variant: 'warning' });
+    }
   };
 
   const loadRecentActivity = async () => {
@@ -456,7 +488,11 @@ const Admin: React.FC = () => {
             user_id: u.user_id,
           }));
 
-          await supabase.from('announcements_recipients').insert(recipients);
+          // Batch insert in chunks to avoid payload size limits
+          const chunkSize = 100;
+          for (let i = 0; i < recipients.length; i += chunkSize) {
+            await supabase.from('announcements_recipients').insert(recipients.slice(i, i + chunkSize));
+          }
         }
       }
 
@@ -505,9 +541,28 @@ const Admin: React.FC = () => {
     }
   };
 
-  const handleViewProfile = (userId: string) => {
-    // Navigate to user's profile view
-    window.open(`/admin/user/${userId}`, '_blank');
+  const handleViewProfile = async (userId: string) => {
+    try {
+      // Fetch user's primary vanity URL
+      const { data, error } = await supabase
+        .from('digital_cards')
+        .select('vanity_url')
+        .eq('owner_user_id', userId)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (data?.vanity_url) {
+        window.open(`/${data.vanity_url}`, '_blank');
+      } else {
+        // Fallback to userID if no vanity url found
+        window.open(`/${userId}`, '_blank');
+      }
+    } catch (error) {
+      console.error('Error opening profile:', error);
+      window.open(`/${userId}`, '_blank');
+    }
   };
 
   const handleOpenUserModal = (user: any) => {
@@ -1418,7 +1473,48 @@ const Admin: React.FC = () => {
                         onCheckedChange={(c) => saveSystemSettings({ ...systemSettings, maintenanceMode: c })}
                       />
                     </div>
-                    <div className="flex items-center justify-between">
+
+                    <div className="space-y-2 pt-2 border-t">
+                      <Label>Maintenance Estimated Completion</Label>
+                      <div className="flex gap-4">
+                        <div className="flex-1">
+                          <Input
+                            type="datetime-local"
+                            value={systemSettings.maintenanceUntil ? new Date(systemSettings.maintenanceUntil).toISOString().slice(0, 16) : ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              saveSystemSettings({
+                                ...systemSettings,
+                                maintenanceUntil: val ? new Date(val).toISOString() : null
+                              });
+                            }}
+                          />
+                        </div>
+                        <div className="w-32">
+                          <Select onValueChange={(hrs) => {
+                            const date = new Date();
+                            date.setHours(date.getHours() + parseInt(hrs));
+                            saveSystemSettings({
+                              ...systemSettings,
+                              maintenanceUntil: date.toISOString()
+                            });
+                          }}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="+ Hours" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="1">+1 hr</SelectItem>
+                              <SelectItem value="2">+2 hrs</SelectItem>
+                              <SelectItem value="4">+4 hrs</SelectItem>
+                              <SelectItem value="12">+12 hrs</SelectItem>
+                              <SelectItem value="24">+24 hrs</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2">
                       <div className="space-y-0.5">
                         <Label>Allow Registrations</Label>
                         <p className="text-sm text-muted-foreground">Enable new user signups</p>
@@ -1428,26 +1524,38 @@ const Admin: React.FC = () => {
                         onCheckedChange={(c) => saveSystemSettings({ ...systemSettings, allowRegistrations: c })}
                       />
                     </div>
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label>Require Email Verification</Label>
-                        <p className="text-sm text-muted-foreground">Users must verify email before access</p>
-                      </div>
-                      <Switch
-                        checked={systemSettings.requireEmailVerification}
-                        onCheckedChange={(c) => saveSystemSettings({ ...systemSettings, requireEmailVerification: c })}
-                      />
-                    </div>
                   </CardContent>
                 </Card>
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>Feature Flags</CardTitle>
-                    <CardDescription>Enable or disable specific features</CardDescription>
+                    <CardTitle>Feature Visibility</CardTitle>
+                    <CardDescription>Toggle features for all users</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>Card Background Templates</Label>
+                        <p className="text-sm text-muted-foreground">Show background options in card editor</p>
+                      </div>
+                      <Switch
+                        checked={systemSettings.showCardBgTemplate}
+                        onCheckedChange={(c) => saveSystemSettings({ ...systemSettings, showCardBgTemplate: c })}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>Banner Background Templates</Label>
+                        <p className="text-sm text-muted-foreground">Show banner options in card editor</p>
+                      </div>
+                      <Switch
+                        checked={systemSettings.showBannerBgTemplate}
+                        onCheckedChange={(c) => saveSystemSettings({ ...systemSettings, showBannerBgTemplate: c })}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t">
                       <div className="space-y-0.5">
                         <Label>AI Assistant Features</Label>
                         <p className="text-sm text-muted-foreground">Enable AI profile generation and chat</p>
@@ -1458,14 +1566,13 @@ const Admin: React.FC = () => {
                       />
                     </div>
 
-                    <div className="space-y-2 pt-4 border-t">
+                    <div className="space-y-2 pt-2 border-t">
                       <Label>Max Cards Per User</Label>
                       <Input
                         type="number"
                         value={systemSettings.maxCardsPerUser}
                         onChange={(e) => saveSystemSettings({ ...systemSettings, maxCardsPerUser: parseInt(e.target.value) })}
                       />
-                      <p className="text-xs text-muted-foreground">Limit for free tier users</p>
                     </div>
                   </CardContent>
                 </Card>

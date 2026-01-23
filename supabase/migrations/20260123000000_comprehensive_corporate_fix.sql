@@ -20,6 +20,10 @@ CREATE TABLE IF NOT EXISTS public.invited_employees (
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
 
+-- 1.1 Ensure updated_at column exists (in case table already existed without it)
+ALTER TABLE public.invited_employees 
+ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT now();
+
 -- 2. Add missing columns to profiles table for corporate accounts
 ALTER TABLE public.profiles 
 ADD COLUMN IF NOT EXISTS account_type TEXT DEFAULT 'individual',
@@ -80,6 +84,7 @@ ALTER TABLE public.invited_employees ENABLE ROW LEVEL SECURITY;
 
 -- 8. Drop existing policies if they exist
 DROP POLICY IF EXISTS "Anyone can view company info by invite code" ON public.profiles;
+DROP POLICY IF EXISTS "Anyone can view company profiles by invite code" ON public.profiles;
 DROP POLICY IF EXISTS "Users can join a company via invite" ON public.invited_employees;
 DROP POLICY IF EXISTS "Users can view their own memberships" ON public.invited_employees;
 DROP POLICY IF EXISTS "Company admins can view their employees" ON public.invited_employees;
