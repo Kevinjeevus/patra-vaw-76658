@@ -8,6 +8,7 @@ import QRCode from 'react-qr-code';
 import { updateOGMetaTags, generateShareText, shareProfile } from '@/lib/og-utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { DigitalCard } from '@/components/card/DigitalCard';
+import { CorporateIDCard } from '@/components/card/CorporateIDCard';
 
 interface CardContent {
   fullName: string;
@@ -50,6 +51,7 @@ export const MyCard: React.FC = () => {
   const [isSaved, setIsSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
+  const [corporateInfo, setCorporateInfo] = useState<any>(null);
 
   useEffect(() => {
     if (username) {
@@ -122,6 +124,38 @@ export const MyCard: React.FC = () => {
           bannerType: content.bannerType || 'gradient',
           bannerValue: content.bannerValue || '',
         });
+
+        // Fetch corporate info if this is an employee
+        const { data: membership } = await supabase
+          .from('invited_employees')
+          .select(`
+            designation,
+            company_profile_id,
+            profiles:company_profile_id (
+              company_name,
+              vanity_url,
+              display_parameters,
+              company_logo_url,
+              bio,
+              address
+            )
+          `)
+          .eq('employee_user_id', card.owner_user_id)
+          .eq('is_approved', true)
+          .maybeSingle();
+
+        if (membership) {
+          const companyInfo = Array.isArray(membership.profiles) ? membership.profiles[0] : membership.profiles;
+          setCorporateInfo({
+            designation: membership.designation || content.jobTitle || 'Team Member',
+            companyName: companyInfo?.company_name || content.company || '',
+            companyLogo: companyInfo?.company_logo_url || null,
+            displayParameters: (companyInfo?.display_parameters as string[]) || ['display_name', 'email', 'job_title'],
+            bio: companyInfo?.bio || '',
+            address: companyInfo?.address || ''
+          });
+        }
+
         setLoading(false);
       } catch (err) {
         console.error('Error fetching profile:', err);
@@ -534,14 +568,34 @@ export const MyCard: React.FC = () => {
 
         {/* 3D Card Container */}
         <div className="flex justify-center items-center">
-          <DigitalCard
-            cardData={cardData}
-            username={username || ''}
-            isFlipped={flipped}
-            onFlip={() => setFlipped(!flipped)}
-            width={cardData.cardConfig?.cardWidth || 400}
-            height={cardData.cardConfig?.cardHeight || 250}
-          />
+          {corporateInfo ? (
+            <CorporateIDCard
+              user={{
+                fullName: cardData.fullName || '',
+                jobTitle: corporateInfo.designation || cardData.jobTitle || 'Team Member',
+                email: cardData.email || '',
+                phone: cardData.phone || '',
+                avatarUrl: cardData.avatarUrl || '',
+                vanityUrl: username || '',
+                companyName: corporateInfo.companyName,
+                bio: corporateInfo.bio,
+                address: corporateInfo.address
+              }}
+              companyLogo={corporateInfo.companyLogo}
+              displayParameters={corporateInfo.displayParameters}
+              isFlipped={flipped}
+              onFlip={() => setFlipped(!flipped)}
+            />
+          ) : (
+            <DigitalCard
+              cardData={cardData}
+              username={username || ''}
+              isFlipped={flipped}
+              onFlip={() => setFlipped(!flipped)}
+              width={cardData.cardConfig?.cardWidth || 400}
+              height={cardData.cardConfig?.cardHeight || 250}
+            />
+          )}
         </div>
 
         {/* Subtle instruction hint */}

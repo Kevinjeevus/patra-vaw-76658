@@ -14,8 +14,9 @@ import {
   Eye, Edit3, Copy, RefreshCw, Send, AlertCircle,
   UserCheck, UserX, Link as LinkIcon, Globe, ShieldCheck, UserPlus,
   ArrowLeft, FileSpreadsheet, Upload, Download, Info, Check, Trash2, ListChecks,
-  Loader2
+  Loader2, Smartphone
 } from 'lucide-react';
+import { CorporateIDCard } from '@/components/card/CorporateIDCard';
 
 
 import { Checkbox } from '@/components/ui/checkbox';
@@ -43,6 +44,7 @@ interface Profile {
   display_parameters: Json;
   payment_due_date: string | null;
   vanity_url: string | null;
+  company_logo_url?: string;
 }
 
 interface DigitalCard {
@@ -843,47 +845,72 @@ export const CompanyDashboard: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="display">
-            <Card className="shadow-md border-none">
-              <CardHeader>
-                <CardTitle>Digital ID Card Display</CardTitle>
-                <CardDescription>Choose which pieces of collected data should be visible on the public ID card.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {AVAILABLE_PARAMETERS.map(param => (
-                    <div key={param.id} className={`flex items-center justify-between p-4 rounded-xl border transition-colors ${selectedParameters.includes(param.id) ? 'bg-slate-50 border-slate-200' : 'bg-slate-50/30 border-dashed border-slate-200 opacity-50'}`}>
-                      <div className="flex items-center gap-3">
-                        <Checkbox
-                          id={`show-${param.id}`}
-                          checked={displayParameters.includes(param.id)}
-                          disabled={!selectedParameters.includes(param.id)}
-                          onCheckedChange={(checked) => {
-                            setDisplayParameters(prev =>
-                              checked
-                                ? [...prev, param.id]
-                                : prev.filter(p => p !== param.id)
-                            );
-                          }}
-                        />
-                        <div className="flex flex-col">
-                          <Label htmlFor={`show-${param.id}`} className="font-medium cursor-pointer">{param.label}</Label>
-                          {!selectedParameters.includes(param.id) && <span className="text-[10px] text-amber-600 font-bold">Not being collected</span>}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <Card className="shadow-md border-none h-fit">
+                <CardHeader>
+                  <CardTitle>Digital ID Card Design</CardTitle>
+                  <CardDescription>Choose which pieces of collected data should be visible on the public ID card.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 gap-4">
+                    {AVAILABLE_PARAMETERS.map(param => (
+                      <div key={param.id} className={`flex items-center justify-between p-4 rounded-xl border transition-colors ${selectedParameters.includes(param.id) ? 'bg-slate-50 border-slate-200' : 'bg-slate-50/30 border-dashed border-slate-200 opacity-50'}`}>
+                        <div className="flex items-center gap-3">
+                          <Checkbox
+                            id={`show-${param.id}`}
+                            checked={displayParameters.includes(param.id)}
+                            disabled={!selectedParameters.includes(param.id)}
+                            onCheckedChange={(checked) => {
+                              setDisplayParameters(prev =>
+                                checked
+                                  ? [...prev, param.id]
+                                  : prev.filter(p => p !== param.id)
+                              );
+                            }}
+                          />
+                          <div className="flex flex-col">
+                            <Label htmlFor={`show-${param.id}`} className="font-medium cursor-pointer">{param.label}</Label>
+                            {!selectedParameters.includes(param.id) && <span className="text-[10px] text-amber-600 font-bold">Not being collected</span>}
+                          </div>
                         </div>
+                        <Badge variant="outline" className={`${displayParameters.includes(param.id) ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                          {displayParameters.includes(param.id) ? 'Visible' : 'Hidden'}
+                        </Badge>
                       </div>
-                      <Badge variant="outline" className={`${displayParameters.includes(param.id) ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
-                        {displayParameters.includes(param.id) ? 'Visible' : 'Hidden'}
-                      </Badge>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                  <Button className="mt-8 bg-indigo-600 hover:bg-indigo-700 w-full" onClick={async () => {
+                    const { error } = await supabase.from('profiles').update({ display_parameters: displayParameters }).eq('id', profile!.id);
+                    if (!error) toast({ title: "Card design updated" });
+                  }}>
+                    Update ID Cards
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <div className="flex flex-col items-center gap-6">
+                <div className="bg-slate-900/5 rounded-[3rem] p-12 border-4 border-dashed border-slate-200 w-full flex justify-center items-center">
+                  <div className="animate-in fade-in zoom-in duration-500">
+                    <CorporateIDCard
+                      user={{
+                        fullName: user?.user_metadata?.display_name || 'Sample Employee',
+                        jobTitle: 'Senior Executive',
+                        email: user?.email || 'employee@company.com',
+                        phone: '+1 234 567 890',
+                        vanityUrl: profile?.vanity_url || 'sample-profile',
+                        companyName: profile?.company_name
+                      }}
+                      companyLogo={profile?.company_logo_url}
+                      displayParameters={displayParameters}
+                    />
+                  </div>
                 </div>
-                <Button className="mt-8 bg-indigo-600 hover:bg-indigo-700 px-8" onClick={async () => {
-                  const { error } = await supabase.from('profiles').update({ display_parameters: displayParameters }).eq('id', profile!.id);
-                  if (!error) toast({ title: "Card design updated" });
-                }}>
-                  Update ID Cards
-                </Button>
-              </CardContent>
-            </Card>
+                <div className="text-center space-y-1">
+                  <p className="font-bold text-slate-900">Live Card Preview</p>
+                  <p className="text-sm text-slate-500">Tap the card to see the reverse side with QR code</p>
+                </div>
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
       </main>
