@@ -78,8 +78,6 @@ const AVAILABLE_PARAMETERS = [
   { id: 'email', label: 'Email', required: true },
   { id: 'phone', label: 'Phone Number', required: false },
   { id: 'job_title', label: 'Job Title', required: false },
-  { id: 'bio', label: 'Bio', required: false },
-  { id: 'address', label: 'Address', required: false },
   { id: 'avatar_url', label: 'Profile Picture', required: false },
 ];
 
@@ -889,26 +887,56 @@ export const CompanyDashboard: React.FC = () => {
               </Card>
 
               <div className="flex flex-col items-center gap-6">
-                <div className="bg-slate-900/5 rounded-[3rem] p-12 border-4 border-dashed border-slate-200 w-full flex justify-center items-center">
-                  <div className="animate-in fade-in zoom-in duration-500">
-                    <CorporateIDCard
-                      user={{
-                        fullName: user?.user_metadata?.display_name || 'Sample Employee',
-                        jobTitle: 'Senior Executive',
-                        email: user?.email || 'employee@company.com',
-                        phone: '+1 234 567 890',
-                        vanityUrl: profile?.vanity_url || 'sample-profile',
-                        companyName: profile?.company_name
-                      }}
-                      companyLogo={profile?.company_logo_url}
-                      displayParameters={displayParameters}
-                    />
-                  </div>
-                </div>
-                <div className="text-center space-y-1">
-                  <p className="font-bold text-slate-900">Live Card Preview</p>
-                  <p className="text-sm text-slate-500">Tap the card to see the reverse side with QR code</p>
-                </div>
+                {/* Staff ID Cards Viewer */}
+                <Card className="w-full">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Users className="w-5 h-5" />
+                      Staff ID Cards
+                    </CardTitle>
+                    <CardDescription>Review ID cards for all approved employees</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {employees.filter(emp => emp.is_approved).length === 0 ? (
+                      <div className="text-center py-12 text-slate-500">
+                        <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p>No approved employees yet</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {employees.filter(emp => emp.is_approved).map(employee => {
+                          const empProfile = Array.isArray(employee.profiles) ? employee.profiles[0] : employee.profiles;
+                          const submittedData = employee.data_submitted as any;
+
+                          return (
+                            <div key={employee.id} className="flex flex-col items-center gap-4">
+                              <div className="bg-slate-50 rounded-[2rem] p-8 border-2 border-slate-200">
+                                <CorporateIDCard
+                                  user={{
+                                    fullName: empProfile?.display_name || submittedData?.display_name || 'Employee',
+                                    jobTitle: employee.designation || submittedData?.job_title || 'Team Member',
+                                    email: submittedData?.email || 'email@company.com',
+                                    phone: submittedData?.phone || '',
+                                    avatarUrl: empProfile?.avatar_url || submittedData?.avatar_url || '',
+                                    vanityUrl: empProfile?.vanity_url || 'employee',
+                                    companyName: profile?.company_name
+                                  }}
+                                  companyLogo={profile?.company_logo_url}
+                                  displayParameters={displayParameters}
+                                  scale={0.7}
+                                />
+                              </div>
+                              <div className="text-center">
+                                <p className="font-semibold text-sm text-slate-900">{empProfile?.display_name || 'Employee'}</p>
+                                <p className="text-xs text-slate-500">{employee.designation || 'Team Member'}</p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               </div>
             </div>
           </TabsContent>
