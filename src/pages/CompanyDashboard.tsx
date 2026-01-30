@@ -97,6 +97,7 @@ export const CompanyDashboard: React.FC = () => {
   const [manualStaffData, setManualStaffData] = useState<Record<string, string>>({});
   const [isProcessingBulk, setIsProcessingBulk] = useState(false);
   const [importStatus, setImportStatus] = useState<{ total: number, current: number } | null>(null);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
 
   useEffect(() => {
     // Only proceed once auth has finished loading the session
@@ -892,9 +893,9 @@ export const CompanyDashboard: React.FC = () => {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Users className="w-5 h-5" />
-                      Staff ID Cards
+                      Staff ID Card Viewer
                     </CardTitle>
-                    <CardDescription>Review ID cards for all approved employees</CardDescription>
+                    <CardDescription>Select an employee to view their ID card</CardDescription>
                   </CardHeader>
                   <CardContent>
                     {employees.filter(emp => emp.is_approved).length === 0 ? (
@@ -903,18 +904,53 @@ export const CompanyDashboard: React.FC = () => {
                         <p>No approved employees yet</p>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {employees.filter(emp => emp.is_approved).map(employee => {
-                          const empProfile = Array.isArray(employee.profiles) ? employee.profiles[0] : employee.profiles;
-                          const submittedData = employee.data_submitted as any;
+                      <div className="space-y-6">
+                        {/* Employee Selector */}
+                        <div className="max-w-md mx-auto">
+                          <Label htmlFor="employee-select" className="text-sm font-medium mb-2 block">
+                            Select Employee
+                          </Label>
+                          <select
+                            id="employee-select"
+                            className="w-full px-4 py-2 border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            value={selectedEmployeeId || ''}
+                            onChange={(e) => setSelectedEmployeeId(e.target.value)}
+                          >
+                            {!selectedEmployeeId && <option value="">-- Choose an employee --</option>}
+                            {employees.filter(emp => emp.is_approved).map(employee => {
+                              const empProfile = Array.isArray(employee.profiles) ? employee.profiles[0] : employee.profiles;
+                              const submittedData = employee.data_submitted as any;
+                              const displayName = empProfile?.display_name || submittedData?.display_name || 'Employee';
+                              const designation = employee.designation || submittedData?.job_title || 'Team Member';
+
+                              return (
+                                <option key={employee.id} value={employee.id}>
+                                  {displayName} - {designation}
+                                </option>
+                              );
+                            })}
+                          </select>
+                        </div>
+
+                        {/* Selected Employee Card */}
+                        {(() => {
+                          // Auto-select first employee if none selected
+                          const approvedEmployees = employees.filter(emp => emp.is_approved);
+                          const currentSelectedId = selectedEmployeeId || approvedEmployees[0]?.id;
+                          const selectedEmployee = approvedEmployees.find(emp => emp.id === currentSelectedId);
+
+                          if (!selectedEmployee) return null;
+
+                          const empProfile = Array.isArray(selectedEmployee.profiles) ? selectedEmployee.profiles[0] : selectedEmployee.profiles;
+                          const submittedData = selectedEmployee.data_submitted as any;
 
                           return (
-                            <div key={employee.id} className="flex flex-col items-center gap-4">
-                              <div className="bg-slate-50 rounded-[2rem] p-8 border-2 border-slate-200">
+                            <div className="flex flex-col items-center gap-4">
+                              <div className="bg-slate-50 rounded-[3rem] p-12 border-2 border-slate-200">
                                 <CorporateIDCard
                                   user={{
                                     fullName: empProfile?.display_name || submittedData?.display_name || 'Employee',
-                                    jobTitle: employee.designation || submittedData?.job_title || 'Team Member',
+                                    jobTitle: selectedEmployee.designation || submittedData?.job_title || 'Team Member',
                                     email: submittedData?.email || 'email@company.com',
                                     phone: submittedData?.phone || '',
                                     avatarUrl: empProfile?.avatar_url || submittedData?.avatar_url || '',
@@ -923,16 +959,22 @@ export const CompanyDashboard: React.FC = () => {
                                   }}
                                   companyLogo={profile?.company_logo_url}
                                   displayParameters={displayParameters}
-                                  scale={0.7}
                                 />
                               </div>
-                              <div className="text-center">
-                                <p className="font-semibold text-sm text-slate-900">{empProfile?.display_name || 'Employee'}</p>
-                                <p className="text-xs text-slate-500">{employee.designation || 'Team Member'}</p>
+                              <div className="text-center space-y-1">
+                                <p className="font-bold text-lg text-slate-900">
+                                  {empProfile?.display_name || submittedData?.display_name || 'Employee'}
+                                </p>
+                                <p className="text-sm text-slate-600">
+                                  {selectedEmployee.designation || submittedData?.job_title || 'Team Member'}
+                                </p>
+                                <p className="text-xs text-slate-400 mt-2">
+                                  Tap the card to see the reverse side with QR code
+                                </p>
                               </div>
                             </div>
                           );
-                        })}
+                        })()}
                       </div>
                     )}
                   </CardContent>
