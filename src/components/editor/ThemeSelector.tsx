@@ -33,7 +33,8 @@ interface ThemeSelectorProps {
 export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ cardData, setCardData }) => {
     const navigate = useNavigate();
     const { user } = useAuth();
-    const [activeTab, setActiveTab] = useState(cardData.bannerType || 'gradient');
+type BannerType = 'blurred' | 'color' | 'gradient' | 'image' | 'pattern';
+    const [activeTab, setActiveTab] = useState<BannerType>((cardData.bannerType as BannerType) || 'gradient');
 
     // Sync active tab with cardData
     useEffect(() => {
@@ -43,7 +44,7 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ cardData, setCardD
     }, [cardData.bannerType]);
 
     const handleTabChange = (val: string) => {
-        setActiveTab(val);
+        setActiveTab(val as BannerType);
         // Set default values when switching tabs if empty
         let newValue = cardData.bannerValue;
 

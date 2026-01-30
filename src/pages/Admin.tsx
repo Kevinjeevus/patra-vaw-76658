@@ -197,7 +197,7 @@ const Admin: React.FC = () => {
       toast({ title: 'Settings Saved', description: 'System configuration updated.' });
     } catch (error) {
       console.error('Error saving settings:', error);
-      toast({ title: 'Local Save Only', description: 'Failed to sync with database.', variant: 'warning' });
+      toast({ title: 'Local Save Only', description: 'Failed to sync with database.', variant: 'default' });
     }
   };
 

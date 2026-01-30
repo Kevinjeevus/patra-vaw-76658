@@ -14,7 +14,7 @@ import {
   Eye, Edit3, Copy, RefreshCw, Send, AlertCircle,
   UserCheck, UserX, Link as LinkIcon, Globe, ShieldCheck, UserPlus, Camera,
   ArrowLeft, FileSpreadsheet, Upload, Download, Info, Check, Trash2, ListChecks,
-  Loader2, Smartphone
+  Loader2, Smartphone, User, Mail, Phone
 } from 'lucide-react';
 import { CorporateIDCard } from '@/components/card/CorporateIDCard';
 
@@ -66,6 +66,7 @@ interface Employee {
   designation: string;
   is_approved: boolean;
   data_submitted: any;
+  staff_id?: string;
   profiles: {
     display_name: string;
     avatar_url: string;
@@ -81,7 +82,7 @@ const AVAILABLE_PARAMETERS = [
 ];
 
 export const CompanyDashboard: React.FC = () => {
-  const { user, loading: loadingAuth } = useAuth();
+  const { user, loading: loadingAuth, signOut } = useAuth();
   const navigate = useNavigate();
   const { tab } = useParams<{ tab: string }>();
 
