@@ -38,6 +38,7 @@ import Pricing from "./pages/Pricing";
 // import PrintCard from "./pages/Printcard";
 import { InvitePage } from "./pages/InvitePage";
 import { CorporateEditor } from "./pages/CorporateEditor";
+import { StaffCardView } from "./pages/StaffCardView";
 import { AlertCircle, Clock, Shield } from "lucide-react";
 import { Button as UIButton } from "@/components/ui/button";
 
@@ -202,7 +203,7 @@ const AppContent = () => {
           }
         />
         <Route
-          path="/dashboard"
+          path="/dashboard/:tab?"
           element={
             <ProtectedRoute>
               <DashboardRouter />
@@ -323,6 +324,7 @@ const AppContent = () => {
         <Route path="/embed/:username" element={<EmbedCard />} />
 
         <Route path="/:username/ai" element={<AIChat />} />
+        <Route path="/:companyVanity/:staffId" element={<StaffCardView />} />
         <Route path="/:username" element={<PublicProfile />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
