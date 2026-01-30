@@ -133,6 +133,7 @@ export const CompanyDashboard: React.FC = () => {
   const [importStatus, setImportStatus] = useState<{ total: number, current: number } | null>(null);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [isAddingStaff, setIsAddingStaff] = useState(false);
 
   useEffect(() => {
     // Only proceed once auth has finished loading the session
@@ -375,46 +376,72 @@ export const CompanyDashboard: React.FC = () => {
   };
 
   const handleManualAdd = async () => {
-    if (!profile) return;
+    if (!profile || isAddingStaff) return;
+    
+    // Validate required fields
+    if (!manualStaffData.display_name?.trim()) {
+      toast({ title: "Missing name", description: "Please enter the staff member's full name.", variant: "destructive" });
+      return;
+    }
+    if (!manualStaffData.email?.trim()) {
+      toast({ title: "Missing email", description: "Please enter the staff member's email.", variant: "destructive" });
+      return;
+    }
+    
+    setIsAddingStaff(true);
     try {
       let avatarUrl = manualStaffData.avatar_url;
 
       if (selectedImage) {
         const fileExt = selectedImage.name.split('.').pop();
-        const fileName = `${Math.random()}.${fileExt}`;
-        const filePath = `${fileName}`;
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `staff/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
           .from('avatars')
           .upload(filePath, selectedImage);
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+          throw uploadError;
+        }
 
         const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
         avatarUrl = data.publicUrl;
       }
 
-      const { error } = await supabase
+      console.log('Adding staff with company_profile_id:', profile.id);
+      
+      const { data, error } = await supabase
         .from('invited_employees')
         .insert({
           company_profile_id: profile.id,
-          invite_code: profile.invite_code,
+          invite_code: profile.invite_code || 'MANUAL',
           status: 'invited',
           data_submitted: {
             ...manualStaffData,
             avatar_url: avatarUrl
           },
           designation: manualStaffData.job_title || ''
-        });
+        })
+        .select();
 
-      if (error) throw error;
-      toast({ title: "Staff added successfully" });
+      if (error) {
+        console.error('Insert error:', error);
+        throw error;
+      }
+      
+      console.log('Staff added successfully:', data);
+      toast({ title: "Staff added successfully", description: `${manualStaffData.display_name} has been added to the directory.` });
       setShowAddStaffDialog(false);
       setManualStaffData({});
       setSelectedImage(null);
       fetchEmployees();
     } catch (error: any) {
+      console.error('Error adding staff:', error);
       toast({ title: "Error adding staff", description: error.message, variant: "destructive" });
+    } finally {
+      setIsAddingStaff(false);
     }
   };
 
@@ -618,14 +645,14 @@ export const CompanyDashboard: React.FC = () => {
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-3">
                             <div className="w-9 h-9 bg-slate-200 rounded-full flex items-center justify-center overflow-hidden">
-                              {emp.profiles?.avatar_url ? (
-                                <img src={emp.profiles.avatar_url} alt="" className="w-full h-full object-cover" />
+                              {emp.data_submitted?.avatar_url ? (
+                                <img src={emp.data_submitted.avatar_url} alt="" className="w-full h-full object-cover" />
                               ) : (
                                 <Users className="w-5 h-5 text-slate-400" />
                               )}
                             </div>
                             <div>
-                              <div className="text-slate-900">{emp.profiles?.display_name || 'New User'}</div>
+                              <div className="text-slate-900">{emp.data_submitted?.display_name || 'New User'}</div>
                               <div className="text-xs text-slate-500">{emp.data_submitted?.email || 'No email provided'}</div>
                             </div>
                           </div>
@@ -1411,8 +1438,17 @@ export const CompanyDashboard: React.FC = () => {
           </div>
 
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setShowAddStaffDialog(false)}>Cancel</Button>
-            <Button onClick={handleManualAdd} className="bg-indigo-600 hover:bg-indigo-700">Add to Directory</Button>
+            <Button variant="ghost" onClick={() => setShowAddStaffDialog(false)} disabled={isAddingStaff}>Cancel</Button>
+            <Button onClick={handleManualAdd} className="bg-indigo-600 hover:bg-indigo-700" disabled={isAddingStaff}>
+              {isAddingStaff ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                'Add to Directory'
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
