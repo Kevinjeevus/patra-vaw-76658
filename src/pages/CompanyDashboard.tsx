@@ -135,7 +135,7 @@ export const CompanyDashboard: React.FC = () => {
 
   useEffect(() => {
     // Only proceed once auth has finished loading the session
-    if (!authLoading) {
+    if (!loadingAuth) {
       if (user) {
         const loadAll = async () => {
           try {
@@ -157,7 +157,7 @@ export const CompanyDashboard: React.FC = () => {
         setLoading(false);
       }
     }
-  }, [user, authLoading]);
+  }, [user, loadingAuth]);
 
   const fetchProfile = async () => {
     if (!user) return null;
