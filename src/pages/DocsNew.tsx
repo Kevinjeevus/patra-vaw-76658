@@ -24,7 +24,9 @@ import {
   Palette,
   Code,
   Rocket,
-  CheckCircle2
+  CheckCircle2,
+  BarChart3,
+  CreditCard
 } from 'lucide-react';
 import { parseMarkdown } from '@/lib/markdown';
 
