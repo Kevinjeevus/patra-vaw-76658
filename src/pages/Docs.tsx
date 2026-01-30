@@ -51,7 +51,7 @@ export function Docs() {
         .order('order_index', { ascending: true });
 
       if (data) {
-        setDynamicPages(data.filter(p => p.slug !== 'changelog')); // Changelog is handled separately
+        setDynamicPages(data.filter(p => p.page_id !== 'changelog'));
       }
     } catch (error) {
       console.error('Error fetching dynamic pages:', error);
@@ -65,7 +65,7 @@ export function Docs() {
       const { data } = await supabase
         .from('documentation_pages')
         .select('content')
-        .eq('slug', 'changelog')
+        .eq('page_id', 'changelog')
         .maybeSingle();
 
       if (data) {

@@ -130,8 +130,8 @@ export const Dashboard: React.FC = () => {
       // Map data to include pinned/favorite from content_json if not yet in top level
       const mappedCards = (data || []).map(card => ({
         ...card,
-        is_pinned: card.content_json?.is_pinned || false,
-        is_favorite: card.content_json?.is_favorite || false
+        is_pinned: (card.content_json as any)?.is_pinned || false,
+        is_favorite: (card.content_json as any)?.is_favorite || false
       }));
 
       setCards(mappedCards);

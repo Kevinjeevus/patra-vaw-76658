@@ -121,8 +121,7 @@ export const InvitePage: React.FC = () => {
             const { error: updateError } = await supabase
                 .from('digital_cards')
                 .update({
-                    company_id: company.id,
-                    // We might also want to mark it as a corporate card if that's a thing
+                    account_type: 'company_employee'
                 })
                 .eq('id', selectedCard);
 

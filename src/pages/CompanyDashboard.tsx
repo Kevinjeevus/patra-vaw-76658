@@ -226,19 +226,19 @@ export const CompanyDashboard: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('invited_employees')
-        .select(`
-          *,
-          profiles:employee_profile_id (
-            display_name,
-            avatar_url,
-            vanity_url
-          )
-        `)
+        .select('*')
         .eq('company_profile_id', idToUse)
         .order('joined_at', { ascending: false });
 
       if (error) throw error;
-      setEmployees(data || []);
+      
+      // Map the data to match Employee interface
+      const mappedEmployees = (data || []).map(emp => ({
+        ...emp,
+        profiles: null as any
+      }));
+      
+      setEmployees(mappedEmployees as any);
     } catch (error: any) {
       console.error('Error fetching employees:', error);
     }
