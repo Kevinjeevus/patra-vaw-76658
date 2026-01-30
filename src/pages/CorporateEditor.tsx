@@ -146,7 +146,7 @@ export const CorporateEditor: React.FC = () => {
             const cardId = searchParams.get('id');
             const payload = {
                 title: cardData.fullName || 'Director Card',
-                content_json: cardData,
+                content_json: cardData as unknown as Record<string, any>,
                 owner_user_id: user.id,
                 is_active: true,
                 is_approved: true,

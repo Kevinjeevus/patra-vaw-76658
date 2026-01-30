@@ -679,6 +679,7 @@ export type Database = {
           is_approved: boolean | null
           joined_at: string | null
           profile_display_id: string | null
+          staff_id: string | null
           status: string
           updated_at: string | null
         }
@@ -698,6 +699,7 @@ export type Database = {
           is_approved?: boolean | null
           joined_at?: string | null
           profile_display_id?: string | null
+          staff_id?: string | null
           status?: string
           updated_at?: string | null
         }
@@ -717,6 +719,7 @@ export type Database = {
           is_approved?: boolean | null
           joined_at?: string | null
           profile_display_id?: string | null
+          staff_id?: string | null
           status?: string
           updated_at?: string | null
         }

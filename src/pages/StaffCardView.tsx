@@ -50,17 +50,11 @@ export const StaffCardView: React.FC = () => {
                 // Find employee by staff_id
                 const { data: employee, error: empError } = await supabase
                     .from('invited_employees')
-                    .select(`
-            *,
-            profiles:employee_profile_id (
-              display_name,
-              avatar_url
-            )
-          `)
+                    .select('*')
                     .eq('company_profile_id', companyProfile.id)
                     .eq('staff_id', staffId)
                     .eq('is_approved', true)
-                    .single();
+                    .maybeSingle();
 
                 if (empError || !employee) {
                     console.error('Employee not found:', empError);
@@ -68,16 +62,15 @@ export const StaffCardView: React.FC = () => {
                     return;
                 }
 
-                const empProfile = Array.isArray(employee.profiles) ? employee.profiles[0] : employee.profiles;
                 const submittedData = employee.data_submitted as any;
 
                 setStaffData({
-                    fullName: empProfile?.display_name || submittedData?.display_name || 'Employee',
+                    fullName: submittedData?.display_name || 'Employee',
                     jobTitle: employee.designation || submittedData?.job_title || 'Team Member',
                     email: submittedData?.email || '',
                     phone: submittedData?.phone || '',
-                    avatar_url: empProfile?.avatar_url || submittedData?.avatar_url || '',
-                    staffId: employee.staff_id,
+                    avatar_url: submittedData?.avatar_url || '',
+                    staffId: employee.staff_id || '',
                     companyName: companyProfile.company_name,
                     companyVanity: companyVanity,
                     companyLogo: companyProfile.company_logo_url || undefined,

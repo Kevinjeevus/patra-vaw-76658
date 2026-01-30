@@ -37,7 +37,7 @@ export const CompanyProfileEditor = ({ user }: { user: any }) => {
                 setProfile({
                     ...data,
                     // Convert point to string if needed or handle parsing
-                    location_coordinates: data.location_coordinates ? `${data.location_coordinates.x},${data.location_coordinates.y}` : ''
+                    location_coordinates: data.location_coordinates ? `${(data.location_coordinates as any).x},${(data.location_coordinates as any).y}` : ''
                 });
             }
         } catch (error) {
