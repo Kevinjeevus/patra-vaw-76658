@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { 
-  Mail, Phone, Globe, Calendar, MessageCircle, 
-  Check, ExternalLink, Award, Heart, ImageIcon, MapPin 
+import {
+  Mail, Phone, Globe, Calendar, MessageCircle,
+  Check, ExternalLink, Award, Heart, ImageIcon, MapPin,
+  Maximize2, X, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@iconify/react';
@@ -80,22 +81,22 @@ export const ContactSection: React.FC<SectionProps> = ({ cardData, showAIButton,
           </div>
         )}
         {showAIButton && cardData.aiEnabled && cardData.vanityUrl && (
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             className="w-full mt-3 relative group border border-violet-400/40 bg-transparent hover:bg-blue-600 hover:border-blue-500 transition-all duration-300"
             onClick={() => window.location.href = `/${cardData.vanityUrl}/ai`}
           >
-            <Icon 
-              icon="proicons:sparkle-2" 
+            <Icon
+              icon="proicons:sparkle-2"
               className="absolute top-1.5 left-6 w-2.5 h-2.5 text-violet-400 animate-sparkle-fade-1"
             />
-            <Icon 
-              icon="proicons:sparkle-2" 
+            <Icon
+              icon="proicons:sparkle-2"
               className="absolute top-1.5 right-6 w-3 h-3 text-fuchsia-400 animate-sparkle-fade-2"
             />
-            <Icon 
-              icon="proicons:sparkle-2" 
+            <Icon
+              icon="proicons:sparkle-2"
               className="absolute bottom-1.5 left-1/3 w-2.5 h-2.5 text-purple-400 animate-sparkle-fade-3"
             />
             <MessageCircle className="w-4 h-4 mr-2 relative z-10 group-hover:text-white transition-colors duration-300" />
@@ -158,8 +159,8 @@ export const LinksSection: React.FC<SectionProps> = ({ cardData }) => {
     >
       {link.previewImage && (
         <div className="w-16 h-16 flex-shrink-0 rounded overflow-hidden bg-muted">
-          <img 
-            src={link.previewImage} 
+          <img
+            src={link.previewImage}
             alt={link.title}
             className="w-full h-full object-cover"
           />
@@ -224,9 +225,9 @@ export const AchievementsSection: React.FC<SectionProps> = ({ cardData }) => {
                 {achievement.issuer} • {achievement.date}
               </p>
               {achievement.url && (
-                <a 
-                  href={achievement.url} 
-                  target="_blank" 
+                <a
+                  href={achievement.url}
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="text-xs text-primary hover:underline flex items-center gap-1 mt-1"
                 >
@@ -265,9 +266,9 @@ export const TestimonialsSection: React.FC<SectionProps> = ({ cardData }) => {
             </div>
             <p className="text-sm text-foreground leading-relaxed mb-2">"{testimonial.content}"</p>
             {testimonial.socialUrl && (
-              <a 
-                href={testimonial.socialUrl} 
-                target="_blank" 
+              <a
+                href={testimonial.socialUrl}
+                target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs text-primary hover:underline flex items-center gap-1"
               >
@@ -302,46 +303,146 @@ export const InterestsSection: React.FC<SectionProps> = ({ cardData }) => {
 };
 
 export const GallerySection: React.FC<SectionProps> = ({ cardData }) => {
-  if (!cardData.photos?.length && !cardData.videoIntro) return null;
+  const [selectedImage, setSelectedImage] = useState<number | null>(null);
+
+  // Show gallery if there's video OR photos
+  if (!cardData.videoIntro && (!cardData.photos || cardData.photos.length === 0)) return null;
+
+  // Helper function to convert YouTube URL to embed URL
+  const getEmbedUrl = (url: string) => {
+    if (url.includes('youtube.com/watch?v=')) {
+      return url.replace('watch?v=', 'embed/').split('&')[0];
+    } else if (url.includes('youtu.be/')) {
+      const videoId = url.split('youtu.be/')[1].split('?')[0];
+      return `https://www.youtube.com/embed/${videoId}`;
+    } else if (url.includes('vimeo.com/')) {
+      const videoId = url.split('vimeo.com/')[1].split('?')[0];
+      return `https://player.vimeo.com/video/${videoId}`;
+    }
+    return url;
+  };
+
+  const isYouTubeOrVimeo = (url: string) => {
+    return url.includes('youtube.com') || url.includes('youtu.be') || url.includes('vimeo.com');
+  };
 
   return (
-    <Card className="p-6">
-      <h3 className="font-semibold text-base mb-4 flex items-center gap-2">
-        <ImageIcon className="w-4 h-4 text-primary" />
-        Gallery
-      </h3>
-      <div className="space-y-4">
-        {cardData.videoIntro && (
-          <div className="rounded-lg overflow-hidden bg-black aspect-video">
-            <video 
-              src={cardData.videoIntro} 
-              controls 
-              className="w-full h-full"
-              preload="metadata"
-            />
-          </div>
-        )}
-        
-        {cardData.photos && cardData.photos.length > 0 && (
-          <div className="grid grid-cols-2 gap-2">
-            {cardData.photos.map((photo, index) => (
-              <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-muted group">
-                <img 
-                  src={photo.url} 
-                  alt={photo.caption || `Gallery image ${index + 1}`}
-                  className="w-full h-full object-cover"
+    <>
+      <Card className="p-6">
+        <h3 className="font-semibold text-base mb-4 flex items-center gap-2">
+          <ImageIcon className="w-4 h-4 text-primary" />
+          Gallery
+        </h3>
+        <div className="space-y-4">
+          {cardData.videoIntro && (
+            <div className="rounded-lg overflow-hidden bg-black aspect-video">
+              {isYouTubeOrVimeo(cardData.videoIntro) ? (
+                <iframe
+                  src={getEmbedUrl(cardData.videoIntro)}
+                  className="w-full h-full"
+                  allowFullScreen
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  title="Video Introduction"
                 />
-                {photo.caption && (
-                  <div className="absolute inset-x-0 bottom-0 bg-black/70 p-2 text-xs text-white">
-                    {photo.caption}
+              ) : (
+                <video
+                  src={cardData.videoIntro}
+                  controls
+                  className="w-full h-full"
+                  preload="metadata"
+                />
+              )}
+            </div>
+          )}
+
+          {cardData.photos && cardData.photos.length > 0 && (
+            <div className={`grid gap-2 ${cardData.photos.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+              {cardData.photos.map((photo, index) => (
+                <div
+                  key={index}
+                  className="relative aspect-square rounded-lg overflow-hidden bg-muted group cursor-pointer"
+                  onClick={() => setSelectedImage(index)}
+                >
+                  <img
+                    src={photo.url}
+                    alt={photo.caption || `Gallery image ${index + 1}`}
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                  {/* Fullscreen icon on hover */}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <Maximize2 className="w-8 h-8 text-white" />
                   </div>
-                )}
+                  {photo.caption && (
+                    <div className="absolute inset-x-0 bottom-0 bg-black/70 p-2 text-xs text-white">
+                      {photo.caption}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </Card>
+
+      {/* Fullscreen Image Viewer */}
+      {selectedImage !== null && cardData.photos && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+          onClick={() => setSelectedImage(null)}
+        >
+          <button
+            className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+            onClick={() => setSelectedImage(null)}
+          >
+            <X className="w-6 h-6 text-white" />
+          </button>
+
+          <div className="relative w-[90vw] h-[90vh] flex items-center justify-center">
+            <img
+              src={cardData.photos[selectedImage].url}
+              alt={cardData.photos[selectedImage].caption || `Gallery image ${selectedImage + 1}`}
+              className="max-w-full max-h-full object-contain"
+              onClick={(e) => e.stopPropagation()}
+            />
+
+            {cardData.photos[selectedImage].caption && (
+              <div className="absolute bottom-0 left-0 right-0 bg-black/70 p-4 text-white text-center">
+                {cardData.photos[selectedImage].caption}
               </div>
-            ))}
+            )}
+
+            {/* Navigation buttons */}
+            {cardData.photos.length > 1 && (
+              <>
+                {selectedImage > 0 && (
+                  <button
+                    className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedImage(selectedImage - 1);
+                    }}
+                  >
+                    <ChevronLeft className="w-6 h-6 text-white" />
+                  </button>
+                )}
+
+                {selectedImage < cardData.photos.length - 1 && (
+                  <button
+                    className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedImage(selectedImage + 1);
+                    }}
+                  >
+                    <ChevronRight className="w-6 h-6 text-white" />
+                  </button>
+                )}
+              </>
+            )}
           </div>
-        )}
-      </div>
-    </Card>
+        </div>
+      )}
+    </>
   );
 };
 
@@ -366,13 +467,13 @@ export const LocationSection: React.FC<SectionProps> = ({ cardData }) => {
   if (!cardData.address && !cardData.latitude && !cardData.longitude) return null;
 
   // Use coordinates if available, otherwise encode address
-  const hasCoordinates = cardData.latitude !== null && cardData.latitude !== undefined && 
-                       cardData.longitude !== null && cardData.longitude !== undefined;
-  
+  const hasCoordinates = cardData.latitude !== null && cardData.latitude !== undefined &&
+    cardData.longitude !== null && cardData.longitude !== undefined;
+
   const mapEmbedUrl = hasCoordinates
     ? `https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${cardData.latitude},${cardData.longitude}&zoom=15`
     : `https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodeURIComponent(cardData.address || '')}`;
-  
+
   const mapUrl = hasCoordinates
     ? `https://www.google.com/maps/search/?api=1&query=${cardData.latitude},${cardData.longitude}`
     : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cardData.address || '')}`;

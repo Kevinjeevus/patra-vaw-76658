@@ -4,8 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
-import { 
-  TreePine, 
+import {
+  TreePine,
   Leaf,
   Globe,
   Heart,
@@ -26,11 +26,18 @@ import {
   Rocket,
   CheckCircle2
 } from 'lucide-react';
+import { parseMarkdown } from '@/lib/markdown';
 
 // Default static sections
 const defaultSections = [
   'introduction',
   'quick-start',
+  'dashboard',
+  'analytics',
+  'editor',
+  'settings',
+  'public-profile',
+  'api',
   'why-patra',
   'avatar',
   'username',
@@ -89,7 +96,7 @@ export const DocsNew: React.FC = () => {
         .select('*')
         .eq('is_published', true)
         .order('order_index', { ascending: true });
-      
+
       if (error) throw error;
       if (data) setCustomDocs(data);
     } catch (error) {
@@ -115,7 +122,7 @@ export const DocsNew: React.FC = () => {
                 The modern, eco-friendly way to share your professional identity
               </p>
             </div>
-            
+
             <Card className="border-green-200 dark:border-green-900">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -182,6 +189,261 @@ export const DocsNew: React.FC = () => {
                 </Card>
               ))}
             </div>
+          </div>
+        );
+
+      case 'dashboard':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-4xl font-bold mb-4">Dashboard</h1>
+              <p className="text-lg text-muted-foreground">
+                Your central command center for managing your digital presence
+              </p>
+            </div>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Overview</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p>
+                  The Dashboard (<code>/dashboard</code>) is your home base in Patra. It provides a comprehensive overview of your digital card's performance and quick access to key features.
+                </p>
+                
+                <Separator />
+                
+                <div>
+                  <h4 className="font-semibold mb-3">Key Features</h4>
+                  <div className="grid gap-3">
+                    <div className="flex items-start gap-3 p-3 border rounded-lg">
+                      <BarChart3 className="w-5 h-5 text-primary mt-0.5" />
+                      <div>
+                        <div className="font-medium">Quick Stats</div>
+                        <div className="text-sm text-muted-foreground">View total views, unique visitors, and engagement metrics at a glance</div>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3 p-3 border rounded-lg">
+                      <CreditCard className="w-5 h-5 text-primary mt-0.5" />
+                      <div>
+                        <div className="font-medium">Card Gallery</div>
+                        <div className="text-sm text-muted-foreground">Browse and manage all your digital cards in one place</div>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3 p-3 border rounded-lg">
+                      <Rocket className="w-5 h-5 text-primary mt-0.5" />
+                      <div>
+                        <div className="font-medium">Quick Actions</div>
+                        <div className="text-sm text-muted-foreground">Create new cards, access editor, view analytics, and more</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        );
+
+      case 'analytics':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-4xl font-bold mb-4">Analytics</h1>
+              <p className="text-lg text-muted-foreground">
+                Track your performance and understand your audience
+              </p>
+            </div>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Performance Insights</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p>
+                  The Analytics page (<code>/analytics</code>) offers deep insights into how your card is performing. Make data-driven decisions to optimize your digital presence.
+                </p>
+                
+                <Separator />
+                
+                <div>
+                  <h4 className="font-semibold mb-3">Metrics Available</h4>
+                  <div className="grid gap-2">
+                    <div className="flex items-start gap-2 p-2">
+                      <CheckCircle2 className="w-4 h-4 text-green-600 mt-1" />
+                      <div>
+                        <strong>Total Views:</strong> <span className="text-muted-foreground">Track how many times your profile has been viewed</span>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2 p-2">
+                      <CheckCircle2 className="w-4 h-4 text-green-600 mt-1" />
+                      <div>
+                        <strong>Unique Visitors:</strong> <span className="text-muted-foreground">Number of distinct people who visited your profile</span>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2 p-2">
+                      <CheckCircle2 className="w-4 h-4 text-green-600 mt-1" />
+                      <div>
+                        <strong>Click-through Rate:</strong> <span className="text-muted-foreground">Percentage of visitors who clicked on your links</span>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2 p-2">
+                      <CheckCircle2 className="w-4 h-4 text-green-600 mt-1" />
+                      <div>
+                        <strong>Device Breakdown:</strong> <span className="text-muted-foreground">See if your visitors are using Mobile or Desktop</span>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2 p-2">
+                      <CheckCircle2 className="w-4 h-4 text-green-600 mt-1" />
+                      <div>
+                        <strong>Geographic Data:</strong> <span className="text-muted-foreground">Understand where your audience is located</span>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2 p-2">
+                      <CheckCircle2 className="w-4 h-4 text-green-600 mt-1" />
+                      <div>
+                        <strong>Time-based Trends:</strong> <span className="text-muted-foreground">View performance over time with interactive charts</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <Separator />
+                
+                <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-900">
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    <strong>💡 Pro Tip:</strong> Check your analytics regularly to understand peak engagement times and optimize when you share your card.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        );
+
+      case 'editor':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-4xl font-bold mb-4">Profile Editor</h1>
+              <p className="text-lg text-muted-foreground">
+                Customize every aspect of your digital card
+              </p>
+            </div>
+            <Card>
+              <CardContent className="pt-6">
+                <p className="mb-4">
+                  The Editor (<code>/editor</code>) is where you build your profile. Each section has its own direct URL for quick access:
+                </p>
+                <div className="grid gap-3">
+                  {[
+                    { label: 'Avatar', url: '/editor?tab=avatar', desc: 'Upload your profile picture' },
+                    { label: 'About', url: '/editor?tab=about', desc: 'Add your bio and personal details' },
+                    { label: 'Location', url: '/editor?tab=location', desc: 'Set your physical location' },
+                    { label: 'Social Accounts', url: '/editor?tab=verified', desc: 'Connect your social media profiles' },
+                    { label: 'Wallet', url: '/editor?tab=wallet', desc: 'Add payment links and UPI' },
+                    { label: 'Links', url: '/editor?tab=links', desc: 'Add custom links and groups' },
+                    { label: 'Interests', url: '/editor?tab=interests', desc: 'Share your hobbies and interests' },
+                    { label: 'Achievements', url: '/editor?tab=achievements', desc: 'Showcase your awards and certifications' },
+                    { label: 'Testimonials', url: '/editor?tab=testimonials', desc: 'Display reviews and recommendations' },
+                    { label: 'Gallery', url: '/editor?tab=gallery', desc: 'Upload photos to your gallery' },
+                    { label: 'Design', url: '/editor?tab=design', desc: 'Choose themes and colors' },
+                    { label: 'Card Layout', url: '/editor?tab=cardlayout', desc: 'Reorder or hide sections' },
+                    { label: 'AI Profile', url: '/editor?tab=aiprofile', desc: 'Configure your AI assistant' }
+                  ].map((tab) => (
+                    <div key={tab.label} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                      <div>
+                        <div className="font-semibold">{tab.label}</div>
+                        <div className="text-sm text-muted-foreground">{tab.desc}</div>
+                      </div>
+                      <code className="text-xs bg-muted px-2 py-1 rounded">{tab.url}</code>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        );
+
+      case 'settings':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-4xl font-bold mb-4">Settings</h1>
+              <p className="text-lg text-muted-foreground">
+                Manage your account and preferences
+              </p>
+            </div>
+            <Card>
+              <CardContent className="pt-6">
+                <p className="mb-4">
+                  Access your account settings at <code>/settings</code>. Here you can:
+                </p>
+                <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
+                  <li>Update your email and password</li>
+                  <li>Manage your subscription</li>
+                  <li>Configure notification preferences</li>
+                  <li>View billing history</li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+        );
+
+      case 'public-profile':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-4xl font-bold mb-4">Public Profile</h1>
+              <p className="text-lg text-muted-foreground">
+                Your digital identity shared with the world
+              </p>
+            </div>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">Profile View</h3>
+                    <code className="block bg-muted p-3 rounded-lg mb-2">/:username</code>
+                    <p className="text-sm text-muted-foreground">
+                      This is your main profile page (e.g., <code>patra.me/john</code>). It displays your full profile, including all sections like About, Links, Gallery, and more.
+                    </p>
+                  </div>
+                  <Separator />
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">Card View</h3>
+                    <code className="block bg-muted p-3 rounded-lg mb-2">/:username?card</code>
+                    <p className="text-sm text-muted-foreground">
+                      A simplified, 3D-style digital card view. This is perfect for quick sharing and serves as the visual representation of your physical card.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        );
+
+      case 'api':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-4xl font-bold mb-4">API Documentation</h1>
+              <p className="text-lg text-muted-foreground">
+                Build with Patra
+              </p>
+            </div>
+            <Card>
+              <CardContent className="pt-6">
+                <p className="mb-6">
+                  Developers can integrate with Patra using our comprehensive API. Access profile data, generate cards programmatically, and more.
+                </p>
+                <a
+                  href="/api-docs"
+                  className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
+                >
+                  View API Documentation
+                  <Globe className="ml-2 h-4 w-4" />
+                </a>
+              </CardContent>
+            </Card>
           </div>
         );
 
@@ -462,6 +724,8 @@ export const DocsNew: React.FC = () => {
           </section>
         ))}
 
+
+
         {/* Render custom documentation from database */}
         {customDocs.map((doc) => (
           <section
@@ -476,9 +740,9 @@ export const DocsNew: React.FC = () => {
               </div>
               <Card>
                 <CardContent className="pt-6">
-                  <div 
+                  <div
                     className="prose prose-sm max-w-none dark:prose-invert"
-                    dangerouslySetInnerHTML={{ __html: doc.content }}
+                    dangerouslySetInnerHTML={{ __html: parseMarkdown(doc.content) }}
                   />
                 </CardContent>
               </Card>

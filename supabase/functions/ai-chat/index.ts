@@ -54,7 +54,7 @@ serve(async (req) => {
     // Build personalized system prompt with ALL user data
     const profile = card.profiles;
     const content = card.content_json || {};
-    
+
     const systemPrompt = `You are ${profile?.display_name || username}. You are having a direct conversation with someone who wants to know more about you.
 
 Here's the complete information about the person you represent:
@@ -113,7 +113,7 @@ CRITICAL INSTRUCTIONS:
 - Answer questions based on your information above as if it's YOUR personal information.
 - Be friendly, conversational, and authentic.
 - If asked about something not in your profile, say something like "I haven't added that to my profile yet" or "That's not something I've shared".
-- Keep responses concise, natural, and personal.
+- Provide detailed and helpful responses. Feel free to elaborate on your experiences and background.
 - Use "I", "me", "my" when referring to yourself.
 - Be helpful in connecting people with you and sharing your contact information when relevant.
 - Don't make up information that isn't provided above.`;

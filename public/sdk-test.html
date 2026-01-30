@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Patra SDK Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Use relative path so it works both locally (preview) and on Vercel -->
+    <script type="module" src="/patra-sdk.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f0f0f0; }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Patra SDK Test Page</h1>
+        <p>This page tests the <code>&lt;patra-card&gt;</code> web component.</p>
+        
+        <!-- Test Card -->
+        <patra-card username="abinbn" width="400" height="250"></patra-card>
+
+        <div style="margin-top: 20px; padding: 10px; background: #fff; border-radius: 8px;">
+            <h3>Debug Info:</h3>
+            <p>Open the browser console (F12) to see detailed logs from the SDK.</p>
+            <p>If you see "Card not found", check the console for "Fetch failed" or "Error" messages.</p>
+        </div>
+    </div>
+</body>
+</html>

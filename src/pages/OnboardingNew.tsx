@@ -8,11 +8,12 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
-import { 
+import {
   ChevronRight, ChevronLeft, Users, Building2, User, AlertCircle,
   Brain, Wand2, Palette, Sparkles, Check, CreditCard, MapPin, Info,
-  Camera, Mail, Briefcase, FileText, Upload
+  Camera, Mail, Briefcase, FileText, Upload, Smartphone, Lock
 } from 'lucide-react';
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,7 +24,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
 import { Checkbox } from '@/components/ui/checkbox';
+
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
@@ -73,6 +82,12 @@ export const OnboardingNew: React.FC = () => {
   const [showCompanyWarning, setShowCompanyWarning] = useState(false);
   const [showAILoading, setShowAILoading] = useState(false);
   const [aiLoadingStep, setAiLoadingStep] = useState(0);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [createdVanityUrl, setCreatedVanityUrl] = useState('');
+  const [showPaymentGateway, setShowPaymentGateway] = useState(false);
+  const [paymentStep, setPaymentStep] = useState<'method' | 'processing' | 'success'>('method');
+
+
   const [data, setData] = useState<OnboardingData>({
     accountType: null,
     display_name: user?.user_metadata?.full_name || user?.user_metadata?.name || '',
@@ -101,8 +116,8 @@ export const OnboardingNew: React.FC = () => {
 
   useEffect(() => {
     if (user?.email) {
-      setData(prev => ({ 
-        ...prev, 
+      setData(prev => ({
+        ...prev,
         email: user.email!,
         display_name: prev.display_name || user.user_metadata?.full_name || user.user_metadata?.name || '',
         phone: prev.phone || user.user_metadata?.phone || '',
@@ -118,7 +133,7 @@ export const OnboardingNew: React.FC = () => {
       const timer = setTimeout(() => {
         setAiLoadingStep(aiLoadingStep + 1);
       }, aiLoadingSteps[aiLoadingStep].duration);
-      
+
       return () => clearTimeout(timer);
     } else if (showAILoading && aiLoadingStep >= aiLoadingSteps.length) {
       completeOnboarding();
@@ -128,7 +143,7 @@ export const OnboardingNew: React.FC = () => {
   const collectDeviceInfo = async () => {
     const browser = navigator.userAgent;
     const device = /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent) ? 'Mobile' : 'Desktop';
-    
+
     // Get IP via a public API
     let ip = 'Unknown';
     try {
@@ -197,10 +212,29 @@ export const OnboardingNew: React.FC = () => {
   };
 
   const handleComplete = () => {
-    setLoading(true);
-    setShowAILoading(true);
-    setAiLoadingStep(0);
+    if (data.accountType === 'company') {
+      setShowPaymentGateway(true);
+      setPaymentStep('method');
+    } else {
+      setLoading(true);
+      setShowAILoading(true);
+      setAiLoadingStep(0);
+    }
   };
+
+  const simulatePayment = () => {
+    setPaymentStep('processing');
+    setTimeout(() => {
+      setPaymentStep('success');
+      setTimeout(() => {
+        setShowPaymentGateway(false);
+        setLoading(true);
+        setShowAILoading(true);
+        setAiLoadingStep(0);
+      }, 2000);
+    }, 3000);
+  };
+
 
   const completeOnboarding = async () => {
     if (!user) return;
@@ -217,33 +251,33 @@ export const OnboardingNew: React.FC = () => {
           }
           return username;
         };
-        
+
         let username = generateRandomUsername();
         let attempts = 0;
-        
+
         while (attempts < 10) {
           const { data: existingCard } = await supabase
             .from('digital_cards')
             .select('vanity_url')
             .eq('vanity_url', username)
             .maybeSingle();
-          
+
           if (!existingCard) {
             break;
           }
-          
+
           username = generateRandomUsername();
           attempts++;
         }
-        
+
         return username;
       };
 
       // Determine final avatar URL
-      const finalAvatarUrl = data.selectedAvatarSource === 'google' 
-        ? data.google_avatar_url 
-        : data.selectedAvatarSource === 'upload' 
-          ? data.avatar_url 
+      const finalAvatarUrl = data.selectedAvatarSource === 'google'
+        ? data.google_avatar_url
+        : data.selectedAvatarSource === 'upload'
+          ? data.avatar_url
           : '';
 
       // Check for existing card
@@ -259,7 +293,7 @@ export const OnboardingNew: React.FC = () => {
       if (!existingCard || !existingCard.vanity_url) {
         // Generate username
         vanityUrl = await generateUsername();
-        
+
         if (!existingCard) {
           // Create new card
           const { data: newCard, error: insertError } = await supabase
@@ -297,7 +331,7 @@ export const OnboardingNew: React.FC = () => {
             .from('digital_cards')
             .update({ vanity_url: vanityUrl })
             .eq('id', existingCard.id);
-          
+
           if (updateError) throw updateError;
           cardId = existingCard.id;
         }
@@ -318,8 +352,13 @@ export const OnboardingNew: React.FC = () => {
         avatar_url: finalAvatarUrl || null,
         bio: data.bio || null,
         job_title: data.job_title || null,
-        company_name: data.company || null,
+        company_name: data.company || data.company_name || null,
       };
+
+      // Generate invite code for company if not exists
+      if (data.accountType === 'company') {
+        updateData.invite_code = Math.random().toString(36).substring(2, 8).toUpperCase();
+      }
 
       const { error: profileError } = await supabase
         .from('profiles')
@@ -371,8 +410,11 @@ export const OnboardingNew: React.FC = () => {
       // Mark tour as should show
       localStorage.removeItem('patra-tour-completed');
 
-      // Navigate to card page with card parameter
-      navigate(`/${vanityUrl}?card`, { replace: true });
+      // Show success screen
+      setCreatedVanityUrl(vanityUrl);
+      setShowAILoading(false);
+      setLoading(false);
+      setShowSuccess(true);
     } catch (error: any) {
       console.error('Error completing onboarding:', error);
       toast({
@@ -421,7 +463,7 @@ export const OnboardingNew: React.FC = () => {
         .getPublicUrl(filePath);
 
       setData({ ...data, avatar_url: publicUrl, selectedAvatarSource: 'upload' });
-      
+
       toast({
         title: "Avatar uploaded!",
         description: "Your profile picture has been updated."
@@ -436,11 +478,65 @@ export const OnboardingNew: React.FC = () => {
     }
   };
 
+  // Success Screen
+  if (showSuccess) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50 flex items-center justify-center p-4 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-20" style={{
+          backgroundImage: 'radial-gradient(circle, #d1d5db 1px, transparent 1px)',
+          backgroundSize: '30px 30px'
+        }}></div>
+
+        <div className="w-full max-w-lg relative z-10">
+          <Card className="bg-white/90 backdrop-blur-xl shadow-2xl border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-500">
+            <div className="h-2 bg-gradient-to-r from-violet-500 via-purple-500 to-pink-500" />
+            <CardContent className="p-8 text-center space-y-6">
+              <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce-slow">
+                <Check className="w-12 h-12 text-green-600" />
+              </div>
+
+              <div className="space-y-2">
+                <h2 className="text-3xl font-bold text-slate-900">You're All Set!</h2>
+                <p className="text-slate-600">
+                  Your digital profile has been created successfully.
+                </p>
+              </div>
+
+              <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                <p className="text-sm text-slate-500 mb-1">Your unique URL:</p>
+                <p className="font-mono font-medium text-violet-600">patra.me/{createdVanityUrl}</p>
+              </div>
+
+              <div className="grid gap-4 pt-4">
+                <Button
+                  onClick={() => navigate(data.accountType === 'company' ? '/dashboard' : '/editor')}
+                  className="w-full h-12 text-lg bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all"
+                >
+                  <Palette className="w-5 h-5 mr-2" />
+                  {data.accountType === 'company' ? 'Go to Dashboard' : 'Customize in Editor'}
+                </Button>
+
+                <Button
+                  variant="outline"
+                  onClick={() => window.open(`/${createdVanityUrl}?card`, '_blank')}
+                  className="w-full h-12 text-lg border-2 hover:bg-slate-50"
+                >
+                  <CreditCard className="w-5 h-5 mr-2" />
+                  View Public Card
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   // AI Loading Screen
   if (showAILoading) {
     const CurrentIcon = aiLoadingStep < aiLoadingSteps.length ? aiLoadingSteps[aiLoadingStep].icon : Check;
     const currentText = aiLoadingStep < aiLoadingSteps.length ? aiLoadingSteps[aiLoadingStep].text : "Complete!";
-    
+
     return (
       <div className="min-h-screen bg-gradient-to-br from-violet-50 via-purple-50 to-pink-50 flex items-center justify-center p-4 relative overflow-hidden">
         <div className="absolute inset-0 opacity-30" style={{
@@ -457,7 +553,7 @@ export const OnboardingNew: React.FC = () => {
               <div className="absolute inset-0 border-4 border-violet-200 rounded-full animate-spin-slow"></div>
               <div className="absolute inset-2 border-4 border-purple-200 rounded-full animate-spin-reverse"></div>
               <div className="absolute inset-4 border-4 border-pink-200 rounded-full animate-spin-slow"></div>
-              
+
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="w-20 h-20 bg-gradient-to-br from-violet-600 via-purple-600 to-pink-600 rounded-2xl flex items-center justify-center shadow-2xl animate-pulse">
                   <CurrentIcon className="w-10 h-10 text-white animate-bounce-slow" />
@@ -469,16 +565,15 @@ export const OnboardingNew: React.FC = () => {
           <h2 className="text-3xl font-bold bg-gradient-to-r from-violet-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-3 animate-fade-in">
             {currentText}
           </h2>
-          
+
           <div className="flex items-center justify-center gap-2 mb-8">
             {aiLoadingSteps.map((_, index) => (
               <div
                 key={index}
-                className={`h-2 rounded-full transition-all duration-500 ${
-                  index <= aiLoadingStep
-                    ? 'w-8 bg-gradient-to-r from-violet-600 to-purple-600'
-                    : 'w-2 bg-slate-300'
-                }`}
+                className={`h-2 rounded-full transition-all duration-500 ${index <= aiLoadingStep
+                  ? 'w-8 bg-gradient-to-r from-violet-600 to-purple-600'
+                  : 'w-2 bg-slate-300'
+                  }`}
               />
             ))}
           </div>
@@ -551,21 +646,26 @@ export const OnboardingNew: React.FC = () => {
                     </p>
                   </button>
 
-                  <div className="group relative p-6 rounded-2xl border-2 border-slate-300 bg-slate-50 opacity-60 cursor-not-allowed text-left">
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-orange-600 text-white px-4 py-1 rounded-full text-xs font-bold shadow-lg z-10">
-                      Under Development
+                  <button
+                    onClick={() => handleAccountTypeSelect('company')}
+                    className="group relative p-6 rounded-2xl border-2 border-slate-200 hover:border-blue-500 bg-white hover:bg-blue-50/50 transition-all duration-300 text-left hover:shadow-2xl hover:shadow-blue-100"
+                  >
+                    <div className="absolute -top-3 -right-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[10px] font-black px-3 py-1.5 rounded-full shadow-lg z-10 animate-bounce">
+                      RECOMMENDED
                     </div>
-                    <div className="w-16 h-16 bg-gradient-to-br from-slate-400 to-slate-500 rounded-2xl flex items-center justify-center mb-4">
+                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                       <Building2 className="w-8 h-8 text-white" />
                     </div>
-                    <h3 className="text-xl font-bold text-slate-600 mb-2">Company</h3>
-                    <p className="text-sm text-slate-500">
+                    <h3 className="text-xl font-bold text-slate-900 mb-2">Company</h3>
+                    <p className="text-sm text-slate-600">
                       For organizations managing employee cards
                     </p>
-                    <div className="mt-3 text-xs text-slate-500 font-medium">
-                      Requires verification (₹20)
+                    <div className="mt-3 text-xs text-blue-600 font-bold bg-blue-100 px-3 py-1 rounded-full w-fit flex items-center gap-1">
+                      <Sparkles className="w-3 h-3" />
+                      Premium Account (₹999)
                     </div>
-                  </div>
+                  </button>
+
                 </div>
               </div>
             )}
@@ -688,7 +788,7 @@ export const OnboardingNew: React.FC = () => {
                   <h2 className="text-2xl font-bold text-slate-900 mb-2">Choose your photo</h2>
                   <p className="text-slate-600">Select between Google photo or upload new (optional)</p>
                 </div>
-                
+
                 <div className="flex flex-col items-center space-y-6">
                   {/* Avatar options */}
                   <div className="flex gap-6">
@@ -697,11 +797,10 @@ export const OnboardingNew: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setData({ ...data, selectedAvatarSource: 'google' })}
-                        className={`flex flex-col items-center space-y-2 p-4 rounded-xl transition-all ${
-                          data.selectedAvatarSource === 'google'
-                            ? 'border-4 border-green-500 bg-green-50'
-                            : 'border-2 border-slate-200 hover:border-slate-300'
-                        }`}
+                        className={`flex flex-col items-center space-y-2 p-4 rounded-xl transition-all ${data.selectedAvatarSource === 'google'
+                          ? 'border-4 border-green-500 bg-green-50'
+                          : 'border-2 border-slate-200 hover:border-slate-300'
+                          }`}
                       >
                         <Avatar className="w-24 h-24">
                           <AvatarImage src={data.google_avatar_url} alt="Google Profile" />
@@ -720,11 +819,10 @@ export const OnboardingNew: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => document.getElementById('avatar-upload')?.click()}
-                      className={`flex flex-col items-center space-y-2 p-4 rounded-xl transition-all ${
-                        data.selectedAvatarSource === 'upload'
-                          ? 'border-4 border-green-500 bg-green-50'
-                          : 'border-2 border-slate-200 hover:border-slate-300'
-                      }`}
+                      className={`flex flex-col items-center space-y-2 p-4 rounded-xl transition-all ${data.selectedAvatarSource === 'upload'
+                        ? 'border-4 border-green-500 bg-green-50'
+                        : 'border-2 border-slate-200 hover:border-slate-300'
+                        }`}
                     >
                       <Avatar className="w-24 h-24">
                         <AvatarImage src={data.avatar_url} alt="Uploaded Profile" />
@@ -745,15 +843,15 @@ export const OnboardingNew: React.FC = () => {
                       className="hidden"
                     />
                   </div>
-                  
+
                   {/* Preview of selected avatar */}
                   {(data.selectedAvatarSource === 'google' || data.selectedAvatarSource === 'upload') && (
                     <div className="text-center">
                       <p className="text-sm text-green-600 font-medium mb-2">✓ Profile photo selected</p>
                       <Avatar className="w-32 h-32 mx-auto border-4 border-green-500">
-                        <AvatarImage 
-                          src={data.selectedAvatarSource === 'google' ? data.google_avatar_url : data.avatar_url} 
-                          alt="Selected" 
+                        <AvatarImage
+                          src={data.selectedAvatarSource === 'google' ? data.google_avatar_url : data.avatar_url}
+                          alt="Selected"
                         />
                         <AvatarFallback>
                           <User className="w-16 h-16" />
@@ -983,7 +1081,7 @@ export const OnboardingNew: React.FC = () => {
                       <div className="flex-1">
                         <h4 className="font-semibold text-slate-900 mb-2">Verification Payment Required</h4>
                         <p className="text-sm text-slate-600 mb-3">
-                          Company accounts require a one-time verification fee of ₹20. Your account will be activated within 1-2 hours after payment.
+                          Company accounts require a one-time verification fee of ₹999. Your account will be activated instantly after payment.
                         </p>
                         <div className="flex items-center gap-2 mb-3">
                           <Checkbox
@@ -992,9 +1090,10 @@ export const OnboardingNew: React.FC = () => {
                             onCheckedChange={(checked) => setData({ ...data, verificationPaid: checked as boolean })}
                           />
                           <Label htmlFor="payment-confirm" className="text-sm cursor-pointer">
-                            I have completed the payment of ₹20
+                            I understand the verification fee of ₹999
                           </Label>
                         </div>
+
                       </div>
                     </div>
                   </div>
@@ -1006,11 +1105,11 @@ export const OnboardingNew: React.FC = () => {
                         <p className="font-medium">Company Account Features:</p>
                         <ul className="space-y-1 ml-4 list-disc text-xs">
                           <li>Create digital IDs for employees in bulk</li>
-                          <li>Up to 5 Board of Directors cards (free)</li>
+                          <li>Up to 2 Board of Directors cards (free)</li>
                           <li>Unique invite code for employees</li>
                           <li>Customizable data collection parameters</li>
                           <li>Company-branded templates</li>
-                          <li>₹2 per employee invite (payable within 2 months)</li>
+                          <li>Unlimited employee invites (No fee)</li>
                         </ul>
                       </div>
                     </div>
@@ -1069,7 +1168,7 @@ export const OnboardingNew: React.FC = () => {
               <p className="text-base">
                 You're about to create a <strong>Company Account</strong>. This account type is designed for businesses and organizations. Please read carefully:
               </p>
-              
+
               <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800 space-y-3">
                 <h4 className="font-semibold text-slate-900 text-base">What is a Company Account?</h4>
                 <p className="text-sm text-slate-700">
@@ -1080,7 +1179,7 @@ export const OnboardingNew: React.FC = () => {
                   <li>Centralized employee profile management</li>
                   <li>Request printing services for physical ID cards</li>
                   <li>Specialized dashboard tailored for HR/Admin teams</li>
-                  <li>Board of Directors cards (up to 5 members included)</li>
+                  <li>Board of Directors cards (up to 2 members included)</li>
                 </ul>
               </div>
 
@@ -1088,17 +1187,18 @@ export const OnboardingNew: React.FC = () => {
                 <h4 className="font-semibold text-slate-900">⚠️ Critical Requirements:</h4>
                 <ul className="text-sm space-y-1 list-disc list-inside text-slate-700">
                   <li>Company accounts <strong>CANNOT be changed</strong> to individual accounts</li>
-                  <li><strong>Verification fee: ₹20</strong> (required during account creation)</li>
+                  <li><strong>Verification fee: ₹999</strong> (required during account creation)</li>
                   <li>Account will be <strong>active within 1-2 hours</strong> after payment verification</li>
                   <li>Must <strong>verify company status</strong> - individual users cannot use this</li>
-                  <li><strong>Employee invite fee: ₹2 per employee</strong> (payable within 2 months)</li>
+                  <li><strong>Unlimited employee invites</strong> - No additional fees per employee</li>
                 </ul>
               </div>
+
 
               <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg border border-green-200 dark:border-green-800 space-y-2">
                 <h4 className="font-semibold text-slate-900">✨ Company Account Benefits:</h4>
                 <ul className="text-sm space-y-1 list-disc list-inside text-slate-700">
-                  <li>Create up to 5 Board of Directors cards (FREE)</li>
+                  <li>Create up to 2 Board of Directors cards (FREE)</li>
                   <li>Generate unique invite codes for employees</li>
                   <li>Customize data collection parameters per employee</li>
                   <li>Access specialized company dashboard</li>
@@ -1120,6 +1220,99 @@ export const OnboardingNew: React.FC = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Simulated Payment Gateway */}
+      <Dialog open={showPaymentGateway} onOpenChange={setShowPaymentGateway}>
+        <DialogContent className="max-w-md p-0 overflow-hidden border-none shadow-2xl">
+          <div className="bg-slate-900 p-6 text-white text-center">
+            <h3 className="text-xl font-bold flex items-center justify-center gap-2">
+              <CreditCard className="w-6 h-6 text-blue-400" />
+              Secure Checkout
+            </h3>
+            <p className="text-slate-400 text-sm mt-1">Order #PATRA-{Math.floor(Math.random() * 999999)}</p>
+          </div>
+
+          <div className="p-8">
+            {paymentStep === 'method' && (
+              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="text-center">
+                  <p className="text-slate-500 text-sm uppercase font-bold tracking-wider">Total Amount</p>
+                  <p className="text-4xl font-black text-slate-900 mt-1">₹999.00</p>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="p-4 border-2 border-blue-500 bg-blue-50 rounded-xl flex items-center gap-4 cursor-pointer">
+                    <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                      <Smartphone className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-900">UPI / Google Pay / PhonePe</p>
+                      <p className="text-xs text-slate-500">Pay using any UPI app</p>
+                    </div>
+                    <div className="ml-auto">
+                      <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center">
+                        <div className="w-2 h-2 rounded-full bg-white" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 border-2 border-slate-100 rounded-xl flex items-center gap-4 opacity-50 cursor-not-allowed">
+                    <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                      <CreditCard className="w-6 h-6 text-slate-400" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-400">Debit / Credit Card</p>
+                      <p className="text-xs text-slate-400">Visa, Mastercard, RuPay</p>
+                    </div>
+                  </div>
+                </div>
+
+                <Button className="w-full h-12 text-lg bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200" onClick={simulatePayment}>
+                  Pay Now
+                </Button>
+
+                <p className="text-center text-[10px] text-slate-400">
+                  🔒 Encrypted by 256-bit SSL connection. Secured by PayPatra.
+                </p>
+              </div>
+            )}
+
+            {paymentStep === 'processing' && (
+              <div className="py-12 text-center space-y-6 animate-in fade-in duration-500">
+                <div className="relative w-24 h-24 mx-auto">
+                  <div className="absolute inset-0 border-4 border-slate-100 rounded-full"></div>
+                  <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Lock className="w-8 h-8 text-blue-600" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <h4 className="text-xl font-bold text-slate-900">Securing Payment...</h4>
+                  <p className="text-slate-500">Please do not close the window or press back.</p>
+                </div>
+                <div className="max-w-[200px] mx-auto">
+                  <Progress value={65} className="h-1" />
+                </div>
+              </div>
+            )}
+
+            {paymentStep === 'success' && (
+              <div className="py-12 text-center space-y-6 animate-out-in slide-in-from-scale-95 duration-500">
+                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto text-green-600 scale-110">
+                  <Check className="w-10 h-10 stroke-[3px]" />
+                </div>
+                <div className="space-y-2">
+                  <h4 className="text-2xl font-black text-slate-900">Payment Successful!</h4>
+                  <p className="text-slate-500">Transaction ID: TXN{Math.floor(Math.random() * 1000000)}</p>
+                </div>
+                <div className="p-3 bg-green-50 rounded-lg text-green-700 text-sm font-medium">
+                  Verification Complete • Corporate Access Granted
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
