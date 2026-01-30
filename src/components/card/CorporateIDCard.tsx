@@ -11,6 +11,8 @@ export interface CorporateIDCardProps {
         avatarUrl?: string;
         companyName?: string;
         vanityUrl?: string;
+        staffId?: string;
+        companyVanity?: string;
         [key: string]: any;
     };
     companyLogo?: string;
@@ -43,14 +45,16 @@ export const CorporateIDCard: React.FC<CorporateIDCardProps> = ({
     const width = 320;
     const height = 500;
 
-    // Link QR code to user's personal profile
-    const cardUrl = `${window.location.origin}/${user.vanityUrl || ''}`;
+    // Link QR code to company staff card page: /companyVanity/staffId
+    const cardUrl = user.staffId && user.companyVanity
+        ? `${window.location.origin}/${user.companyVanity}/${user.staffId}`
+        : `${window.location.origin}/${user.vanityUrl || ''}`;
 
     return (
-        <div 
-            className="perspective-card" 
-            style={{ 
-                transform: `scale(${scale})`, 
+        <div
+            className="perspective-card"
+            style={{
+                transform: `scale(${scale})`,
                 transformOrigin: 'center center',
                 width: `${width}px`,
                 height: `${height}px`
@@ -67,7 +71,7 @@ export const CorporateIDCard: React.FC<CorporateIDCardProps> = ({
                 {/* Front Side - Clean White Theme */}
                 <div className="card-face card-front bg-white border-2 border-slate-200">
                     <div className="h-full flex flex-col items-center pt-12 pb-8 px-8">
-                        
+
                         {/* Company Name at Top */}
                         <div className="mb-10 text-center">
                             {companyLogo ? (
@@ -125,7 +129,7 @@ export const CorporateIDCard: React.FC<CorporateIDCardProps> = ({
                 {/* Back Side - Same White Theme */}
                 <div className="card-face card-back bg-white border-2 border-slate-200">
                     <div className="h-full flex flex-col items-center justify-between py-12 px-8">
-                        
+
                         {/* Company Name at Top */}
                         <div className="text-center">
                             {companyLogo ? (

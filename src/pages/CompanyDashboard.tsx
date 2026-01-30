@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,7 +12,7 @@ import { toast } from '@/hooks/use-toast';
 import {
   Plus, Users, CreditCard, BarChart3, Settings, LogOut,
   Eye, Edit3, Copy, RefreshCw, Send, AlertCircle,
-  UserCheck, UserX, Link as LinkIcon, Globe, ShieldCheck, UserPlus,
+  UserCheck, UserX, Link as LinkIcon, Globe, ShieldCheck, UserPlus, Camera,
   ArrowLeft, FileSpreadsheet, Upload, Download, Info, Check, Trash2, ListChecks,
   Loader2, Smartphone
 } from 'lucide-react';
@@ -77,13 +77,46 @@ const AVAILABLE_PARAMETERS = [
   { id: 'display_name', label: 'Full Name', required: true },
   { id: 'email', label: 'Email', required: true },
   { id: 'phone', label: 'Phone Number', required: false },
-  { id: 'job_title', label: 'Job Title', required: false },
   { id: 'avatar_url', label: 'Profile Picture', required: false },
 ];
 
 export const CompanyDashboard: React.FC = () => {
-  const { user, signOut, loading: authLoading } = useAuth();
+  const { user, loading: loadingAuth } = useAuth();
   const navigate = useNavigate();
+  const { tab } = useParams<{ tab: string }>();
+
+  // Map URL param to Tab Value
+  const getTabFromUrl = (urlParam?: string) => {
+    switch (urlParam) {
+      case 'employees': return 'staff';
+      case 'leadership': return 'directors';
+      case 'invite': return 'invites';
+      case 'data-collection': return 'parameters';
+      case 'id-design': return 'display';
+      case 'branding': return 'branding';
+      default: return 'staff';
+    }
+  };
+
+  // Map Tab Value to URL param
+  const getUrlFromTab = (tabValue: string) => {
+    switch (tabValue) {
+      case 'staff': return 'employees';
+      case 'directors': return 'leadership';
+      case 'invites': return 'invite';
+      case 'parameters': return 'data-collection';
+      case 'display': return 'id-design';
+      case 'branding': return 'branding';
+      default: return 'employees';
+    }
+  };
+
+  const activeTab = getTabFromUrl(tab);
+
+  const handleTabChange = (value: string) => {
+    navigate(`/dashboard/${getUrlFromTab(value)}`);
+  };
+
   const [profile, setProfile] = useState<Profile | null>(null);
   const [cards, setCards] = useState<DigitalCard[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -98,10 +131,11 @@ export const CompanyDashboard: React.FC = () => {
   const [isProcessingBulk, setIsProcessingBulk] = useState(false);
   const [importStatus, setImportStatus] = useState<{ total: number, current: number } | null>(null);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
 
   useEffect(() => {
     // Only proceed once auth has finished loading the session
-    if (!authLoading) {
+    if (!loadingAuth) {
       if (user) {
         const loadAll = async () => {
           try {
@@ -123,7 +157,7 @@ export const CompanyDashboard: React.FC = () => {
         setLoading(false);
       }
     }
-  }, [user, authLoading]);
+  }, [user, loadingAuth]);
 
   const fetchProfile = async () => {
     if (!user) return null;
@@ -227,14 +261,60 @@ export const CompanyDashboard: React.FC = () => {
     }
   };
 
+  const generateStaffId = (): string => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let staffId = '';
+    for (let i = 0; i < 6; i++) {
+      staffId += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return staffId;
+  };
+
   const handleApproveEmployee = async (empId: string, approve: boolean) => {
     try {
-      const { error } = await supabase
-        .from('invited_employees')
-        .update({ is_approved: approve, status: approve ? 'joined' : 'rejected' })
-        .eq('id', empId);
-      if (error) throw error;
-      toast({ title: approve ? "Employee Approved" : "Employee Rejected" });
+      if (approve) {
+        // Generate unique staff_id for approved employees
+        let staffId = generateStaffId();
+        let isUnique = false;
+        let attempts = 0;
+
+        // Ensure staff_id is unique (max 10 attempts)
+        while (!isUnique && attempts < 10) {
+          const { data: existing } = await supabase
+            .from('invited_employees')
+            .select('id')
+            .eq('staff_id', staffId)
+            .maybeSingle();
+
+          if (!existing) {
+            isUnique = true;
+          } else {
+            staffId = generateStaffId();
+            attempts++;
+          }
+        }
+
+        const { error } = await supabase
+          .from('invited_employees')
+          .update({
+            is_approved: true,
+            status: 'joined',
+            staff_id: staffId
+          })
+          .eq('id', empId);
+
+        if (error) throw error;
+        toast({ title: "Employee Approved", description: `Staff ID: ${staffId}` });
+      } else {
+        const { error } = await supabase
+          .from('invited_employees')
+          .update({ is_approved: false, status: 'rejected' })
+          .eq('id', empId);
+
+        if (error) throw error;
+        toast({ title: "Employee Rejected" });
+      }
+
       fetchEmployees();
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -296,13 +376,33 @@ export const CompanyDashboard: React.FC = () => {
   const handleManualAdd = async () => {
     if (!profile) return;
     try {
+      let avatarUrl = manualStaffData.avatar_url;
+
+      if (selectedImage) {
+        const fileExt = selectedImage.name.split('.').pop();
+        const fileName = `${Math.random()}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(filePath, selectedImage);
+
+        if (uploadError) throw uploadError;
+
+        const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+        avatarUrl = data.publicUrl;
+      }
+
       const { error } = await supabase
         .from('invited_employees')
         .insert({
           company_profile_id: profile.id,
           invite_code: profile.invite_code,
           status: 'invited',
-          data_submitted: manualStaffData,
+          data_submitted: {
+            ...manualStaffData,
+            avatar_url: avatarUrl
+          },
           designation: manualStaffData.job_title || ''
         });
 
@@ -310,6 +410,7 @@ export const CompanyDashboard: React.FC = () => {
       toast({ title: "Staff added successfully" });
       setShowAddStaffDialog(false);
       setManualStaffData({});
+      setSelectedImage(null);
       fetchEmployees();
     } catch (error: any) {
       toast({ title: "Error adding staff", description: error.message, variant: "destructive" });
@@ -463,7 +564,7 @@ export const CompanyDashboard: React.FC = () => {
         </div>
 
 
-        <Tabs defaultValue="staff" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
           <div className="overflow-x-auto pb-2 scrollbar-none">
             <TabsList className="bg-white border border-slate-200 p-1 rounded-xl shadow-sm inline-flex min-w-max">
               <TabsTrigger value="staff" className="rounded-lg px-6">Staff Directory</TabsTrigger>
@@ -502,7 +603,7 @@ export const CompanyDashboard: React.FC = () => {
                   <TableHeader>
                     <TableRow className="bg-slate-50/50">
                       <TableHead className="min-w-[200px]">Employee</TableHead>
-                      <TableHead className="min-w-[100px]">Employee ID</TableHead>
+                      <TableHead className="min-w-[100px]">Staff ID</TableHead>
                       <TableHead className="min-w-[100px]">Profile ID</TableHead>
                       <TableHead className="min-w-[150px]">Designation</TableHead>
                       <TableHead className="min-w-[150px]">Joined Date</TableHead>
@@ -529,7 +630,18 @@ export const CompanyDashboard: React.FC = () => {
                           </div>
                         </TableCell>
                         <TableCell className="text-slate-600 text-sm font-mono">
-                          {emp.employee_display_id || '—'}
+                          {emp.staff_id ? (
+                            <a
+                              href={`/${profile?.vanity_url}/${emp.staff_id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-indigo-600 hover:text-indigo-800 hover:underline"
+                            >
+                              {emp.staff_id}
+                            </a>
+                          ) : (
+                            <span className="text-slate-400">Pending</span>
+                          )}
                         </TableCell>
                         <TableCell className="text-slate-600 text-sm font-mono">
                           {emp.profile_display_id || '—'}
@@ -595,33 +707,74 @@ export const CompanyDashboard: React.FC = () => {
                                 <DialogTrigger asChild>
                                   <Button size="sm" variant="ghost" className="text-slate-500">View Data</Button>
                                 </DialogTrigger>
-                                <DialogContent>
+                                <DialogContent className="max-h-[90vh] overflow-y-auto max-w-md">
                                   <DialogHeader>
-                                    <DialogTitle>Collected Data: {emp.profiles?.display_name}</DialogTitle>
+                                    <DialogTitle>Employee Profile Data</DialogTitle>
+                                    <DialogDescription>Review details submitted by {emp.profiles?.display_name}</DialogDescription>
                                   </DialogHeader>
-                                  <div className="space-y-4 py-4">
-                                    {Object.entries(emp.data_submitted || {}).map(([key, value]) => (
-                                      <div key={key} className="flex flex-col border-b border-slate-100 pb-2">
-                                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{key.replace('_', ' ')}</span>
-                                        {key === 'avatar_url' ? (
-                                          <div className="mt-2 w-[200px] h-[200px] bg-slate-100 rounded-[40px] overflow-hidden shadow-sm border border-slate-200">
-                                            <img
-                                              src={String(value)}
-                                              alt="Avatar"
-                                              className="w-full h-full object-cover"
-                                              onError={(e) => {
-                                                (e.target as HTMLImageElement).src = 'https://ui-avatars.com/api/?name=User&background=random';
-                                              }}
-                                            />
-                                          </div>
+                                  <div className="py-4 space-y-6">
+                                    {/* Header Section: Image & Name */}
+                                    <div className="flex flex-col items-center justify-center text-center space-y-4 pb-6 border-b border-slate-100">
+                                      <div className="w-32 h-32 bg-slate-100 rounded-[2rem] overflow-hidden shadow-sm border-4 border-white ring-1 ring-slate-100">
+                                        {emp.data_submitted?.avatar_url ? (
+                                          <img
+                                            src={String(emp.data_submitted.avatar_url)}
+                                            alt={String(emp.profiles?.display_name)}
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => {
+                                              (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${emp.profiles?.display_name}&background=random`;
+                                            }}
+                                          />
                                         ) : (
-                                          <span className="text-slate-900 break-all">{String(value)}</span>
+                                          <div className="w-full h-full flex items-center justify-center text-slate-300">
+                                            <User className="w-16 h-16" />
+                                          </div>
                                         )}
                                       </div>
-                                    ))}
-                                    {Object.keys(emp.data_submitted || {}).length === 0 && (
-                                      <p className="text-center text-slate-500 italic">No data collected yet</p>
-                                    )}
+                                      <div>
+                                        <h3 className="text-xl font-bold text-slate-900">{String(emp.data_submitted?.display_name || 'Unknown Name')}</h3>
+                                        <div className="flex items-center justify-center gap-2 text-slate-500 mt-1">
+                                          <Badge variant="outline" className="border-indigo-200 text-indigo-700 bg-indigo-50">
+                                            {emp.designation || 'No Designation'}
+                                          </Badge>
+                                        </div>
+                                      </div>
+
+                                      {/* Quick Actions */}
+                                      <div className="flex gap-2 w-full justify-center">
+                                        {emp.data_submitted?.email && (
+                                          <a href={`mailto:${emp.data_submitted.email}`} className="p-2 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">
+                                            <Mail className="w-4 h-4" />
+                                          </a>
+                                        )}
+                                        {emp.data_submitted?.phone && (
+                                          <a href={`tel:${emp.data_submitted.phone}`} className="p-2 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">
+                                            <Phone className="w-4 h-4" />
+                                          </a>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    {/* Detailed Fields */}
+                                    <div className="space-y-4">
+                                      <h4 className="font-semibold text-sm text-slate-900 uppercase tracking-wider mb-3">Contact & Details</h4>
+
+                                      <div className="grid grid-cols-1 gap-4">
+                                        {Object.entries(emp.data_submitted || {})
+                                          .filter(([key]) => !['avatar_url', 'display_name'].includes(key))
+                                          .map(([key, value]) => (
+                                            <div key={key} className="flex flex-col bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                                                {key.replace(/_/g, ' ')}
+                                              </span>
+                                              <span className="text-sm font-medium text-slate-700 break-words">
+                                                {String(value) || '-'}
+                                              </span>
+                                            </div>
+                                          ))
+                                        }
+                                      </div>
+                                    </div>
                                   </div>
                                 </DialogContent>
                               </Dialog>
@@ -745,30 +898,153 @@ export const CompanyDashboard: React.FC = () => {
           <TabsContent value="branding">
             <Card className="shadow-md border-none">
               <CardHeader>
-                <CardTitle>Company Identity & Security</CardTitle>
-                <CardDescription>Personalize how your company appears and manage global security settings.</CardDescription>
+                <CardTitle>Company Details & Branding</CardTitle>
+                <CardDescription>Complete your company profile with essential business information.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-8">
-                <div className="space-y-4 max-w-md">
-                  <div className="space-y-2">
-                    <Label>Company Vanity URL</Label>
-                    <div className="flex gap-2">
-                      <div className="flex-1 flex items-center bg-slate-100 rounded-lg px-3 border border-slate-200">
-                        <Globe className="w-4 h-4 text-slate-400 mr-2" />
-                        <span className="text-slate-500 text-sm">{window.location.host}/</span>
-                        <input
-                          className="bg-transparent border-none outline-none text-sm font-medium text-slate-900 flex-1 ml-1"
-                          value={companyVanity}
-                          onChange={(e) => setCompanyVanity(e.target.value)}
-                          placeholder="your-company-name"
-                        />
-                      </div>
-                      <Button onClick={handleUpdateVanity}>Save</Button>
+                {/* Essential Information */}
+                <div className="space-y-6">
+                  <h4 className="font-bold text-slate-900 flex items-center gap-2">
+                    <AlertCircle className="w-5 h-5 text-red-500" />
+                    Essential Information
+                    <Badge variant="destructive" className="ml-2">Required</Badge>
+                  </h4>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Company Name */}
+                    <div className="space-y-2">
+                      <Label htmlFor="company-name">Company Name *</Label>
+                      <Input
+                        id="company-name"
+                        value={profile?.company_name || ''}
+                        placeholder="Enter company name"
+                        className="bg-slate-50"
+                      />
                     </div>
-                    <p className="text-xs text-slate-500 italic">This URL will be used to host your corporate ID cards.</p>
+
+                    {/* Company Email */}
+                    <div className="space-y-2">
+                      <Label htmlFor="company-email">Company Email *</Label>
+                      <Input
+                        id="company-email"
+                        type="email"
+                        placeholder="contact@company.com"
+                        className="bg-slate-50"
+                      />
+                    </div>
+
+                    {/* Company Phone */}
+                    <div className="space-y-2">
+                      <Label htmlFor="company-phone">Company Phone *</Label>
+                      <Input
+                        id="company-phone"
+                        type="tel"
+                        placeholder="+1 (555) 123-4567"
+                        className="bg-slate-50"
+                      />
+                    </div>
+
+                    {/* Company Logo URL */}
+                    <div className="space-y-2">
+                      <Label htmlFor="company-logo">Company Logo URL *</Label>
+                      <Input
+                        id="company-logo"
+                        value={profile?.company_logo_url || ''}
+                        placeholder="https://example.com/logo.png"
+                        className="bg-slate-50"
+                      />
+                      {profile?.company_logo_url && (
+                        <div className="mt-2 p-2 bg-slate-100 rounded flex items-center justify-center">
+                          <img src={profile.company_logo_url} alt="Logo Preview" className="max-h-12 object-contain" />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
+                {/* Optional Information */}
+                <div className="pt-6 border-t border-slate-100 space-y-6">
+                  <h4 className="font-bold text-slate-900 flex items-center gap-2">
+                    <Info className="w-5 h-5 text-blue-500" />
+                    Additional Details
+                    <Badge variant="outline" className="ml-2">Optional</Badge>
+                  </h4>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Website */}
+                    <div className="space-y-2">
+                      <Label htmlFor="company-website">Website</Label>
+                      <Input
+                        id="company-website"
+                        type="url"
+                        placeholder="https://www.company.com"
+                        className="bg-slate-50"
+                      />
+                    </div>
+
+                    {/* Industry */}
+                    <div className="space-y-2">
+                      <Label htmlFor="company-industry">Industry</Label>
+                      <Input
+                        id="company-industry"
+                        placeholder="e.g., Technology, Healthcare"
+                        className="bg-slate-50"
+                      />
+                    </div>
+
+                    {/* GST Number */}
+                    <div className="space-y-2">
+                      <Label htmlFor="company-gst">GST Number</Label>
+                      <Input
+                        id="company-gst"
+                        placeholder="e.g., 22AAAAA0000A1Z5"
+                        className="bg-slate-50"
+                      />
+                    </div>
+
+                    {/* Company Vanity URL */}
+                    <div className="space-y-2">
+                      <Label>Company Vanity URL</Label>
+                      <div className="flex gap-2">
+                        <div className="flex-1 flex items-center bg-slate-100 rounded-lg px-3 border border-slate-200">
+                          <Globe className="w-4 h-4 text-slate-400 mr-2" />
+                          <span className="text-slate-500 text-sm">{window.location.host}/</span>
+                          <input
+                            className="bg-transparent border-none outline-none text-sm font-medium text-slate-900 flex-1 ml-1"
+                            value={companyVanity}
+                            onChange={(e) => setCompanyVanity(e.target.value)}
+                            placeholder="your-company-name"
+                          />
+                        </div>
+                      </div>
+                      <p className="text-xs text-slate-500 italic">This URL will be used to host your corporate ID cards.</p>
+                    </div>
+                  </div>
+
+                  {/* Company Address */}
+                  <div className="space-y-2">
+                    <Label htmlFor="company-address">Company Address</Label>
+                    <textarea
+                      id="company-address"
+                      rows={3}
+                      placeholder="Enter full company address"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+
+                  {/* Company Description */}
+                  <div className="space-y-2">
+                    <Label htmlFor="company-description">Company Description</Label>
+                    <textarea
+                      id="company-description"
+                      rows={4}
+                      placeholder="Brief description of your company and what you do"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Global Security & Policy */}
                 <div className="pt-6 border-t border-slate-100">
                   <h4 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
                     <ShieldCheck className="w-5 h-5 text-indigo-600" />
@@ -797,6 +1073,20 @@ export const CompanyDashboard: React.FC = () => {
                       <Checkbox />
                     </div>
                   </div>
+                </div>
+
+                {/* Save Button */}
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    className="bg-indigo-600 hover:bg-indigo-700 px-8"
+                    onClick={async () => {
+                      await handleUpdateVanity();
+                      toast({ title: "Company details saved successfully" });
+                    }}
+                  >
+                    Save All Changes
+                  </Button>
+                  <Button variant="outline">Reset to Default</Button>
                 </div>
               </CardContent>
             </Card>
@@ -955,6 +1245,8 @@ export const CompanyDashboard: React.FC = () => {
                                     phone: submittedData?.phone || '',
                                     avatarUrl: empProfile?.avatar_url || submittedData?.avatar_url || '',
                                     vanityUrl: empProfile?.vanity_url || 'employee',
+                                    staffId: selectedEmployee.staff_id,
+                                    companyVanity: profile?.vanity_url || undefined,
                                     companyName: profile?.company_name
                                   }}
                                   companyLogo={profile?.company_logo_url}
@@ -985,33 +1277,138 @@ export const CompanyDashboard: React.FC = () => {
         </Tabs>
       </main>
       {/* Manual Add Staff Dialog */}
-      <Dialog open={showAddStaffDialog} onOpenChange={setShowAddStaffDialog}>
-        <DialogContent className="max-w-xl">
+      <Dialog open={showAddStaffDialog} onOpenChange={(open) => {
+        setShowAddStaffDialog(open);
+        if (!open) {
+          setManualStaffData({});
+          setSelectedImage(null);
+        }
+      }}>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <UserPlus className="w-5 h-5 text-indigo-600" />
               Add New Staff Member
             </DialogTitle>
             <DialogDescription>
-              Manually input staff details. An invitation will be automatically recorded in your directory.
+              Create a new staff profile. Access credentials will be sent to the email provided.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-4 py-4">
-            {AVAILABLE_PARAMETERS.map(param => (
-              <div key={param.id} className="space-y-2">
-                <Label htmlFor={`manual-${param.id}`} className="text-xs font-bold uppercase text-slate-500">
-                  {param.label} {param.required && <span className="text-red-500">*</span>}
-                </Label>
-                <Input
-                  id={`manual-${param.id}`}
-                  placeholder={`Enter ${param.label.toLowerCase()}`}
-                  value={manualStaffData[param.id] || ''}
-                  onChange={(e) => setManualStaffData(prev => ({ ...prev, [param.id]: e.target.value }))}
-                  className="bg-slate-50 border-none h-11"
+
+          <div className="flex flex-col md:flex-row gap-6 py-4">
+            {/* Left Column: Image Upload */}
+            <div className="flex-shrink-0 flex flex-col items-center space-y-3">
+              <Label className="text-xs font-bold uppercase text-slate-500">Profile Photo</Label>
+              <div className="group relative w-32 h-32 bg-slate-100 rounded-[2rem] overflow-hidden border-2 border-dashed border-slate-300 hover:border-indigo-500 transition-colors cursor-pointer">
+                {selectedImage ? (
+                  <img
+                    src={URL.createObjectURL(selectedImage)}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                  />
+                ) : manualStaffData.avatar_url ? (
+                  <img
+                    src={manualStaffData.avatar_url}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-slate-400">
+                    <Camera className="w-8 h-8" />
+                  </div>
+                )}
+                <input
+                  type="file"
+                  className="absolute inset-0 opacity-0 cursor-pointer"
+                  accept="image/*"
+                  onChange={(e) => {
+                    if (e.target.files?.[0]) {
+                      setSelectedImage(e.target.files[0]);
+                    }
+                  }}
                 />
+                <div className="absolute inset-x-0 bottom-0 bg-black/50 text-white text-[10px] py-1 text-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  Click to Upload
+                </div>
               </div>
-            ))}
+              <p className="text-[10px] text-slate-400 text-center max-w-[120px]">
+                Recommended: Square image, max 2MB
+              </p>
+            </div>
+
+            {/* Right Column: Details */}
+            <div className="flex-1 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="manual-name" className="text-xs font-bold uppercase text-slate-500">Full Name *</Label>
+                  <Input
+                    id="manual-name"
+                    placeholder="e.g. John Doe"
+                    value={manualStaffData['display_name'] || ''}
+                    onChange={(e) => setManualStaffData(prev => ({ ...prev, 'display_name': e.target.value }))}
+                    className="bg-slate-50"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="manual-job" className="text-xs font-bold uppercase text-slate-500">Designation</Label>
+                  <Input
+                    id="manual-job"
+                    placeholder="e.g. Product Manager"
+                    value={manualStaffData['job_title'] || ''}
+                    onChange={(e) => setManualStaffData(prev => ({ ...prev, 'job_title': e.target.value }))}
+                    className="bg-slate-50"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="manual-email" className="text-xs font-bold uppercase text-slate-500">Email *</Label>
+                  <Input
+                    id="manual-email"
+                    type="email"
+                    placeholder="john@company.com"
+                    value={manualStaffData['email'] || ''}
+                    onChange={(e) => setManualStaffData(prev => ({ ...prev, 'email': e.target.value }))}
+                    className="bg-slate-50"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="manual-phone" className="text-xs font-bold uppercase text-slate-500">Phone</Label>
+                  <Input
+                    id="manual-phone"
+                    type="tel"
+                    placeholder="+1 234 567 890"
+                    value={manualStaffData['phone'] || ''}
+                    onChange={(e) => setManualStaffData(prev => ({ ...prev, 'phone': e.target.value }))}
+                    className="bg-slate-50"
+                  />
+                </div>
+              </div>
+
+              {/* Additional Parameters */}
+              <div className="pt-2">
+                <div className="text-xs text-slate-400 mb-2 font-medium">Additional Information</div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {AVAILABLE_PARAMETERS
+                    .filter(p => !['display_name', 'email', 'phone', 'avatar_url'].includes(p.id))
+                    .map(param => (
+                      <div key={param.id} className="space-y-2">
+                        <Label htmlFor={`manual-${param.id}`} className="text-xs font-bold uppercase text-slate-500">
+                          {param.label} {param.required && <span className="text-red-500">*</span>}
+                        </Label>
+                        <Input
+                          id={`manual-${param.id}`}
+                          placeholder={`Enter ${param.label.toLowerCase()}`}
+                          value={manualStaffData[param.id] || ''}
+                          onChange={(e) => setManualStaffData(prev => ({ ...prev, [param.id]: e.target.value }))}
+                          className="bg-slate-50"
+                        />
+                      </div>
+                    ))
+                  }
+                </div>
+              </div>
+            </div>
           </div>
+
           <DialogFooter>
             <Button variant="ghost" onClick={() => setShowAddStaffDialog(false)}>Cancel</Button>
             <Button onClick={handleManualAdd} className="bg-indigo-600 hover:bg-indigo-700">Add to Directory</Button>
