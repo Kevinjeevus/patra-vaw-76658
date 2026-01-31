@@ -167,15 +167,11 @@ export const CompanyDashboard: React.FC = () => {
   const [cardCustomization, setCardCustomization] = useState<IDCardCustomization>(DEFAULT_CUSTOMIZATION);
   const [isSavingCardDesign, setIsSavingCardDesign] = useState(false);
   const [brandingData, setBrandingData] = useState({
-    company_name: '',
-    company_email: '',
-    company_phone: '',
-    company_website: '',
-    company_industry: '',
-    company_gst: '',
     company_address: '',
     company_description: '',
   });
+  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  const [isUpdatingStaff, setIsUpdatingStaff] = useState(false);
 
   useEffect(() => {
     // Only proceed once auth has finished loading the session
@@ -281,19 +277,21 @@ export const CompanyDashboard: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('invited_employees')
-        .select('*')
+        .select(`
+          *,
+          profiles:employee_profile_id (
+            display_name,
+            avatar_url,
+            vanity_url,
+            id
+          )
+        `)
         .eq('company_profile_id', idToUse)
         .order('joined_at', { ascending: false });
 
       if (error) throw error;
 
-      // Map the data to match Employee interface
-      const mappedEmployees = (data || []).map(emp => ({
-        ...emp,
-        profiles: null as any
-      }));
-
-      setEmployees(mappedEmployees as any);
+      setEmployees(data as any);
     } catch (error: any) {
       console.error('Error fetching employees:', error);
     }
@@ -394,10 +392,44 @@ export const CompanyDashboard: React.FC = () => {
     }
   };
 
-  const handleUpdateDesignation = async () => {
-    if (!editingDesignation) return;
+  const handleUpdateStaff = async () => {
+    if (!editingEmployee) return;
+    setIsUpdatingStaff(true);
     try {
-      const { error } = await supabase
+      // 1. Update invited_employees
+      const { error: empError } = await supabase
+        .from('invited_employees')
+        .update({
+          designation: editingEmployee.designation,
+          staff_id: editingEmployee.staff_id,
+          data_submitted: editingEmployee.data_submitted
+        })
+        .eq('id', editingEmployee.id);
+
+      if (empError) throw empError;
+
+      // 2. Update profiles if linked
+      if (editingEmployee.profiles?.id) {
+        const { error: profError } = await supabase
+          .from('profiles')
+          .update({
+            display_name: String(editingEmployee.data_submitted?.display_name || ''),
+            vanity_url: editingEmployee.profiles.vanity_url
+          })
+          .eq('id', editingEmployee.profiles.id);
+        
+        if (profError) throw profError;
+      }
+
+      toast({ title: "Success", description: "Employee data updated successfully" });
+      setEditingEmployee(null);
+      fetchEmployees();
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setIsUpdatingStaff(false);
+    }
+  };
         .from('invited_employees')
         .update({ designation: editingDesignation.value })
         .eq('id', editingDesignation.id);
@@ -822,79 +854,113 @@ export const CompanyDashboard: React.FC = () => {
                               ) : (
                                 <span className="text-xs text-slate-400 italic mr-3">Pending Activation</span>
                               )}
-                              <Dialog>
+                              <Dialog open={!!editingEmployee && editingEmployee.id === emp.id} onOpenChange={(open) => !open && setEditingEmployee(null)}>
                                 <DialogTrigger asChild>
-                                  <Button size="sm" variant="ghost" className="text-slate-500">View Data</Button>
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost" 
+                                    className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                                    onClick={() => setEditingEmployee({ ...emp })}
+                                  >
+                                    <Edit3 className="w-4 h-4 mr-1" />
+                                    Edit
+                                  </Button>
                                 </DialogTrigger>
-                                <DialogContent className="max-h-[90vh] overflow-y-auto max-w-md">
+                                <DialogContent className="max-h-[90vh] overflow-y-auto max-w-lg">
                                   <DialogHeader>
-                                    <DialogTitle>Employee Profile Data</DialogTitle>
-                                    <DialogDescription>Review details submitted by {emp.profiles?.display_name}</DialogDescription>
+                                    <DialogTitle>Edit Employee Profile</DialogTitle>
+                                    <DialogDescription>Modify details for {emp.profiles?.display_name || 'Staff Member'}</DialogDescription>
                                   </DialogHeader>
-                                  <div className="py-4 space-y-6">
-                                    {/* Header Section: Image & Name */}
-                                    <div className="flex flex-col items-center justify-center text-center space-y-4 pb-6 border-b border-slate-100">
-                                      <div className="w-32 h-32 bg-slate-100 rounded-[2rem] overflow-hidden shadow-sm border-4 border-white ring-1 ring-slate-100">
-                                        {emp.data_submitted?.avatar_url ? (
-                                          <img
-                                            src={String(emp.data_submitted.avatar_url)}
-                                            alt={String(emp.profiles?.display_name)}
-                                            className="w-full h-full object-cover"
-                                            onError={(e) => {
-                                              (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${emp.profiles?.display_name}&background=random`;
-                                            }}
+                                  
+                                  {editingEmployee && (
+                                    <div className="py-4 space-y-6">
+                                      {/* Basic Info Section */}
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                          <Label>Full Name</Label>
+                                          <Input 
+                                            value={String(editingEmployee.data_submitted?.display_name || '')}
+                                            onChange={(e) => setEditingEmployee({
+                                              ...editingEmployee,
+                                              data_submitted: { ...editingEmployee.data_submitted, display_name: e.target.value }
+                                            })}
                                           />
-                                        ) : (
-                                          <div className="w-full h-full flex items-center justify-center text-slate-300">
-                                            <User className="w-16 h-16" />
+                                        </div>
+                                        <div className="space-y-2">
+                                          <Label>Official Designation</Label>
+                                          <Input 
+                                            value={editingEmployee.designation || ''}
+                                            onChange={(e) => setEditingEmployee({
+                                              ...editingEmployee,
+                                              designation: e.target.value
+                                            })}
+                                          />
+                                        </div>
+                                        <div className="space-y-2">
+                                          <Label>Staff ID (Alphanumeric)</Label>
+                                          <Input 
+                                            value={editingEmployee.staff_id || ''}
+                                            onChange={(e) => setEditingEmployee({
+                                              ...editingEmployee,
+                                              staff_id: e.target.value.toUpperCase()
+                                            })}
+                                          />
+                                        </div>
+                                        <div className="space-y-2">
+                                          <Label>Personal Vanity URL</Label>
+                                          <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-md px-2 h-10">
+                                            <span className="text-[10px] text-slate-400 font-mono">/</span>
+                                            <input 
+                                              className="bg-transparent border-none outline-none text-sm flex-1"
+                                              value={editingEmployee.profiles?.vanity_url || ''}
+                                              onChange={(e) => setEditingEmployee({
+                                                ...editingEmployee,
+                                                profiles: { ...editingEmployee.profiles, vanity_url: e.target.value }
+                                              })}
+                                            />
                                           </div>
-                                        )}
-                                      </div>
-                                      <div>
-                                        <h3 className="text-xl font-bold text-slate-900">{String(emp.data_submitted?.display_name || 'Unknown Name')}</h3>
-                                        <div className="flex items-center justify-center gap-2 text-slate-500 mt-1">
-                                          <Badge variant="outline" className="border-indigo-200 text-indigo-700 bg-indigo-50">
-                                            {emp.designation || 'No Designation'}
-                                          </Badge>
                                         </div>
                                       </div>
 
-                                      {/* Quick Actions */}
-                                      <div className="flex gap-2 w-full justify-center">
-                                        {emp.data_submitted?.email && (
-                                          <a href={`mailto:${emp.data_submitted.email}`} className="p-2 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">
-                                            <Mail className="w-4 h-4" />
-                                          </a>
-                                        )}
-                                        {emp.data_submitted?.phone && (
-                                          <a href={`tel:${emp.data_submitted.phone}`} className="p-2 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">
-                                            <Phone className="w-4 h-4" />
-                                          </a>
-                                        )}
+                                      <div className="space-y-4">
+                                        <h4 className="font-semibold text-sm text-slate-900 uppercase tracking-wider pb-2 border-b">Contact Information</h4>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                          <div className="space-y-2">
+                                            <Label>Email Address</Label>
+                                            <Input 
+                                              value={String(editingEmployee.data_submitted?.email || '')}
+                                              onChange={(e) => setEditingEmployee({
+                                                ...editingEmployee,
+                                                data_submitted: { ...editingEmployee.data_submitted, email: e.target.value }
+                                              })}
+                                            />
+                                          </div>
+                                          <div className="space-y-2">
+                                            <Label>Phone Number</Label>
+                                            <Input 
+                                              value={String(editingEmployee.data_submitted?.phone || '')}
+                                              onChange={(e) => setEditingEmployee({
+                                                ...editingEmployee,
+                                                data_submitted: { ...editingEmployee.data_submitted, phone: e.target.value }
+                                              })}
+                                            />
+                                          </div>
+                                        </div>
                                       </div>
                                     </div>
+                                  )}
 
-                                    {/* Detailed Fields */}
-                                    <div className="space-y-4">
-                                      <h4 className="font-semibold text-sm text-slate-900 uppercase tracking-wider mb-3">Contact & Details</h4>
-
-                                      <div className="grid grid-cols-1 gap-4">
-                                        {Object.entries(emp.data_submitted || {})
-                                          .filter(([key]) => !['avatar_url', 'display_name'].includes(key))
-                                          .map(([key, value]) => (
-                                            <div key={key} className="flex flex-col bg-slate-50 p-3 rounded-lg border border-slate-100">
-                                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                                                {key.replace(/_/g, ' ')}
-                                              </span>
-                                              <span className="text-sm font-medium text-slate-700 break-words">
-                                                {String(value) || '-'}
-                                              </span>
-                                            </div>
-                                          ))
-                                        }
-                                      </div>
-                                    </div>
-                                  </div>
+                                  <DialogFooter className="gap-2">
+                                    <Button variant="outline" onClick={() => setEditingEmployee(null)}>Cancel</Button>
+                                    <Button 
+                                      className="bg-indigo-600 hover:bg-indigo-700"
+                                      disabled={isUpdatingStaff}
+                                      onClick={handleUpdateStaff}
+                                    >
+                                      {isUpdatingStaff ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
+                                      Save All Changes
+                                    </Button>
+                                  </DialogFooter>
                                 </DialogContent>
                               </Dialog>
                             </div>

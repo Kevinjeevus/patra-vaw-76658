@@ -54,7 +54,7 @@ export const CompanyProfile: React.FC = () => {
                 const { data: profile, error } = await supabase
                     .from('profiles')
                     .select('id, company_name, company_logo_url, company_verified, vanity_url, display_parameters')
-                    .eq('vanity_url', companyVanity)
+                    .ilike('vanity_url', companyVanity)
                     .ilike('account_type', 'company')
                     .maybeSingle();
 

@@ -37,6 +37,9 @@ export const CorporateIDCard: React.FC<CorporateIDCardProps> = ({
     const [internalFlipped, setInternalFlipped] = useState(false);
     const isFlipped = controlledFlipped !== undefined ? controlledFlipped : internalFlipped;
 
+    // Ensure displayParameters is an array
+    const safeDisplayParams = Array.isArray(displayParameters) ? displayParameters : ['display_name', 'email', 'job_title'];
+
     const handleFlip = () => {
         if (onFlip) {
             onFlip();
@@ -121,13 +124,13 @@ export const CorporateIDCard: React.FC<CorporateIDCardProps> = ({
 
                         {/* Contact Information */}
                         <div className="space-y-3 w-full">
-                            {displayParameters.includes('email') && (
+                            {safeDisplayParams.includes('email') && (
                                 <div className="flex items-center gap-2 text-slate-700">
                                     <Mail className="w-4 h-4 text-slate-500 flex-shrink-0" />
                                     <span className="text-xs truncate">{user.email}</span>
                                 </div>
                             )}
-                            {displayParameters.includes('phone') && user.phone && (
+                            {safeDisplayParams.includes('phone') && user.phone && (
                                 <div className="flex items-center gap-2 text-slate-700">
                                     <Phone className="w-4 h-4 text-slate-500 flex-shrink-0" />
                                     <span className="text-xs">{user.phone}</span>

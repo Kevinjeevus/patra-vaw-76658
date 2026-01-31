@@ -38,7 +38,7 @@ export const StaffCardView: React.FC = () => {
                 const { data: companyProfile, error: companyError } = await supabase
                     .from('profiles')
                     .select('id, company_name, company_logo_url, display_parameters')
-                    .eq('vanity_url', companyVanity)
+                    .ilike('vanity_url', companyVanity)
                     .ilike('account_type', 'company')
                     .single();
 
@@ -75,7 +75,9 @@ export const StaffCardView: React.FC = () => {
                     companyName: companyProfile.company_name,
                     companyVanity: companyVanity,
                     companyLogo: companyProfile.company_logo_url || undefined,
-                    displayParameters: (companyProfile.display_parameters as string[]) || ['display_name', 'email'],
+                    displayParameters: Array.isArray(companyProfile.display_parameters)
+                        ? companyProfile.display_parameters
+                        : (companyProfile.display_parameters as any)?.visibility || ['display_name', 'email', 'job_title'],
                 });
 
                 // Update Meta Tags for PWA

@@ -18,13 +18,13 @@ export const ProfileRouter: React.FC = () => {
             }
 
             try {
-         // Check if it's a company vanity (case-insensitive)
-        const { data: companyProfile } = await supabase
-          .from('profiles')
-          .select('id, account_type')
-          .eq('vanity_url', vanity)
-          .ilike('account_type', 'company')
-          .maybeSingle();
+                // Check if it's a company vanity (case-insensitive)
+                const { data: companyProfile } = await supabase
+                    .from('profiles')
+                    .select('id, account_type')
+                    .ilike('vanity_url', vanity)
+                    .ilike('account_type', 'company')
+                    .maybeSingle();
 
                 if (companyProfile) {
                     setType('company');
