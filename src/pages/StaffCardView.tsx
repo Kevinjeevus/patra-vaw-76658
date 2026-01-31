@@ -39,7 +39,7 @@ export const StaffCardView: React.FC = () => {
                     .from('profiles')
                     .select('id, company_name, company_logo_url, display_parameters')
                     .eq('vanity_url', companyVanity)
-                    .eq('account_type', 'company')
+                    .ilike('account_type', 'company')
                     .single();
 
                 if (companyError || !companyProfile) {

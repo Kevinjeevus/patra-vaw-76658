@@ -108,9 +108,16 @@ export const CorporateIDCard: React.FC<CorporateIDCardProps> = ({
                         </h2>
 
                         {/* Designation */}
-                        <p className="text-sm text-slate-600 font-medium mb-6 text-center">
+                        <p className="text-sm text-slate-600 font-medium mb-1 text-center">
                             {user.jobTitle || 'Designation'}
                         </p>
+
+                        {/* Staff ID */}
+                        {user.staffId && (
+                            <p className="text-[10px] text-slate-400 font-mono mb-6 uppercase tracking-wider">
+                                ID: {user.staffId}
+                            </p>
+                        )}
 
                         {/* Contact Information */}
                         <div className="space-y-3 w-full">

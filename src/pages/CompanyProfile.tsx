@@ -55,7 +55,7 @@ export const CompanyProfile: React.FC = () => {
                     .from('profiles')
                     .select('id, company_name, company_logo_url, company_verified, vanity_url, display_parameters')
                     .eq('vanity_url', companyVanity)
-                    .eq('account_type', 'company')
+                    .ilike('account_type', 'company')
                     .maybeSingle();
 
                 if (error || !profile) {
