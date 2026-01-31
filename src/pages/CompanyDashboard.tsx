@@ -134,6 +134,8 @@ export const CompanyDashboard: React.FC = () => {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [isAddingStaff, setIsAddingStaff] = useState(false);
+  const [companyLogoFile, setCompanyLogoFile] = useState<File | null>(null);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
 
   useEffect(() => {
     // Only proceed once auth has finished loading the session
@@ -981,20 +983,102 @@ export const CompanyDashboard: React.FC = () => {
                       />
                     </div>
 
-                    {/* Company Logo URL */}
+                    {/* Company Logo Upload */}
                     <div className="space-y-2">
-                      <Label htmlFor="company-logo">Company Logo URL *</Label>
-                      <Input
-                        id="company-logo"
-                        value={profile?.company_logo_url || ''}
-                        placeholder="https://example.com/logo.png"
-                        className="bg-slate-50"
-                      />
-                      {profile?.company_logo_url && (
-                        <div className="mt-2 p-2 bg-slate-100 rounded flex items-center justify-center">
-                          <img src={profile.company_logo_url} alt="Logo Preview" className="max-h-12 object-contain" />
+                      <Label htmlFor="company-logo">Company Logo *</Label>
+                      <div className="flex flex-col gap-3">
+                        <div className="group relative w-full h-32 bg-slate-100 rounded-xl overflow-hidden border-2 border-dashed border-slate-300 hover:border-indigo-500 transition-colors cursor-pointer flex items-center justify-center">
+                          {companyLogoFile ? (
+                            <img
+                              src={URL.createObjectURL(companyLogoFile)}
+                              alt="Logo Preview"
+                              className="max-h-full max-w-full object-contain p-2"
+                            />
+                          ) : profile?.company_logo_url ? (
+                            <img
+                              src={profile.company_logo_url}
+                              alt="Company Logo"
+                              className="max-h-full max-w-full object-contain p-2"
+                            />
+                          ) : (
+                            <div className="flex flex-col items-center gap-2 text-slate-400">
+                              <Camera className="w-8 h-8" />
+                              <span className="text-xs">Click to upload logo</span>
+                            </div>
+                          )}
+                          <input
+                            type="file"
+                            id="company-logo"
+                            className="absolute inset-0 opacity-0 cursor-pointer"
+                            accept="image/*"
+                            onChange={(e) => {
+                              if (e.target.files?.[0]) {
+                                setCompanyLogoFile(e.target.files[0]);
+                              }
+                            }}
+                          />
+                          <div className="absolute inset-x-0 bottom-0 bg-black/50 text-white text-[10px] py-1 text-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            {profile?.company_logo_url || companyLogoFile ? 'Click to change' : 'Click to upload'}
+                          </div>
                         </div>
-                      )}
+                        {companyLogoFile && (
+                          <Button
+                            size="sm"
+                            className="bg-indigo-600 hover:bg-indigo-700"
+                            disabled={isUploadingLogo}
+                            onClick={async () => {
+                              if (!companyLogoFile || !user || !profile) return;
+                              setIsUploadingLogo(true);
+                              try {
+                                const fileExt = companyLogoFile.name.split('.').pop();
+                                const fileName = `logo-${Date.now()}.${fileExt}`;
+                                const filePath = `${user.id}/company/${fileName}`;
+
+                                const { error: uploadError } = await supabase.storage
+                                  .from('avatars')
+                                  .upload(filePath, companyLogoFile, {
+                                    contentType: companyLogoFile.type || undefined,
+                                    upsert: true,
+                                  });
+
+                                if (uploadError) throw uploadError;
+
+                                const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
+                                const logoUrl = urlData.publicUrl;
+
+                                const { error: updateError } = await supabase
+                                  .from('profiles')
+                                  .update({ company_logo_url: logoUrl })
+                                  .eq('id', profile.id);
+
+                                if (updateError) throw updateError;
+
+                                toast({ title: "Logo uploaded", description: "Your company logo has been updated successfully." });
+                                setCompanyLogoFile(null);
+                                fetchProfile();
+                              } catch (error: any) {
+                                console.error('Logo upload error:', error);
+                                toast({ title: "Upload failed", description: error.message, variant: "destructive" });
+                              } finally {
+                                setIsUploadingLogo(false);
+                              }
+                            }}
+                          >
+                            {isUploadingLogo ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Uploading...
+                              </>
+                            ) : (
+                              <>
+                                <Upload className="w-4 h-4 mr-2" />
+                                Save Logo
+                              </>
+                            )}
+                          </Button>
+                        )}
+                        <p className="text-xs text-slate-500">PNG, JPG or SVG. Max 2MB recommended.</p>
+                      </div>
                     </div>
                   </div>
                 </div>
