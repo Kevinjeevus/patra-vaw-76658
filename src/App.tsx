@@ -39,6 +39,8 @@ import Pricing from "./pages/Pricing";
 import { InvitePage } from "./pages/InvitePage";
 import { CorporateEditor } from "./pages/CorporateEditor";
 import { StaffCardView } from "./pages/StaffCardView";
+import { CompanyProfile } from "./pages/CompanyProfile";
+import { ProfileRouter } from "./pages/ProfileRouter";
 import { AlertCircle, Clock, Shield } from "lucide-react";
 import { Button as UIButton } from "@/components/ui/button";
 
@@ -325,7 +327,7 @@ const AppContent = () => {
 
         <Route path="/:username/ai" element={<AIChat />} />
         <Route path="/:companyVanity/:staffId" element={<StaffCardView />} />
-        <Route path="/:username" element={<PublicProfile />} />
+        <Route path="/:vanity" element={<ProfileRouter />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
