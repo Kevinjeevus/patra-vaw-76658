@@ -377,6 +377,10 @@ export const CompanyDashboard: React.FC = () => {
 
   const handleManualAdd = async () => {
     if (!profile || isAddingStaff) return;
+    if (!user) {
+      toast({ title: "Not signed in", description: "Please sign in and try again.", variant: "destructive" });
+      return;
+    }
     
     // Validate required fields
     if (!manualStaffData.display_name?.trim()) {
@@ -395,11 +399,16 @@ export const CompanyDashboard: React.FC = () => {
       if (selectedImage) {
         const fileExt = selectedImage.name.split('.').pop();
         const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-        const filePath = `staff/${fileName}`;
+        // Storage RLS for `avatars` requires the first folder to be the uploader's auth.uid()
+        // policy: (storage.foldername(name))[1] = auth.uid()::text
+        const filePath = `${user.id}/staff/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
           .from('avatars')
-          .upload(filePath, selectedImage);
+          .upload(filePath, selectedImage, {
+            contentType: selectedImage.type || undefined,
+            upsert: false,
+          });
 
         if (uploadError) {
           console.error('Upload error:', uploadError);
