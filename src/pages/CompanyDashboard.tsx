@@ -10,11 +10,30 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import {
-  Plus, Users, CreditCard, BarChart3, Settings, LogOut,
-  Eye, Edit3, Copy, RefreshCw, Send, AlertCircle,
-  UserCheck, UserX, Link as LinkIcon, Globe, ShieldCheck, UserPlus, Camera,
-  ArrowLeft, FileSpreadsheet, Upload, Download, Info, Check, Trash2, ListChecks,
-  Loader2, Smartphone, User, Mail, Phone
+  Plus, Upload, FileSpreadsheet, AlertCircle, Info, ShieldCheck, Camera, Loader2, Globe, ShieldAlert,
+  ArrowLeft,
+  Mail,
+  Phone,
+  Settings,
+  LogOut,
+  Users,
+  CreditCard,
+  Edit3,
+  Trash2,
+  Eye,
+  Link as LinkIcon,
+  User,
+  UserCheck,
+  UserX,
+  BarChart3,
+  Copy,
+  RefreshCw,
+  UserPlus,
+  Send,
+  Download,
+  ListChecks,
+  Smartphone,
+  Check
 } from 'lucide-react';
 import { IDCardRenderer } from '@/components/card/IDCardRenderer';
 import { IDCardCustomizer } from '@/components/card/IDCardCustomizer';
@@ -41,11 +60,19 @@ interface Profile {
   account_type: string;
   board_member_count: number;
   employee_invite_count: number;
-  invite_parameters: Json;
-  display_parameters: Json;
+  invite_parameters: any;
+  display_parameters: any;
   payment_due_date: string | null;
   vanity_url: string | null;
   company_logo_url?: string;
+  company_email?: string;
+  company_phone?: string;
+  company_website?: string;
+  company_industry?: string;
+  company_gst?: string;
+  company_address?: string;
+  company_description?: string;
+  company_verified?: boolean;
 }
 
 interface DigitalCard {
@@ -139,6 +166,16 @@ export const CompanyDashboard: React.FC = () => {
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [cardCustomization, setCardCustomization] = useState<IDCardCustomization>(DEFAULT_CUSTOMIZATION);
   const [isSavingCardDesign, setIsSavingCardDesign] = useState(false);
+  const [brandingData, setBrandingData] = useState({
+    company_name: '',
+    company_email: '',
+    company_phone: '',
+    company_website: '',
+    company_industry: '',
+    company_gst: '',
+    company_address: '',
+    company_description: '',
+  });
 
   useEffect(() => {
     // Only proceed once auth has finished loading the session
@@ -193,6 +230,18 @@ export const CompanyDashboard: React.FC = () => {
       setProfile(data);
       setCompanyVanity(data.vanity_url || '');
 
+      const branding = (data.display_parameters as any)?.branding || {};
+      setBrandingData({
+        company_name: data.company_name || '',
+        company_email: branding.company_email || '',
+        company_phone: branding.company_phone || '',
+        company_website: branding.company_website || '',
+        company_industry: branding.company_industry || '',
+        company_gst: branding.company_gst || '',
+        company_address: branding.company_address || '',
+        company_description: branding.company_description || '',
+      });
+
       const inviteParams = Array.isArray(data.invite_parameters)
         ? data.invite_parameters as string[]
         : ['display_name', 'email'];
@@ -237,13 +286,13 @@ export const CompanyDashboard: React.FC = () => {
         .order('joined_at', { ascending: false });
 
       if (error) throw error;
-      
+
       // Map the data to match Employee interface
       const mappedEmployees = (data || []).map(emp => ({
         ...emp,
         profiles: null as any
       }));
-      
+
       setEmployees(mappedEmployees as any);
     } catch (error: any) {
       console.error('Error fetching employees:', error);
@@ -253,15 +302,32 @@ export const CompanyDashboard: React.FC = () => {
   const totalViews = employees.reduce((sum, emp) => sum + (Math.floor(Math.random() * 50)), 0); // Simulated for now
 
 
-  const handleUpdateVanity = async () => {
+  const handleSaveBranding = async () => {
     if (!profile) return;
     try {
+      const currentDisplayParams = (profile.display_parameters as any) || {};
       const { error } = await supabase
         .from('profiles')
-        .update({ vanity_url: companyVanity })
+        .update({
+          vanity_url: companyVanity,
+          company_name: brandingData.company_name,
+          display_parameters: {
+            ...currentDisplayParams,
+            branding: {
+              company_email: brandingData.company_email,
+              company_phone: brandingData.company_phone,
+              company_website: brandingData.company_website,
+              company_industry: brandingData.company_industry,
+              company_gst: brandingData.company_gst,
+              company_address: brandingData.company_address,
+              company_description: brandingData.company_description,
+            }
+          }
+        })
         .eq('id', profile.id);
+
       if (error) throw error;
-      toast({ title: "Success", description: "Company vanity URL updated" });
+      toast({ title: "Success", description: "Company branding updated successfully" });
       fetchProfile();
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -386,7 +452,7 @@ export const CompanyDashboard: React.FC = () => {
       toast({ title: "Not signed in", description: "Please sign in and try again.", variant: "destructive" });
       return;
     }
-    
+
     // Validate required fields
     if (!manualStaffData.display_name?.trim()) {
       toast({ title: "Missing name", description: "Please enter the staff member's full name.", variant: "destructive" });
@@ -396,7 +462,7 @@ export const CompanyDashboard: React.FC = () => {
       toast({ title: "Missing email", description: "Please enter the staff member's email.", variant: "destructive" });
       return;
     }
-    
+
     setIsAddingStaff(true);
     try {
       let avatarUrl = manualStaffData.avatar_url;
@@ -425,7 +491,7 @@ export const CompanyDashboard: React.FC = () => {
       }
 
       console.log('Adding staff with company_profile_id:', profile.id);
-      
+
       const { data, error } = await supabase
         .from('invited_employees')
         .insert({
@@ -444,7 +510,7 @@ export const CompanyDashboard: React.FC = () => {
         console.error('Insert error:', error);
         throw error;
       }
-      
+
       console.log('Staff added successfully:', data);
       toast({ title: "Staff added successfully", description: `${manualStaffData.display_name} has been added to the directory.` });
       setShowAddStaffDialog(false);
@@ -575,32 +641,41 @@ export const CompanyDashboard: React.FC = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8 max-w-7xl">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          <Card className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white border-none shadow-lg">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <Card className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white border-none shadow-lg transform hover:scale-[1.02] transition-transform duration-300">
             <CardHeader className="pb-2">
-              <CardTitle className="text-indigo-100 text-sm font-medium uppercase tracking-wider">Total Staff</CardTitle>
+              <CardTitle className="text-indigo-100 text-xs font-bold uppercase tracking-widest">Total Staff</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-4xl font-bold">{employees.filter(e => e.is_approved).length}</div>
-              <p className="text-indigo-100/80 text-sm mt-1">Verified employees in your network</p>
+              <div className="flex items-end gap-2">
+                <div className="text-4xl font-black">{employees.filter(e => e.is_approved).length}</div>
+                <Users className="w-5 h-5 mb-1 opacity-50" />
+              </div>
+              <p className="text-indigo-100/70 text-[10px] font-bold uppercase mt-2">Verified employees in your network</p>
             </CardContent>
           </Card>
-          <Card className="shadow-sm border-slate-200">
+          <Card className="shadow-sm border-slate-200 hover:border-amber-200 transition-colors">
             <CardHeader className="pb-2">
-              <CardTitle className="text-slate-500 text-sm font-medium uppercase tracking-wider">Pending Approvals</CardTitle>
+              <CardTitle className="text-slate-400 text-xs font-bold uppercase tracking-widest">Pending Approvals</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-4xl font-bold text-slate-900">{employees.filter(e => !e.is_approved && e.status !== 'rejected').length}</div>
-              <p className="text-slate-500 text-sm mt-1">New join requests waiting for you</p>
+              <div className="flex items-end gap-2">
+                <div className="text-4xl font-black text-slate-900">{employees.filter(e => !e.is_approved && e.status !== 'rejected').length}</div>
+                <ShieldAlert className="w-5 h-5 mb-1 text-amber-500 opacity-50" />
+              </div>
+              <p className="text-slate-500 text-[10px] font-bold uppercase mt-2">New join requests waiting for you</p>
             </CardContent>
           </Card>
-          <Card className="shadow-sm border-slate-200">
+          <Card className="shadow-sm border-slate-200 hover:border-indigo-200 transition-colors">
             <CardHeader className="pb-2">
-              <CardTitle className="text-slate-500 text-sm font-medium uppercase tracking-wider">Total Impressions</CardTitle>
+              <CardTitle className="text-slate-400 text-xs font-bold uppercase tracking-widest">Total Impressions</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-4xl font-bold text-slate-900">{totalViews}</div>
-              <p className="text-slate-500 text-sm mt-1">Combined views across all staff</p>
+              <div className="flex items-end gap-2">
+                <div className="text-4xl font-black text-slate-900">{totalViews}</div>
+                <Eye className="w-5 h-5 mb-1 text-indigo-500 opacity-50" />
+              </div>
+              <p className="text-slate-500 text-[10px] font-bold uppercase mt-2">Combined views across all staff</p>
             </CardContent>
           </Card>
         </div>
@@ -620,24 +695,26 @@ export const CompanyDashboard: React.FC = () => {
 
           <TabsContent value="staff">
             <Card className="shadow-md border-none overflow-hidden">
-              <CardHeader className="bg-white border-b border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div>
-                  <CardTitle>Employee Directory</CardTitle>
-                  <CardDescription>Manage your staff, their designations, and access.</CardDescription>
-                </div>
-                <div className="flex w-full sm:w-auto gap-2">
-                  <Button variant="outline" size="sm" onClick={() => fetchEmployees()} className="flex-1 sm:flex-initial">
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                    Refresh
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => setShowImportDialog(true)} className="flex-1 sm:flex-initial border-indigo-200 text-indigo-700 hover:bg-indigo-50">
-                    <FileSpreadsheet className="w-4 h-4 mr-2" />
-                    Bulk Import
-                  </Button>
-                  <Button size="sm" onClick={() => setShowAddStaffDialog(true)} className="bg-indigo-600 hover:bg-indigo-700 flex-1 sm:flex-initial shadow-md">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Staff
-                  </Button>
+              <CardHeader className="bg-white border-b border-slate-100 p-6">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                  <div>
+                    <CardTitle className="text-xl font-bold">Employee Directory</CardTitle>
+                    <CardDescription>Manage your staff, their designations, and access.</CardDescription>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Button variant="outline" size="sm" onClick={() => fetchEmployees()} className="flex-1 sm:flex-none">
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Refresh
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => setShowImportDialog(true)} className="flex-1 sm:flex-none border-indigo-200 text-indigo-700 hover:bg-indigo-50">
+                      <FileSpreadsheet className="w-4 h-4 mr-2" />
+                      Bulk Import
+                    </Button>
+                    <Button size="sm" onClick={() => setShowAddStaffDialog(true)} className="bg-indigo-600 hover:bg-indigo-700 flex-1 sm:flex-none shadow-md shadow-indigo-100">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Staff
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <div className="overflow-x-auto">
@@ -939,9 +1016,28 @@ export const CompanyDashboard: React.FC = () => {
 
           <TabsContent value="branding">
             <Card className="shadow-md border-none">
-              <CardHeader>
-                <CardTitle>Company Details & Branding</CardTitle>
-                <CardDescription>Complete your company profile with essential business information.</CardDescription>
+              <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6">
+                <div>
+                  <CardTitle>Company Details & Branding</CardTitle>
+                  <CardDescription>Complete your company profile with essential business information.</CardDescription>
+                </div>
+                {!profile?.company_verified && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-indigo-200 text-indigo-600 hover:bg-indigo-50 font-bold"
+                    onClick={() => toast({ title: "Verification Request Sent", description: "Our team will review your details shortly." })}
+                  >
+                    <ShieldCheck className="w-4 h-4 mr-2" />
+                    Request Verification
+                  </Button>
+                )}
+                {profile?.company_verified && (
+                  <Badge className="bg-green-100 text-green-700 border-none px-4 py-2 flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4" />
+                    Verified Business
+                  </Badge>
+                )}
               </CardHeader>
               <CardContent className="space-y-8">
                 {/* Essential Information */}
@@ -958,7 +1054,8 @@ export const CompanyDashboard: React.FC = () => {
                       <Label htmlFor="company-name">Company Name *</Label>
                       <Input
                         id="company-name"
-                        value={profile?.company_name || ''}
+                        value={brandingData.company_name}
+                        onChange={(e) => setBrandingData(prev => ({ ...prev, company_name: e.target.value }))}
                         placeholder="Enter company name"
                         className="bg-slate-50"
                       />
@@ -970,6 +1067,8 @@ export const CompanyDashboard: React.FC = () => {
                       <Input
                         id="company-email"
                         type="email"
+                        value={brandingData.company_email}
+                        onChange={(e) => setBrandingData(prev => ({ ...prev, company_email: e.target.value }))}
                         placeholder="contact@company.com"
                         className="bg-slate-50"
                       />
@@ -981,6 +1080,8 @@ export const CompanyDashboard: React.FC = () => {
                       <Input
                         id="company-phone"
                         type="tel"
+                        value={brandingData.company_phone}
+                        onChange={(e) => setBrandingData(prev => ({ ...prev, company_phone: e.target.value }))}
                         placeholder="+1 (555) 123-4567"
                         className="bg-slate-50"
                       />
@@ -1101,6 +1202,8 @@ export const CompanyDashboard: React.FC = () => {
                       <Input
                         id="company-website"
                         type="url"
+                        value={brandingData.company_website}
+                        onChange={(e) => setBrandingData(prev => ({ ...prev, company_website: e.target.value }))}
                         placeholder="https://www.company.com"
                         className="bg-slate-50"
                       />
@@ -1111,6 +1214,8 @@ export const CompanyDashboard: React.FC = () => {
                       <Label htmlFor="company-industry">Industry</Label>
                       <Input
                         id="company-industry"
+                        value={brandingData.company_industry}
+                        onChange={(e) => setBrandingData(prev => ({ ...prev, company_industry: e.target.value }))}
                         placeholder="e.g., Technology, Healthcare"
                         className="bg-slate-50"
                       />
@@ -1121,6 +1226,8 @@ export const CompanyDashboard: React.FC = () => {
                       <Label htmlFor="company-gst">GST Number</Label>
                       <Input
                         id="company-gst"
+                        value={brandingData.company_gst}
+                        onChange={(e) => setBrandingData(prev => ({ ...prev, company_gst: e.target.value }))}
                         placeholder="e.g., 22AAAAA0000A1Z5"
                         className="bg-slate-50"
                       />
@@ -1130,11 +1237,11 @@ export const CompanyDashboard: React.FC = () => {
                     <div className="space-y-2">
                       <Label>Company Vanity URL</Label>
                       <div className="flex gap-2">
-                        <div className="flex-1 flex items-center bg-slate-100 rounded-lg px-3 border border-slate-200">
-                          <Globe className="w-4 h-4 text-slate-400 mr-2" />
-                          <span className="text-slate-500 text-sm">{window.location.host}/</span>
+                        <div className="flex-1 flex items-center bg-slate-100 rounded-lg px-3 border border-slate-200 h-10 min-h-[40px]">
+                          <Globe className="w-4 h-4 text-slate-400 mr-2 flex-shrink-0" />
+                          <span className="text-slate-500 text-sm whitespace-nowrap">{window.location.host}/</span>
                           <input
-                            className="bg-transparent border-none outline-none text-sm font-medium text-slate-900 flex-1 ml-1"
+                            className="bg-transparent border-none outline-none text-sm font-medium text-slate-900 flex-1 ml-1 min-w-0"
                             value={companyVanity}
                             onChange={(e) => setCompanyVanity(e.target.value)}
                             placeholder="your-company-name"
@@ -1151,6 +1258,8 @@ export const CompanyDashboard: React.FC = () => {
                     <textarea
                       id="company-address"
                       rows={3}
+                      value={brandingData.company_address}
+                      onChange={(e) => setBrandingData(prev => ({ ...prev, company_address: e.target.value }))}
                       placeholder="Enter full company address"
                       className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
@@ -1162,6 +1271,8 @@ export const CompanyDashboard: React.FC = () => {
                     <textarea
                       id="company-description"
                       rows={4}
+                      value={brandingData.company_description}
+                      onChange={(e) => setBrandingData(prev => ({ ...prev, company_description: e.target.value }))}
                       placeholder="Brief description of your company and what you do"
                       className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
@@ -1175,19 +1286,15 @@ export const CompanyDashboard: React.FC = () => {
                     Global Security & Policy
                   </h4>
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
-                      <div>
-                        <p className="font-medium text-slate-900">Enforce Verification Badge</p>
-                        <p className="text-sm text-slate-500">Show "Verified by {profile?.company_name}" on all cards.</p>
-                      </div>
-                      <Checkbox checked={true} />
-                    </div>
-                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-slate-50 rounded-xl gap-4">
                       <div>
                         <p className="font-medium text-slate-900">Auto-Deactivate on Termination</p>
                         <p className="text-sm text-slate-500">Automatically disable card if employee is removed from directory.</p>
                       </div>
-                      <Checkbox checked={true} />
+                      <div className="flex items-center gap-3">
+                        <Checkbox checked={true} id="auto-deactivate" />
+                        <Label htmlFor="auto-deactivate" className="sm:hidden text-xs text-slate-500">Enable</Label>
+                      </div>
                     </div>
                     <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
                       <div>
@@ -1202,10 +1309,9 @@ export const CompanyDashboard: React.FC = () => {
                 {/* Save Button */}
                 <div className="flex gap-3 pt-4">
                   <Button
-                    className="bg-indigo-600 hover:bg-indigo-700 px-8"
+                    className="bg-indigo-600 hover:bg-indigo-700 px-8 flex-1 sm:flex-none shadow-lg shadow-indigo-100"
                     onClick={async () => {
-                      await handleUpdateVanity();
-                      toast({ title: "Company details saved successfully" });
+                      await handleSaveBranding();
                     }}
                   >
                     Save All Changes
@@ -1280,7 +1386,7 @@ export const CompanyDashboard: React.FC = () => {
                         }
                       })
                       .eq('id', profile!.id);
-                    
+
                     if (error) throw error;
                     toast({ title: "Card design saved successfully" });
                   } catch (err) {
@@ -1404,6 +1510,7 @@ export const CompanyDashboard: React.FC = () => {
                                     companyVanity: profile?.vanity_url || undefined,
                                     companyName: profile?.company_name,
                                     badgeRole: cardCustomization.options.badgeText || selectedEmployee.designation,
+                                    isVerified: profile?.company_verified,
                                   }}
                                   companyLogo={profile?.company_logo_url}
                                   customization={cardCustomization}

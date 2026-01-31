@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import QRCode from 'react-qr-code';
-import { Mail, Phone } from 'lucide-react';
+import { Mail, Phone, ShieldCheck } from 'lucide-react';
 import { IDCardCustomization } from '@/types/id-card-templates';
 
 interface NeonDarkCardProps {
@@ -21,6 +21,7 @@ interface NeonDarkCardProps {
   isFlipped?: boolean;
   onFlip?: () => void;
   scale?: number;
+  isVerified?: boolean;
 }
 
 export const NeonDarkCard: React.FC<NeonDarkCardProps> = ({
@@ -31,6 +32,7 @@ export const NeonDarkCard: React.FC<NeonDarkCardProps> = ({
   isFlipped: controlledFlipped,
   onFlip,
   scale = 1,
+  isVerified = false,
 }) => {
   const [internalFlipped, setInternalFlipped] = useState(false);
   const isFlipped = controlledFlipped !== undefined ? controlledFlipped : internalFlipped;
@@ -198,6 +200,21 @@ export const NeonDarkCard: React.FC<NeonDarkCardProps> = ({
                 </div>
               )}
             </div>
+
+            {/* Verified Badge */}
+            {isVerified && (
+              <div
+                className="absolute bottom-6 right-6 flex items-center gap-1 px-2 py-1 rounded-full border shadow-sm"
+                style={{
+                  backgroundColor: `${colors.accent}15`,
+                  borderColor: `${colors.accent}40`,
+                  boxShadow: `0 0 10px ${colors.accent}20`
+                }}
+              >
+                <ShieldCheck className="w-3.5 h-3.5" style={{ color: colors.accent }} />
+                <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: colors.accent }}>Verified</span>
+              </div>
+            )}
           </div>
         </div>
 

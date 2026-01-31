@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import QRCode from 'react-qr-code';
 import { IDCardCustomization } from '@/types/id-card-templates';
+import { ShieldCheck } from 'lucide-react';
 
 interface GeometricModernCardProps {
   user: {
@@ -20,6 +21,7 @@ interface GeometricModernCardProps {
   isFlipped?: boolean;
   onFlip?: () => void;
   scale?: number;
+  isVerified?: boolean;
 }
 
 export const GeometricModernCard: React.FC<GeometricModernCardProps> = ({
@@ -30,6 +32,7 @@ export const GeometricModernCard: React.FC<GeometricModernCardProps> = ({
   isFlipped: controlledFlipped,
   onFlip,
   scale = 1,
+  isVerified = false,
 }) => {
   const [internalFlipped, setInternalFlipped] = useState(false);
   const isFlipped = controlledFlipped !== undefined ? controlledFlipped : internalFlipped;
@@ -92,7 +95,7 @@ export const GeometricModernCard: React.FC<GeometricModernCardProps> = ({
               <rect x="85" y="60" width="12" height="12" fill={colors.accent} opacity="0.6" />
             </svg>
             {/* Decorative shapes */}
-            <div 
+            <div
               className="absolute top-12 left-4 w-16 h-16 rotate-45"
               style={{ backgroundColor: colors.accent, opacity: 0.3 }}
             />
@@ -176,6 +179,20 @@ export const GeometricModernCard: React.FC<GeometricModernCardProps> = ({
                 )}
               </div>
             </div>
+
+            {/* Verified Badge */}
+            {isVerified && (
+              <div
+                className="absolute bottom-6 right-6 flex items-center gap-1 px-2 py-1 rounded-full backdrop-blur-md border shadow-sm"
+                style={{
+                  backgroundColor: `${colors.accent}20`,
+                  borderColor: `${colors.accent}40`
+                }}
+              >
+                <ShieldCheck className="w-3.5 h-3.5" style={{ color: colors.accent }} />
+                <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: colors.accent }}>Verified</span>
+              </div>
+            )}
           </div>
         </div>
 

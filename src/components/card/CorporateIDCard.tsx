@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import QRCode from 'react-qr-code';
-import { Mail, Phone } from 'lucide-react';
+import { Mail, Phone, ShieldCheck } from 'lucide-react';
 
 export interface CorporateIDCardProps {
     user: {
@@ -13,6 +13,7 @@ export interface CorporateIDCardProps {
         vanityUrl?: string;
         staffId?: string;
         companyVanity?: string;
+        isVerified?: boolean;
         [key: string]: any;
     };
     companyLogo?: string;
@@ -20,6 +21,7 @@ export interface CorporateIDCardProps {
     isFlipped?: boolean;
     onFlip?: () => void;
     scale?: number;
+    isVerified?: boolean;
 }
 
 export const CorporateIDCard: React.FC<CorporateIDCardProps> = ({
@@ -28,8 +30,10 @@ export const CorporateIDCard: React.FC<CorporateIDCardProps> = ({
     displayParameters = ['display_name', 'email', 'job_title'],
     isFlipped: controlledFlipped,
     onFlip,
-    scale = 1
+    scale = 1,
+    isVerified: propVerified
 }) => {
+    const isVerified = propVerified || user.isVerified;
     const [internalFlipped, setInternalFlipped] = useState(false);
     const isFlipped = controlledFlipped !== undefined ? controlledFlipped : internalFlipped;
 
@@ -123,6 +127,14 @@ export const CorporateIDCard: React.FC<CorporateIDCardProps> = ({
                                 </div>
                             )}
                         </div>
+
+                        {/* Verified Badge - Bottom Right */}
+                        {isVerified && (
+                            <div className="absolute bottom-6 right-6 flex items-center gap-1 bg-indigo-50 px-2 py-1 rounded-full border border-indigo-100 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-700">
+                                <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
+                                <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-tighter">Verified</span>
+                            </div>
+                        )}
                     </div>
                 </div>
 

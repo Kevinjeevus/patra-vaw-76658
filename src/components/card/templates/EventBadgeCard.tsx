@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import QRCode from 'react-qr-code';
 import { IDCardCustomization } from '@/types/id-card-templates';
+import { ShieldCheck } from 'lucide-react';
 
 interface EventBadgeCardProps {
   user: {
@@ -23,6 +24,7 @@ interface EventBadgeCardProps {
   isFlipped?: boolean;
   onFlip?: () => void;
   scale?: number;
+  isVerified?: boolean;
 }
 
 export const EventBadgeCard: React.FC<EventBadgeCardProps> = ({
@@ -35,6 +37,7 @@ export const EventBadgeCard: React.FC<EventBadgeCardProps> = ({
   isFlipped: controlledFlipped,
   onFlip,
   scale = 1,
+  isVerified = false,
 }) => {
   const [internalFlipped, setInternalFlipped] = useState(false);
   const isFlipped = controlledFlipped !== undefined ? controlledFlipped : internalFlipped;
@@ -57,7 +60,7 @@ export const EventBadgeCard: React.FC<EventBadgeCardProps> = ({
 
   // Badge role determines the color scheme
   const badgeRole = options.badgeText || user.badgeRole || user.jobTitle || 'Team Member';
-  
+
   // Role-based styling
   const getRoleStyle = (role: string) => {
     const roleLower = role.toLowerCase();
@@ -163,6 +166,7 @@ export const EventBadgeCard: React.FC<EventBadgeCardProps> = ({
                 {user.companyName || 'patra.app'}
               </span>
               <div className="flex items-center gap-1">
+                {isVerified && <ShieldCheck className="w-3.5 h-3.5" style={{ color: colors.accent }} />}
                 <div className="w-4 h-4 rounded" style={{ backgroundColor: colors.accent }} />
               </div>
             </div>
