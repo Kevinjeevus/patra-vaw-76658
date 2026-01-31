@@ -16,8 +16,9 @@ import {
   ArrowLeft, FileSpreadsheet, Upload, Download, Info, Check, Trash2, ListChecks,
   Loader2, Smartphone, User, Mail, Phone
 } from 'lucide-react';
-import { CorporateIDCard } from '@/components/card/CorporateIDCard';
-
+import { IDCardRenderer } from '@/components/card/IDCardRenderer';
+import { IDCardCustomizer } from '@/components/card/IDCardCustomizer';
+import { IDCardCustomization, DEFAULT_CUSTOMIZATION, ID_CARD_TEMPLATES } from '@/types/id-card-templates';
 
 import { Checkbox } from '@/components/ui/checkbox';
 
@@ -136,6 +137,8 @@ export const CompanyDashboard: React.FC = () => {
   const [isAddingStaff, setIsAddingStaff] = useState(false);
   const [companyLogoFile, setCompanyLogoFile] = useState<File | null>(null);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [cardCustomization, setCardCustomization] = useState<IDCardCustomization>(DEFAULT_CUSTOMIZATION);
+  const [isSavingCardDesign, setIsSavingCardDesign] = useState(false);
 
   useEffect(() => {
     // Only proceed once auth has finished loading the session
@@ -1255,14 +1258,49 @@ export const CompanyDashboard: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="display">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <Card className="shadow-md border-none h-fit">
+            <div className="space-y-8">
+              {/* Template Customizer */}
+              <IDCardCustomizer
+                customization={cardCustomization}
+                onCustomizationChange={setCardCustomization}
+                brandColors={{
+                  primary: '#1e293b',
+                  secondary: '#64748b',
+                  accent: '#3b82f6',
+                }}
+                onSave={async () => {
+                  setIsSavingCardDesign(true);
+                  try {
+                    const { error } = await supabase
+                      .from('profiles')
+                      .update({
+                        display_parameters: {
+                          ...displayParameters,
+                          cardCustomization: cardCustomization,
+                        }
+                      })
+                      .eq('id', profile!.id);
+                    
+                    if (error) throw error;
+                    toast({ title: "Card design saved successfully" });
+                  } catch (err) {
+                    console.error('Error saving card design:', err);
+                    toast({ title: "Failed to save card design", variant: "destructive" });
+                  } finally {
+                    setIsSavingCardDesign(false);
+                  }
+                }}
+                isSaving={isSavingCardDesign}
+              />
+
+              {/* Data Visibility Settings */}
+              <Card className="shadow-md border-none">
                 <CardHeader>
-                  <CardTitle>Digital ID Card Design</CardTitle>
+                  <CardTitle>Data Visibility Settings</CardTitle>
                   <CardDescription>Choose which pieces of collected data should be visible on the public ID card.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {AVAILABLE_PARAMETERS.map(param => (
                       <div key={param.id} className={`flex items-center justify-between p-4 rounded-xl border transition-colors ${selectedParameters.includes(param.id) ? 'bg-slate-50 border-slate-200' : 'bg-slate-50/30 border-dashed border-slate-200 opacity-50'}`}>
                         <div className="flex items-center gap-3">
@@ -1289,76 +1327,72 @@ export const CompanyDashboard: React.FC = () => {
                       </div>
                     ))}
                   </div>
-                  <Button className="mt-8 bg-indigo-600 hover:bg-indigo-700 w-full" onClick={async () => {
-                    const { error } = await supabase.from('profiles').update({ display_parameters: displayParameters }).eq('id', profile!.id);
-                    if (!error) toast({ title: "Card design updated" });
-                  }}>
-                    Update ID Cards
-                  </Button>
                 </CardContent>
               </Card>
 
-              <div className="flex flex-col items-center gap-6">
-                {/* Staff ID Cards Viewer */}
-                <Card className="w-full">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Users className="w-5 h-5" />
-                      Staff ID Card Viewer
-                    </CardTitle>
-                    <CardDescription>Select an employee to view their ID card</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {employees.filter(emp => emp.is_approved).length === 0 ? (
-                      <div className="text-center py-12 text-slate-500">
-                        <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                        <p>No approved employees yet</p>
+              {/* Staff ID Card Preview */}
+              <Card className="shadow-md border-none">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="w-5 h-5" />
+                    Staff ID Card Preview
+                  </CardTitle>
+                  <CardDescription>Select an employee to preview their ID card with the current template</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {employees.filter(emp => emp.is_approved).length === 0 ? (
+                    <div className="text-center py-12 text-slate-500">
+                      <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>No approved employees yet</p>
+                      <p className="text-sm mt-2">Add staff members to preview ID cards</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      {/* Employee Selector */}
+                      <div className="max-w-md">
+                        <Label htmlFor="employee-select" className="text-sm font-medium mb-2 block">
+                          Select Employee
+                        </Label>
+                        <select
+                          id="employee-select"
+                          className="w-full px-4 py-2 border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                          value={selectedEmployeeId || ''}
+                          onChange={(e) => setSelectedEmployeeId(e.target.value)}
+                        >
+                          {!selectedEmployeeId && <option value="">-- Choose an employee --</option>}
+                          {employees.filter(emp => emp.is_approved).map(employee => {
+                            const empProfile = Array.isArray(employee.profiles) ? employee.profiles[0] : employee.profiles;
+                            const submittedData = employee.data_submitted as any;
+                            const displayName = empProfile?.display_name || submittedData?.display_name || 'Employee';
+                            const designation = employee.designation || submittedData?.job_title || 'Team Member';
+
+                            return (
+                              <option key={employee.id} value={employee.id}>
+                                {displayName} - {designation}
+                              </option>
+                            );
+                          })}
+                        </select>
                       </div>
-                    ) : (
-                      <div className="space-y-6">
-                        {/* Employee Selector */}
-                        <div className="max-w-md mx-auto">
-                          <Label htmlFor="employee-select" className="text-sm font-medium mb-2 block">
-                            Select Employee
-                          </Label>
-                          <select
-                            id="employee-select"
-                            className="w-full px-4 py-2 border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                            value={selectedEmployeeId || ''}
-                            onChange={(e) => setSelectedEmployeeId(e.target.value)}
-                          >
-                            {!selectedEmployeeId && <option value="">-- Choose an employee --</option>}
-                            {employees.filter(emp => emp.is_approved).map(employee => {
-                              const empProfile = Array.isArray(employee.profiles) ? employee.profiles[0] : employee.profiles;
-                              const submittedData = employee.data_submitted as any;
-                              const displayName = empProfile?.display_name || submittedData?.display_name || 'Employee';
-                              const designation = employee.designation || submittedData?.job_title || 'Team Member';
 
-                              return (
-                                <option key={employee.id} value={employee.id}>
-                                  {displayName} - {designation}
-                                </option>
-                              );
-                            })}
-                          </select>
-                        </div>
+                      {/* Selected Employee Card Preview */}
+                      {(() => {
+                        const approvedEmployees = employees.filter(emp => emp.is_approved);
+                        const currentSelectedId = selectedEmployeeId || approvedEmployees[0]?.id;
+                        const selectedEmployee = approvedEmployees.find(emp => emp.id === currentSelectedId);
 
-                        {/* Selected Employee Card */}
-                        {(() => {
-                          // Auto-select first employee if none selected
-                          const approvedEmployees = employees.filter(emp => emp.is_approved);
-                          const currentSelectedId = selectedEmployeeId || approvedEmployees[0]?.id;
-                          const selectedEmployee = approvedEmployees.find(emp => emp.id === currentSelectedId);
+                        if (!selectedEmployee) return null;
 
-                          if (!selectedEmployee) return null;
+                        const empProfile = Array.isArray(selectedEmployee.profiles) ? selectedEmployee.profiles[0] : selectedEmployee.profiles;
+                        const submittedData = selectedEmployee.data_submitted as any;
 
-                          const empProfile = Array.isArray(selectedEmployee.profiles) ? selectedEmployee.profiles[0] : selectedEmployee.profiles;
-                          const submittedData = selectedEmployee.data_submitted as any;
-
-                          return (
+                        return (
+                          <div className="flex flex-col lg:flex-row items-center lg:items-start gap-8">
+                            {/* Card Preview */}
                             <div className="flex flex-col items-center gap-4">
-                              <div className="bg-slate-50 rounded-[3rem] p-12 border-2 border-slate-200">
-                                <CorporateIDCard
+                              <div className="bg-slate-100 rounded-[2rem] p-8 border-2 border-slate-200">
+                                <IDCardRenderer
+                                  templateId={cardCustomization.templateId}
                                   user={{
                                     fullName: empProfile?.display_name || submittedData?.display_name || 'Employee',
                                     jobTitle: selectedEmployee.designation || submittedData?.job_title || 'Team Member',
@@ -1368,31 +1402,61 @@ export const CompanyDashboard: React.FC = () => {
                                     vanityUrl: empProfile?.vanity_url || 'employee',
                                     staffId: selectedEmployee.staff_id,
                                     companyVanity: profile?.vanity_url || undefined,
-                                    companyName: profile?.company_name
+                                    companyName: profile?.company_name,
+                                    badgeRole: cardCustomization.options.badgeText || selectedEmployee.designation,
                                   }}
                                   companyLogo={profile?.company_logo_url}
+                                  customization={cardCustomization}
                                   displayParameters={displayParameters}
+                                  scale={0.85}
                                 />
                               </div>
-                              <div className="text-center space-y-1">
-                                <p className="font-bold text-lg text-slate-900">
+                              <p className="text-xs text-slate-400">
+                                Tap the card to see the reverse side
+                              </p>
+                            </div>
+
+                            {/* Employee Info */}
+                            <div className="flex-1 space-y-4">
+                              <div>
+                                <h3 className="text-xl font-bold text-slate-900">
                                   {empProfile?.display_name || submittedData?.display_name || 'Employee'}
-                                </p>
-                                <p className="text-sm text-slate-600">
+                                </h3>
+                                <p className="text-slate-600">
                                   {selectedEmployee.designation || submittedData?.job_title || 'Team Member'}
                                 </p>
-                                <p className="text-xs text-slate-400 mt-2">
-                                  Tap the card to see the reverse side with QR code
-                                </p>
+                              </div>
+
+                              <div className="p-4 bg-slate-50 rounded-xl space-y-2">
+                                <div className="flex items-center gap-2 text-sm">
+                                  <Mail className="w-4 h-4 text-slate-400" />
+                                  <span className="text-slate-600">{submittedData?.email || 'N/A'}</span>
+                                </div>
+                                {submittedData?.phone && (
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <Phone className="w-4 h-4 text-slate-400" />
+                                    <span className="text-slate-600">{submittedData.phone}</span>
+                                  </div>
+                                )}
+                                {selectedEmployee.staff_id && (
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <CreditCard className="w-4 h-4 text-slate-400" />
+                                    <span className="text-slate-600 font-mono">ID: {selectedEmployee.staff_id}</span>
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="text-sm text-slate-500">
+                                <p>Template: <span className="font-medium text-slate-700">{ID_CARD_TEMPLATES.find(t => t.id === cardCustomization.templateId)?.name || 'Corporate Classic'}</span></p>
                               </div>
                             </div>
-                          );
-                        })()}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
         </Tabs>
