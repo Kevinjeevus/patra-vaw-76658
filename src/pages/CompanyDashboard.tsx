@@ -1494,6 +1494,7 @@ export const CompanyDashboard: React.FC = () => {
                           ...displayParameters,
                           cardCustomization: cardCustomization,
                           studioXTemplateId: selectedStudioXTemplate?.id || null,
+                          cardViewTheme: (cardCustomization as any)?.cardViewTheme || '#6366f1',
                         }
                       })
                       .eq('id', profile!.id);
@@ -1509,6 +1510,68 @@ export const CompanyDashboard: React.FC = () => {
                 }}
                 isSaving={isSavingCardDesign}
               />
+
+              {/* Card View Theme Color */}
+              <Card className="shadow-md border-none">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <div className="w-5 h-5 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600" />
+                    Card View Theme
+                  </CardTitle>
+                  <CardDescription>Set the background theme color for your staff ID card public view page</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex flex-wrap gap-3">
+                      {[
+                        { name: 'Indigo', color: '#6366f1' },
+                        { name: 'Rose', color: '#e11d48' },
+                        { name: 'Emerald', color: '#059669' },
+                        { name: 'Amber', color: '#d97706' },
+                        { name: 'Slate', color: '#475569' },
+                        { name: 'Purple', color: '#7c3aed' },
+                        { name: 'Blue', color: '#2563eb' },
+                        { name: 'Teal', color: '#0d9488' },
+                      ].map(preset => (
+                        <button
+                          key={preset.color}
+                          onClick={() => {
+                            setCardCustomization(prev => ({
+                              ...prev,
+                              cardViewTheme: preset.color
+                            }));
+                          }}
+                          className={`w-12 h-12 rounded-xl border-2 transition-all hover:scale-110 ${
+                            (cardCustomization as any)?.cardViewTheme === preset.color 
+                              ? 'border-slate-900 ring-2 ring-offset-2 ring-slate-400' 
+                              : 'border-transparent'
+                          }`}
+                          style={{ backgroundColor: preset.color }}
+                          title={preset.name}
+                        />
+                      ))}
+                      {/* Custom color picker */}
+                      <label className="relative">
+                        <input
+                          type="color"
+                          value={(cardCustomization as any)?.cardViewTheme || '#6366f1'}
+                          onChange={(e) => {
+                            setCardCustomization(prev => ({
+                              ...prev,
+                              cardViewTheme: e.target.value
+                            }));
+                          }}
+                          className="sr-only"
+                        />
+                        <div className="w-12 h-12 rounded-xl border-2 border-dashed border-slate-300 flex items-center justify-center cursor-pointer hover:border-slate-400 transition-colors">
+                          <Plus className="w-5 h-5 text-slate-400" />
+                        </div>
+                      </label>
+                    </div>
+                    <p className="text-xs text-slate-500">This color will be used as the background gradient for staff ID card public pages</p>
+                  </div>
+                </CardContent>
+              </Card>
 
               {/* Data Visibility Settings */}
               <Card className="shadow-md border-none">
