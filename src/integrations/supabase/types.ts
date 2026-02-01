@@ -476,6 +476,57 @@ export type Database = {
           },
         ]
       }
+      custom_id_templates: {
+        Row: {
+          background: Json
+          canvas_config: Json
+          card_dimensions: Json
+          created_at: string | null
+          created_by: string
+          description: string | null
+          elements: Json
+          id: string
+          is_public: boolean | null
+          is_published: boolean | null
+          name: string
+          thumbnail_url: string | null
+          updated_at: string | null
+          use_count: number | null
+        }
+        Insert: {
+          background?: Json
+          canvas_config?: Json
+          card_dimensions?: Json
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          elements?: Json
+          id?: string
+          is_public?: boolean | null
+          is_published?: boolean | null
+          name: string
+          thumbnail_url?: string | null
+          updated_at?: string | null
+          use_count?: number | null
+        }
+        Update: {
+          background?: Json
+          canvas_config?: Json
+          card_dimensions?: Json
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          elements?: Json
+          id?: string
+          is_public?: boolean | null
+          is_published?: boolean | null
+          name?: string
+          thumbnail_url?: string | null
+          updated_at?: string | null
+          use_count?: number | null
+        }
+        Relationships: []
+      }
       digital_cards: {
         Row: {
           account_type: string | null
