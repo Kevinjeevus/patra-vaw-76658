@@ -96,6 +96,7 @@ interface Employee {
   data_submitted: any;
   staff_id?: string;
   profiles: {
+    id: string;
     display_name: string;
     avatar_url: string;
     vanity_url: string;
@@ -167,6 +168,12 @@ export const CompanyDashboard: React.FC = () => {
   const [cardCustomization, setCardCustomization] = useState<IDCardCustomization>(DEFAULT_CUSTOMIZATION);
   const [isSavingCardDesign, setIsSavingCardDesign] = useState(false);
   const [brandingData, setBrandingData] = useState({
+    company_name: '',
+    company_email: '',
+    company_phone: '',
+    company_website: '',
+    company_industry: '',
+    company_gst: '',
     company_address: '',
     company_description: '',
   });
@@ -430,6 +437,11 @@ export const CompanyDashboard: React.FC = () => {
       setIsUpdatingStaff(false);
     }
   };
+
+  const handleUpdateDesignation = async () => {
+    if (!editingDesignation) return;
+    try {
+      const { error } = await supabase
         .from('invited_employees')
         .update({ designation: editingDesignation.value })
         .eq('id', editingDesignation.id);
@@ -1180,7 +1192,7 @@ export const CompanyDashboard: React.FC = () => {
                             type="file"
                             id="company-logo"
                             className="absolute inset-0 opacity-0 cursor-pointer"
-                            accept="image/*"
+                            accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
                             onChange={(e) => {
                               if (e.target.files?.[0]) {
                                 setCompanyLogoFile(e.target.files[0]);
