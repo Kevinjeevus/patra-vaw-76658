@@ -37,8 +37,8 @@ import {
 } from 'lucide-react';
 import { IDCardRenderer } from '@/components/card/IDCardRenderer';
 import { IDCardCustomizer } from '@/components/card/IDCardCustomizer';
+import { StudioXCardRenderer } from '@/components/card/StudioXCardRenderer';
 import { IDCardCustomization, DEFAULT_CUSTOMIZATION, ID_CARD_TEMPLATES } from '@/types/id-card-templates';
-import { StudioXTemplateSelector } from '@/components/design-studio';
 import { DesignTemplate } from '@/types/design-studio';
 
 import { Checkbox } from '@/components/ui/checkbox';
@@ -1467,19 +1467,7 @@ export const CompanyDashboard: React.FC = () => {
               </CardContent>
               </Card>
 
-              {/* Studio X Templates Selector */}
-              <StudioXTemplateSelector
-                selectedTemplateId={selectedStudioXTemplate?.id || null}
-                onSelectTemplate={setSelectedStudioXTemplate}
-                previewData={{
-                  company_logo_url: profile?.company_logo_url,
-                  display_name: 'Alex Johnson',
-                  job_title: 'Product Designer',
-                  email: 'alex@company.com',
-                }}
-              />
-
-              {/* Template Customizer */}
+              {/* Template Customizer with Studio X */}
               <IDCardCustomizer
                 customization={cardCustomization}
                 onCustomizationChange={setCardCustomization}
@@ -1487,6 +1475,14 @@ export const CompanyDashboard: React.FC = () => {
                   primary: '#1e293b',
                   secondary: '#64748b',
                   accent: '#3b82f6',
+                }}
+                selectedStudioXTemplate={selectedStudioXTemplate}
+                onStudioXTemplateChange={setSelectedStudioXTemplate}
+                studioXPreviewData={{
+                  company_logo_url: profile?.company_logo_url,
+                  display_name: 'Alex Johnson',
+                  job_title: 'Product Designer',
+                  email: 'alex@company.com',
                 }}
                 onSave={async () => {
                   setIsSavingCardDesign(true);
@@ -1497,6 +1493,7 @@ export const CompanyDashboard: React.FC = () => {
                         display_parameters: {
                           ...displayParameters,
                           cardCustomization: cardCustomization,
+                          studioXTemplateId: selectedStudioXTemplate?.id || null,
                         }
                       })
                       .eq('id', profile!.id);
@@ -1611,29 +1608,47 @@ export const CompanyDashboard: React.FC = () => {
                             {/* Card Preview */}
                             <div className="flex flex-col items-center gap-4">
                               <div className="bg-slate-100 rounded-[2rem] p-8 border-2 border-slate-200">
-                                <IDCardRenderer
-                                  templateId={cardCustomization.templateId}
-                                  user={{
-                                    fullName: empProfile?.display_name || submittedData?.display_name || 'Employee',
-                                    jobTitle: selectedEmployee.designation || submittedData?.job_title || 'Team Member',
-                                    email: submittedData?.email || 'email@company.com',
-                                    phone: submittedData?.phone || '',
-                                    avatarUrl: empProfile?.avatar_url || submittedData?.avatar_url || '',
-                                    vanityUrl: empProfile?.vanity_url || 'employee',
-                                    staffId: selectedEmployee.staff_id,
-                                    companyVanity: profile?.vanity_url || undefined,
-                                    companyName: profile?.company_name,
-                                    badgeRole: cardCustomization.options.badgeText || selectedEmployee.designation,
-                                    isVerified: profile?.company_verified,
-                                  }}
-                                  companyLogo={profile?.company_logo_url}
-                                  customization={cardCustomization}
-                                  displayParameters={displayParameters}
-                                  scale={0.85}
-                                />
+                                {selectedStudioXTemplate ? (
+                                  <StudioXCardRenderer
+                                    template={selectedStudioXTemplate}
+                                    userData={{
+                                      company_logo_url: profile?.company_logo_url,
+                                      avatar_url: empProfile?.avatar_url || submittedData?.avatar_url,
+                                      display_name: empProfile?.display_name || submittedData?.display_name || 'Employee',
+                                      job_title: selectedEmployee.designation || submittedData?.job_title || 'Team Member',
+                                      employee_display_id: selectedEmployee.staff_id || selectedEmployee.employee_display_id,
+                                      department: submittedData?.department,
+                                      email: submittedData?.email || 'email@company.com',
+                                      phone: submittedData?.phone || '',
+                                      vanity_url: empProfile?.vanity_url ? `https://patra.app/${empProfile.vanity_url}` : 'https://patra.app',
+                                    }}
+                                    scale={0.85}
+                                  />
+                                ) : (
+                                  <IDCardRenderer
+                                    templateId={cardCustomization.templateId}
+                                    user={{
+                                      fullName: empProfile?.display_name || submittedData?.display_name || 'Employee',
+                                      jobTitle: selectedEmployee.designation || submittedData?.job_title || 'Team Member',
+                                      email: submittedData?.email || 'email@company.com',
+                                      phone: submittedData?.phone || '',
+                                      avatarUrl: empProfile?.avatar_url || submittedData?.avatar_url || '',
+                                      vanityUrl: empProfile?.vanity_url || 'employee',
+                                      staffId: selectedEmployee.staff_id,
+                                      companyVanity: profile?.vanity_url || undefined,
+                                      companyName: profile?.company_name,
+                                      badgeRole: cardCustomization.options.badgeText || selectedEmployee.designation,
+                                      isVerified: profile?.company_verified,
+                                    }}
+                                    companyLogo={profile?.company_logo_url}
+                                    customization={cardCustomization}
+                                    displayParameters={displayParameters}
+                                    scale={0.85}
+                                  />
+                                )}
                               </div>
                               <p className="text-xs text-slate-400">
-                                Tap the card to see the reverse side
+                                {selectedStudioXTemplate ? 'Using Studio X template' : 'Tap the card to see the reverse side'}
                               </p>
                             </div>
 
