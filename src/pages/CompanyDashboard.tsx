@@ -38,6 +38,8 @@ import {
 import { IDCardRenderer } from '@/components/card/IDCardRenderer';
 import { IDCardCustomizer } from '@/components/card/IDCardCustomizer';
 import { IDCardCustomization, DEFAULT_CUSTOMIZATION, ID_CARD_TEMPLATES } from '@/types/id-card-templates';
+import { StudioXTemplateSelector } from '@/components/design-studio';
+import { DesignTemplate } from '@/types/design-studio';
 
 import { Checkbox } from '@/components/ui/checkbox';
 
@@ -167,6 +169,7 @@ export const CompanyDashboard: React.FC = () => {
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [cardCustomization, setCardCustomization] = useState<IDCardCustomization>(DEFAULT_CUSTOMIZATION);
   const [isSavingCardDesign, setIsSavingCardDesign] = useState(false);
+  const [selectedStudioXTemplate, setSelectedStudioXTemplate] = useState<DesignTemplate | null>(null);
   const [brandingData, setBrandingData] = useState({
     company_name: '',
     company_email: '',
@@ -1461,8 +1464,20 @@ export const CompanyDashboard: React.FC = () => {
                       <Plus className="w-4 h-4" />
                     </Button>
                   </div>
-                </CardContent>
+              </CardContent>
               </Card>
+
+              {/* Studio X Templates Selector */}
+              <StudioXTemplateSelector
+                selectedTemplateId={selectedStudioXTemplate?.id || null}
+                onSelectTemplate={setSelectedStudioXTemplate}
+                previewData={{
+                  company_logo_url: profile?.company_logo_url,
+                  display_name: 'Alex Johnson',
+                  job_title: 'Product Designer',
+                  email: 'alex@company.com',
+                }}
+              />
 
               {/* Template Customizer */}
               <IDCardCustomizer

@@ -4,3 +4,4 @@ export { ElementToolbox } from './ElementToolbox';
 export { ElementProperties } from './ElementProperties';
 export { BackgroundSettings } from './BackgroundSettings';
 export { TemplateGallery } from './TemplateGallery';
+export { StudioXTemplateSelector } from './StudioXTemplateSelector';
