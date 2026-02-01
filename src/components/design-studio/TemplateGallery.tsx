@@ -1,23 +1,161 @@
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
-import { DesignTemplate } from '@/types/design-studio';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { DesignTemplate, CanvasElement, CanvasBackground, CardDimensions } from '@/types/design-studio';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, Download, Eye, User, Sparkles } from 'lucide-react';
+import { Search, Download, Eye, Sparkles, X } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import QRCode from 'react-qr-code';
 
 interface TemplateGalleryProps {
   onUseTemplate: (template: DesignTemplate) => void;
 }
 
+// Mini preview renderer for template cards
+const TemplatePreview: React.FC<{
+  elements: CanvasElement[];
+  background: CanvasBackground;
+  dimensions: CardDimensions;
+  previewData: Record<string, any>;
+  scale?: number;
+}> = ({ elements, background, dimensions, previewData, scale = 0.4 }) => {
+  
+  const getBackgroundStyle = (): React.CSSProperties => {
+    switch (background.type) {
+      case 'color':
+        return { backgroundColor: background.value };
+      case 'gradient':
+        return {
+          background: `linear-gradient(${background.gradientDirection || '135deg'}, ${background.value}, ${background.secondaryValue || background.value})`,
+        };
+      case 'image':
+        return {
+          backgroundImage: `url(${background.value})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        };
+      default:
+        return { backgroundColor: '#ffffff' };
+    }
+  };
+
+  const renderElement = (element: CanvasElement) => {
+    const value = element.dataField ? previewData[element.dataField] : element.content;
+
+    if (element.type === 'company_logo' || element.type === 'profile_photo') {
+      return value ? (
+        <img 
+          src={value} 
+          alt={element.label}
+          className="w-full h-full object-cover"
+          style={{ borderRadius: element.style.borderRadius }}
+        />
+      ) : (
+        <div 
+          className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground"
+          style={{ borderRadius: element.style.borderRadius, fontSize: 8 * scale }}
+        >
+          {element.type === 'company_logo' ? '🏢' : '👤'}
+        </div>
+      );
+    }
+
+    if (element.type === 'qr_code') {
+      return (
+        <div 
+          className="w-full h-full flex items-center justify-center bg-white"
+          style={{ borderRadius: element.style.borderRadius, padding: 2 }}
+        >
+          <QRCode value={value || 'https://patra.app'} size={Math.min(element.width, element.height) * scale - 4} />
+        </div>
+      );
+    }
+
+    if (element.type === 'shape') {
+      return (
+        <div 
+          className="w-full h-full"
+          style={{
+            backgroundColor: element.style.backgroundColor,
+            borderRadius: element.style.borderRadius,
+            opacity: element.style.opacity,
+          }}
+        />
+      );
+    }
+
+    if (element.type === 'divider') {
+      return <div className="w-full h-full" style={{ backgroundColor: element.style.backgroundColor }} />;
+    }
+
+    // Text elements
+    return (
+      <div
+        className="w-full h-full flex items-center overflow-hidden"
+        style={{
+          fontSize: (element.style.fontSize || 14) * scale,
+          fontWeight: element.style.fontWeight === 'bold' ? 700 : element.style.fontWeight === 'semibold' ? 600 : 400,
+          color: element.style.color,
+          textAlign: element.style.textAlign,
+          justifyContent: element.style.textAlign === 'center' ? 'center' : element.style.textAlign === 'right' ? 'flex-end' : 'flex-start',
+        }}
+      >
+        <span className="truncate">{value || element.label}</span>
+      </div>
+    );
+  };
+
+  const sortedElements = [...elements].filter(el => el.visible !== false).sort((a, b) => a.zIndex - b.zIndex);
+
+  return (
+    <div
+      className="relative rounded-lg overflow-hidden shadow-md"
+      style={{
+        width: dimensions.width * scale,
+        height: dimensions.height * scale,
+        ...getBackgroundStyle(),
+      }}
+    >
+      {sortedElements.map((element) => (
+        <div
+          key={element.id}
+          className="absolute"
+          style={{
+            left: element.x * scale,
+            top: element.y * scale,
+            width: element.width * scale,
+            height: element.height * scale,
+          }}
+        >
+          {renderElement(element)}
+        </div>
+      ))}
+    </div>
+  );
+};
+
 export const TemplateGallery: React.FC<TemplateGalleryProps> = ({ onUseTemplate }) => {
   const [templates, setTemplates] = useState<DesignTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [previewTemplate, setPreviewTemplate] = useState<DesignTemplate | null>(null);
+
+  // Sample preview data
+  const samplePreviewData = {
+    company_logo_url: '',
+    avatar_url: '',
+    display_name: 'Alex Johnson',
+    job_title: 'Product Designer',
+    employee_display_id: 'EMP-2024',
+    department: 'Design Team',
+    email: 'alex@company.com',
+    phone: '+1 555 123 4567',
+    vanity_url: 'https://patra.app/alex',
+  };
 
   useEffect(() => {
     fetchTemplates();
@@ -34,7 +172,6 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({ onUseTemplate 
 
       if (error) throw error;
 
-      // Map the data to our DesignTemplate type
       const mappedTemplates: DesignTemplate[] = (data || []).map((t: any) => ({
         id: t.id,
         created_by: t.created_by,
@@ -61,7 +198,6 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({ onUseTemplate 
   };
 
   const handleUseTemplate = async (template: DesignTemplate) => {
-    // Increment use count
     try {
       await supabase
         .from('custom_id_templates')
@@ -72,6 +208,7 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({ onUseTemplate 
     }
 
     onUseTemplate(template);
+    setPreviewTemplate(null);
     toast({ title: 'Template loaded!', description: `"${template.name}" is ready to customize.` });
   };
 
@@ -95,8 +232,8 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({ onUseTemplate 
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => (
+        <div className="space-y-3">
+          {[...Array(3)].map((_, i) => (
             <Card key={i} className="overflow-hidden">
               <Skeleton className="aspect-[1.6] w-full" />
               <CardContent className="p-3">
@@ -115,48 +252,79 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({ onUseTemplate 
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="space-y-3">
           {filteredTemplates.map((template) => (
-            <Card key={template.id} className="overflow-hidden group hover:ring-2 hover:ring-primary transition-all">
-              <div className="aspect-[1.6] relative bg-muted">
-                {template.thumbnail_url ? (
-                  <img 
-                    src={template.thumbnail_url} 
-                    alt={template.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div 
-                    className="w-full h-full"
-                    style={{
-                      background: template.background.type === 'gradient' 
-                        ? `linear-gradient(${template.background.gradientDirection || '135deg'}, ${template.background.value}, ${template.background.secondaryValue})`
-                        : template.background.type === 'image'
-                        ? `url(${template.background.value}) center/cover`
-                        : template.background.value,
-                    }}
-                  />
-                )}
-                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                  <Button size="sm" variant="secondary" onClick={() => handleUseTemplate(template)}>
-                    <Download className="w-3 h-3 mr-1" />
-                    Use
-                  </Button>
+            <Card 
+              key={template.id} 
+              className="overflow-hidden group hover:ring-2 hover:ring-primary transition-all cursor-pointer"
+              onClick={() => setPreviewTemplate(template)}
+            >
+              <div className="p-3 flex items-center gap-3">
+                {/* Mini preview */}
+                <TemplatePreview
+                  elements={template.elements}
+                  background={template.background}
+                  dimensions={template.card_dimensions}
+                  previewData={samplePreviewData}
+                  scale={0.3}
+                />
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-medium text-sm truncate">{template.name}</h4>
+                  {template.description && (
+                    <p className="text-xs text-muted-foreground truncate">{template.description}</p>
+                  )}
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge variant="secondary" className="text-[10px]">
+                      <Eye className="w-2.5 h-2.5 mr-1" />
+                      {template.use_count || 0} uses
+                    </Badge>
+                  </div>
                 </div>
               </div>
-              <CardContent className="p-3">
-                <h4 className="font-medium text-sm truncate">{template.name}</h4>
-                <div className="flex items-center gap-2 mt-1">
-                  <Badge variant="secondary" className="text-[10px]">
-                    <Eye className="w-2.5 h-2.5 mr-1" />
-                    {template.use_count || 0}
-                  </Badge>
-                </div>
-              </CardContent>
             </Card>
           ))}
         </div>
       )}
+
+      {/* Preview Modal */}
+      <Dialog open={!!previewTemplate} onOpenChange={() => setPreviewTemplate(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{previewTemplate?.name}</DialogTitle>
+            <DialogDescription>
+              {previewTemplate?.description || 'Preview this template before using it.'}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {previewTemplate && (
+            <div className="flex flex-col items-center py-4">
+              {/* Large preview */}
+              <TemplatePreview
+                elements={previewTemplate.elements}
+                background={previewTemplate.background}
+                dimensions={previewTemplate.card_dimensions}
+                previewData={samplePreviewData}
+                scale={0.9}
+              />
+              
+              <div className="flex items-center gap-2 mt-4 text-sm text-muted-foreground">
+                <Eye className="w-4 h-4" />
+                <span>Used {previewTemplate.use_count || 0} times</span>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPreviewTemplate(null)}>
+              Cancel
+            </Button>
+            <Button onClick={() => previewTemplate && handleUseTemplate(previewTemplate)}>
+              <Download className="w-4 h-4 mr-2" />
+              Use This Template
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
