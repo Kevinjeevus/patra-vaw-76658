@@ -1443,6 +1443,27 @@ export const CompanyDashboard: React.FC = () => {
 
           <TabsContent value="display">
             <div className="space-y-8">
+              {/* Design Studio CTA */}
+              <Card className="shadow-md border-none bg-gradient-to-r from-primary/5 to-accent/5">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <h3 className="text-lg font-semibold flex items-center gap-2">
+                        <Edit3 className="w-5 h-5 text-primary" />
+                        ID Card Design Studio
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        Create custom ID card designs with drag-and-drop. Place elements freely, upload backgrounds, and publish templates for others to use.
+                      </p>
+                    </div>
+                    <Button onClick={() => navigate('/design-studio')} className="gap-2">
+                      Open Design Studio
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Template Customizer */}
               <IDCardCustomizer
                 customization={cardCustomization}

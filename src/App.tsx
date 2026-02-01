@@ -41,6 +41,7 @@ import { CorporateEditor } from "./pages/CorporateEditor";
 import { StaffCardView } from "./pages/StaffCardView";
 import { CompanyProfile } from "./pages/CompanyProfile";
 import { ProfileRouter } from "./pages/ProfileRouter";
+import IDCardDesignStudio from "./pages/IDCardDesignStudio";
 import { AlertCircle, Clock, Shield } from "lucide-react";
 import { Button as UIButton } from "@/components/ui/button";
 
@@ -298,7 +299,15 @@ const AppContent = () => {
           path="/templates"
           element={
             <ProtectedRoute>
-              <Templates />
+          <Templates />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/design-studio"
+          element={
+            <ProtectedRoute>
+              <IDCardDesignStudio />
             </ProtectedRoute>
           }
         />
