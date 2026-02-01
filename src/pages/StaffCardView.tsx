@@ -29,39 +29,63 @@ export const StaffCardView: React.FC = () => {
     useEffect(() => {
         const fetchStaffCard = async () => {
             if (!companyVanity || !staffId) {
+                console.log('Missing params:', { companyVanity, staffId });
                 setLoading(false);
                 return;
             }
 
+            console.log('Fetching staff card:', { companyVanity, staffId });
+
             try {
-                // Find company profile by vanity URL
-                const { data: companyProfile, error: companyError } = await supabase
+                // Find company profile by vanity URL (case-insensitive)
+                const { data: companyProfiles, error: companyError } = await supabase
                     .from('profiles')
                     .select('id, company_name, company_logo_url, display_parameters')
                     .ilike('vanity_url', companyVanity)
-                    .ilike('account_type', 'company')
-                    .single();
+                    .eq('account_type', 'company');
 
-                if (companyError || !companyProfile) {
-                    console.error('Company not found:', companyError);
+                console.log('Company query result:', { companyProfiles, companyError });
+
+                if (companyError) {
+                    console.error('Company query error:', companyError);
                     setLoading(false);
                     return;
                 }
 
-                // Find employee by staff_id
-                const { data: employee, error: empError } = await supabase
+                const companyProfile = companyProfiles?.[0];
+                if (!companyProfile) {
+                    console.error('Company not found for vanity:', companyVanity);
+                    setLoading(false);
+                    return;
+                }
+
+                console.log('Found company:', companyProfile);
+
+                // Find employee by staff_id (case-insensitive)
+                const { data: employees, error: empError } = await supabase
                     .from('invited_employees')
                     .select('*')
                     .eq('company_profile_id', companyProfile.id)
-                    .eq('staff_id', staffId)
-                    .eq('is_approved', true)
-                    .maybeSingle();
+                    .ilike('staff_id', staffId)
+                    .eq('is_approved', true);
 
-                if (empError || !employee) {
-                    console.error('Employee not found:', empError);
+                console.log('Employee query result:', { employees, empError });
+
+                const employee = employees?.[0];
+
+                if (empError) {
+                    console.error('Employee query error:', empError);
                     setLoading(false);
                     return;
                 }
+
+                if (!employee) {
+                    console.error('Employee not found for staff_id:', staffId);
+                    setLoading(false);
+                    return;
+                }
+
+                console.log('Found employee:', employee);
 
                 const submittedData = employee.data_submitted as any;
 
