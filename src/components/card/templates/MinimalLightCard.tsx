@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import QRCode from 'react-qr-code';
-import { Mail, Phone } from 'lucide-react';
+import { Mail, Phone, ShieldCheck } from 'lucide-react';
 import { IDCardCustomization } from '@/types/id-card-templates';
 
 interface MinimalLightCardProps {
@@ -21,6 +21,7 @@ interface MinimalLightCardProps {
   isFlipped?: boolean;
   onFlip?: () => void;
   scale?: number;
+  isVerified?: boolean;
 }
 
 export const MinimalLightCard: React.FC<MinimalLightCardProps> = ({
@@ -31,6 +32,7 @@ export const MinimalLightCard: React.FC<MinimalLightCardProps> = ({
   isFlipped: controlledFlipped,
   onFlip,
   scale = 1,
+  isVerified = false,
 }) => {
   const [internalFlipped, setInternalFlipped] = useState(false);
   const isFlipped = controlledFlipped !== undefined ? controlledFlipped : internalFlipped;
@@ -157,6 +159,20 @@ export const MinimalLightCard: React.FC<MinimalLightCardProps> = ({
                 </div>
               )}
             </div>
+
+            {/* Verified Badge */}
+            {isVerified && (
+              <div
+                className="absolute bottom-6 right-6 flex items-center gap-1 px-2 py-1 rounded-full border shadow-sm"
+                style={{
+                  backgroundColor: `${colors.secondary}10`,
+                  borderColor: `${colors.text}15`
+                }}
+              >
+                <ShieldCheck className="w-3.5 h-3.5" style={{ color: colors.secondary }} />
+                <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: colors.secondary }}>Verified</span>
+              </div>
+            )}
           </div>
         </div>
 

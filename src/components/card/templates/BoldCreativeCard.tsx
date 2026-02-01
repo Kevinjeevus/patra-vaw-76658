@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import QRCode from 'react-qr-code';
-import { Mail, Phone } from 'lucide-react';
+import { Mail, Phone, ShieldCheck } from 'lucide-react';
 import { IDCardCustomization } from '@/types/id-card-templates';
 
 interface BoldCreativeCardProps {
@@ -21,6 +21,7 @@ interface BoldCreativeCardProps {
   isFlipped?: boolean;
   onFlip?: () => void;
   scale?: number;
+  isVerified?: boolean;
 }
 
 export const BoldCreativeCard: React.FC<BoldCreativeCardProps> = ({
@@ -31,6 +32,7 @@ export const BoldCreativeCard: React.FC<BoldCreativeCardProps> = ({
   isFlipped: controlledFlipped,
   onFlip,
   scale = 1,
+  isVerified = false,
 }) => {
   const [internalFlipped, setInternalFlipped] = useState(false);
   const isFlipped = controlledFlipped !== undefined ? controlledFlipped : internalFlipped;
@@ -90,7 +92,7 @@ export const BoldCreativeCard: React.FC<BoldCreativeCardProps> = ({
               className="absolute top-0 left-0 w-2/3 h-full"
               style={{ backgroundColor: colors.accent }}
             />
-            
+
             {/* Photo positioned at intersection */}
             <div className="absolute bottom-0 right-4 translate-y-1/4 z-10">
               <div
@@ -166,6 +168,20 @@ export const BoldCreativeCard: React.FC<BoldCreativeCardProps> = ({
                 </div>
               )}
             </div>
+
+            {/* Verified Badge */}
+            {isVerified && (
+              <div 
+                className="absolute bottom-6 right-6 flex items-center gap-1 px-2 py-1 rounded-full backdrop-blur-md border shadow-sm"
+                style={{ 
+                  backgroundColor: `${colors.accent}20`, 
+                  borderColor: `${colors.accent}40`
+                }}
+              >
+                <ShieldCheck className="w-3.5 h-3.5" style={{ color: colors.accent }} />
+                <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: colors.accent }}>Verified</span>
+              </div>
+            )}
           </div>
         </div>
 

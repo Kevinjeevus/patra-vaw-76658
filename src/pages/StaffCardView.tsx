@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Share2, Smartphone } from 'lucide-react';
 import { CorporateIDCard } from '@/components/card/CorporateIDCard';
+import { updateOGMetaTags } from '@/lib/og-utils';
 
 interface StaffData {
     fullName: string;
@@ -37,8 +38,8 @@ export const StaffCardView: React.FC = () => {
                 const { data: companyProfile, error: companyError } = await supabase
                     .from('profiles')
                     .select('id, company_name, company_logo_url, display_parameters')
-                    .eq('vanity_url', companyVanity)
-                    .eq('account_type', 'company')
+                    .ilike('vanity_url', companyVanity)
+                    .ilike('account_type', 'company')
                     .single();
 
                 if (companyError || !companyProfile) {
@@ -74,7 +75,18 @@ export const StaffCardView: React.FC = () => {
                     companyName: companyProfile.company_name,
                     companyVanity: companyVanity,
                     companyLogo: companyProfile.company_logo_url || undefined,
-                    displayParameters: (companyProfile.display_parameters as string[]) || ['display_name', 'email'],
+                    displayParameters: Array.isArray(companyProfile.display_parameters)
+                        ? companyProfile.display_parameters
+                        : (companyProfile.display_parameters as any)?.visibility || ['display_name', 'email', 'job_title'],
+                });
+
+                // Update Meta Tags for PWA
+                updateOGMetaTags({
+                    title: `${submittedData?.display_name || 'Employee'} | ${companyProfile.company_name}`,
+                    description: `${employee.designation || 'Staff Member'} at ${companyProfile.company_name}`,
+                    image: submittedData?.avatar_url || '/placeholder.svg',
+                    url: window.location.href,
+                    type: 'profile'
                 });
 
                 setLoading(false);
@@ -127,14 +139,39 @@ export const StaffCardView: React.FC = () => {
                     <div className="text-2xl font-bold text-slate-900">
                         <span className="text-slate-600">P</span>atra
                     </div>
-                    <Button
-                        variant="ghost"
-                        onClick={() => navigate('/')}
-                        className="text-slate-600"
-                    >
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Back
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={async () => {
+                                if (navigator.share) {
+                                    try {
+                                        await navigator.share({
+                                            title: document.title,
+                                            url: window.location.href
+                                        });
+                                    } catch (err) {
+                                        console.log('Error sharing:', err);
+                                    }
+                                } else {
+                                    navigator.clipboard.writeText(window.location.href);
+                                    alert('Link copied to clipboard!');
+                                }
+                            }}
+                            className="hidden sm:flex border-slate-200"
+                        >
+                            <Share2 className="w-4 h-4 mr-2" />
+                            Share
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            onClick={() => navigate('/')}
+                            className="text-slate-600"
+                        >
+                            <ArrowLeft className="mr-2 h-4 w-4" />
+                            Back
+                        </Button>
+                    </div>
                 </div>
             </header>
 
@@ -170,9 +207,33 @@ export const StaffCardView: React.FC = () => {
 
                 {/* Instructions */}
                 <div className="mt-12 text-center">
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-slate-400 mb-6">
                         Click the card to see both sides
                     </p>
+
+                    <div className="flex flex-col gap-3 w-full max-w-[320px]">
+                        <Button
+                            className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold h-12 shadow-lg"
+                            onClick={() => {
+                                if (navigator.share) {
+                                    navigator.share({
+                                        title: `${staffData.fullName}'s ID Card`,
+                                        text: `Digital ID Card for ${staffData.fullName} at ${staffData.companyName}`,
+                                        url: window.location.href
+                                    }).catch(console.error);
+                                } else {
+                                    navigator.clipboard.writeText(window.location.href);
+                                    alert('Link copied to clipboard!');
+                                }
+                            }}
+                        >
+                            <Smartphone className="w-4 h-4 mr-2" />
+                            Save to Phone / PWA
+                        </Button>
+                        <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">
+                            Tap share & 'Add to Home Screen'
+                        </p>
+                    </div>
                 </div>
             </main>
         </div>

@@ -7,16 +7,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Palette, Layout, Type, Settings, 
+import {
+  Palette, Layout, Type, Settings,
   RefreshCw, Check, Wand2
 } from 'lucide-react';
-import { 
-  IDCardCustomization, 
-  IDCardTemplate, 
-  ID_CARD_TEMPLATES, 
+import {
+  IDCardCustomization,
+  IDCardTemplate,
+  ID_CARD_TEMPLATES,
   DEFAULT_CUSTOMIZATION,
-  syncWithBrandColors 
+  syncWithBrandColors
 } from '@/types/id-card-templates';
 import { TemplatePreview } from './IDCardRenderer';
 
@@ -381,7 +381,7 @@ export const IDCardCustomizer: React.FC<IDCardCustomizerProps> = ({
             {/* Typography */}
             <div className="space-y-4">
               <h4 className="font-medium text-slate-900">Typography</h4>
-              
+
               <div className="space-y-3">
                 <Label>Font Family</Label>
                 <div className="flex flex-wrap gap-2">
@@ -420,17 +420,6 @@ export const IDCardCustomizer: React.FC<IDCardCustomizerProps> = ({
             {/* Additional Options */}
             <div className="space-y-4">
               <h4 className="font-medium text-slate-900">Additional Options</h4>
-
-              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
-                <div>
-                  <p className="font-medium text-slate-900">Show Verified Badge</p>
-                  <p className="text-sm text-slate-500">Display company verification badge</p>
-                </div>
-                <Switch
-                  checked={customization.options.showVerifiedIcon}
-                  onCheckedChange={(checked) => updateOptions({ showVerifiedIcon: checked })}
-                />
-              </div>
 
               <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
                 <div>

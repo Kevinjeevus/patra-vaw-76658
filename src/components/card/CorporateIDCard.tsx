@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import QRCode from 'react-qr-code';
-import { Mail, Phone } from 'lucide-react';
+import { Mail, Phone, ShieldCheck } from 'lucide-react';
 
 export interface CorporateIDCardProps {
     user: {
@@ -13,6 +13,7 @@ export interface CorporateIDCardProps {
         vanityUrl?: string;
         staffId?: string;
         companyVanity?: string;
+        isVerified?: boolean;
         [key: string]: any;
     };
     companyLogo?: string;
@@ -20,6 +21,7 @@ export interface CorporateIDCardProps {
     isFlipped?: boolean;
     onFlip?: () => void;
     scale?: number;
+    isVerified?: boolean;
 }
 
 export const CorporateIDCard: React.FC<CorporateIDCardProps> = ({
@@ -28,10 +30,15 @@ export const CorporateIDCard: React.FC<CorporateIDCardProps> = ({
     displayParameters = ['display_name', 'email', 'job_title'],
     isFlipped: controlledFlipped,
     onFlip,
-    scale = 1
+    scale = 1,
+    isVerified: propVerified
 }) => {
+    const isVerified = propVerified || user.isVerified;
     const [internalFlipped, setInternalFlipped] = useState(false);
     const isFlipped = controlledFlipped !== undefined ? controlledFlipped : internalFlipped;
+
+    // Ensure displayParameters is an array
+    const safeDisplayParams = Array.isArray(displayParameters) ? displayParameters : ['display_name', 'email', 'job_title'];
 
     const handleFlip = () => {
         if (onFlip) {
@@ -104,25 +111,40 @@ export const CorporateIDCard: React.FC<CorporateIDCardProps> = ({
                         </h2>
 
                         {/* Designation */}
-                        <p className="text-sm text-slate-600 font-medium mb-6 text-center">
+                        <p className="text-sm text-slate-600 font-medium mb-1 text-center">
                             {user.jobTitle || 'Designation'}
                         </p>
 
+                        {/* Staff ID */}
+                        {user.staffId && (
+                            <p className="text-[10px] text-slate-400 font-mono mb-6 uppercase tracking-wider">
+                                ID: {user.staffId}
+                            </p>
+                        )}
+
                         {/* Contact Information */}
                         <div className="space-y-3 w-full">
-                            {displayParameters.includes('email') && (
+                            {safeDisplayParams.includes('email') && (
                                 <div className="flex items-center gap-2 text-slate-700">
                                     <Mail className="w-4 h-4 text-slate-500 flex-shrink-0" />
                                     <span className="text-xs truncate">{user.email}</span>
                                 </div>
                             )}
-                            {displayParameters.includes('phone') && user.phone && (
+                            {safeDisplayParams.includes('phone') && user.phone && (
                                 <div className="flex items-center gap-2 text-slate-700">
                                     <Phone className="w-4 h-4 text-slate-500 flex-shrink-0" />
                                     <span className="text-xs">{user.phone}</span>
                                 </div>
                             )}
                         </div>
+
+                        {/* Verified Badge - Bottom Right */}
+                        {isVerified && (
+                            <div className="absolute bottom-6 right-6 flex items-center gap-1 bg-indigo-50 px-2 py-1 rounded-full border border-indigo-100 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-700">
+                                <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
+                                <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-tighter">Verified</span>
+                            </div>
+                        )}
                     </div>
                 </div>
 

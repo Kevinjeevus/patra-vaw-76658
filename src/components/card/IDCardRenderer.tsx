@@ -16,6 +16,7 @@ interface IDCardRendererProps {
     staffId?: string;
     companyVanity?: string;
     badgeRole?: string;
+    isVerified?: boolean;
   };
   companyLogo?: string;
   customization: IDCardCustomization;
@@ -47,6 +48,7 @@ export const IDCardRenderer: React.FC<IDCardRendererProps> = ({
     isFlipped,
     onFlip,
     scale,
+    isVerified: user.isVerified,
   };
 
   switch (templateId) {
@@ -81,6 +83,7 @@ export const IDCardRenderer: React.FC<IDCardRendererProps> = ({
           isFlipped={isFlipped}
           onFlip={onFlip}
           scale={scale}
+          isVerified={user.isVerified}
         />
       );
   }
