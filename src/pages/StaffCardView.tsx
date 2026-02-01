@@ -269,14 +269,30 @@ export const StaffCardView: React.FC = () => {
                 </div>
             </header>
 
-            {/* Main Content - Card Hero */}
-            <main className="relative flex flex-col items-center justify-center min-h-screen px-4 pt-20 pb-32">
+            {/* Main Content */}
+            <main className="relative flex flex-col items-center min-h-screen px-4 pt-24 pb-32">
+                
+                {/* Title Section */}
+                <motion.div 
+                    className="text-center mb-8"
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                >
+                    <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
+                        {staffData.fullName}'s Corporate ID
+                    </h1>
+                    <p className="text-white/70 text-lg font-medium">
+                        {staffData.companyName}
+                    </p>
+                </motion.div>
+
                 {/* ID Card Container with 3D perspective */}
                 <motion.div 
                     className="relative"
                     initial={{ y: 30, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
-                    transition={{ duration: 0.6, ease: "easeOut" }}
+                    transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
                 >
                     {/* Card shadow/reflection */}
                     <div 
@@ -306,19 +322,37 @@ export const StaffCardView: React.FC = () => {
                     </div>
                 </motion.div>
 
-                {/* Tap hint */}
+                {/* Flip instruction */}
                 <motion.p 
-                    className="mt-8 text-white/50 text-xs uppercase tracking-widest font-medium"
+                    className="mt-6 text-white/60 text-sm font-medium"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.8 }}
                 >
-                    Tap card to flip
+                    👆 Click the card to see both sides
                 </motion.p>
+
+                {/* PWA Save Section */}
+                <motion.div 
+                    className="mt-10 bg-white/10 backdrop-blur-md rounded-2xl p-6 max-w-sm w-full border border-white/20"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 1 }}
+                >
+                    <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                            <Phone className="w-5 h-5 text-white" />
+                        </div>
+                        <h3 className="text-white font-bold text-lg">Save to Phone / PWA</h3>
+                    </div>
+                    <p className="text-white/70 text-sm leading-relaxed">
+                        Tap <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/20 rounded text-white font-medium"><Share2 className="w-3 h-3" /> Share</span> & <span className="font-semibold text-white">'Add to Home Screen'</span>
+                    </p>
+                </motion.div>
 
                 {/* Scroll hint */}
                 <motion.div 
-                    className="absolute bottom-24 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
+                    className="mt-8 flex flex-col items-center gap-2"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 1.2 }}
