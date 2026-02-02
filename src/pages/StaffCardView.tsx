@@ -47,8 +47,7 @@ export const StaffCardView: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'profile' | 'company'>('profile');
     const [showPWAPrompt, setShowPWAPrompt] = useState(false);
     
-    const containerRef = useRef<HTMLDivElement>(null);
-    const { scrollY } = useScroll({ container: containerRef });
+    const { scrollY } = useScroll();
     
     // Scroll-based animations
     const cardScale = useTransform(scrollY, [0, 300], [1, 0.6]);
@@ -200,7 +199,6 @@ export const StaffCardView: React.FC = () => {
 
     return (
         <div 
-            ref={containerRef}
             className="min-h-screen overflow-y-auto relative"
             style={bgStyle}
         >
