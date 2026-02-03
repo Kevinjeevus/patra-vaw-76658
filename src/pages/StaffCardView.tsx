@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2, Share2, User, Building2, Mail, Globe, Phone as PhoneIcon, BadgeCheck, Download, ChevronUp } from 'lucide-react';
+import { ArrowLeft, Loader2, Share2, Building2, Mail, Globe, Phone as PhoneIcon, BadgeCheck, Download, ChevronUp } from 'lucide-react';
 import { CorporateIDCard } from '@/components/card/CorporateIDCard';
 import { updateOGMetaTags } from '@/lib/og-utils';
 import { motion, AnimatePresence, useScroll, useTransform, useMotionValueEvent } from 'framer-motion';
@@ -50,7 +50,7 @@ export const StaffCardView: React.FC = () => {
     const [staffData, setStaffData] = useState<StaffData | null>(null);
     const [loading, setLoading] = useState(true);
     const [flipped, setFlipped] = useState(false);
-    const [activeTab, setActiveTab] = useState<'profile' | 'company'>('profile');
+    // Removed activeTab - now showing combined profile/company info
     const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
     const [canInstall, setCanInstall] = useState(false);
     
@@ -274,34 +274,12 @@ export const StaffCardView: React.FC = () => {
                 </div>
             </header>
 
-            {/* Mode Tabs */}
+            {/* User Name and Corporate ID Title */}
             <div className="fixed top-20 left-0 right-0 z-40 px-4">
                 <div className="flex justify-center">
-                    <div className="bg-white/10 backdrop-blur-md rounded-full p-1 border border-white/10">
-                        <div className="flex gap-1">
-                            <button
-                                onClick={() => setActiveTab('profile')}
-                                className={`px-5 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-2 ${
-                                    activeTab === 'profile' 
-                                        ? 'bg-white text-slate-900 shadow-lg' 
-                                        : 'text-white/80 hover:text-white hover:bg-white/10'
-                                }`}
-                            >
-                                <User className="w-4 h-4" />
-                                Profile
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('company')}
-                                className={`px-5 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-2 ${
-                                    activeTab === 'company' 
-                                        ? 'bg-white text-slate-900 shadow-lg' 
-                                        : 'text-white/80 hover:text-white hover:bg-white/10'
-                                }`}
-                            >
-                                <Building2 className="w-4 h-4" />
-                                Company
-                            </button>
-                        </div>
+                    <div className="bg-white/10 backdrop-blur-md rounded-full px-5 py-2.5 border border-white/10 text-center">
+                        <h2 className="text-white font-semibold text-base">{staffData.fullName}</h2>
+                        <p className="text-white/60 text-xs uppercase tracking-wider mt-0.5">Corporate ID Card</p>
                     </div>
                 </div>
             </div>
@@ -398,134 +376,87 @@ export const StaffCardView: React.FC = () => {
                         </div>
 
                         <div className="px-6 pb-8 overflow-y-auto" style={{ maxHeight: 'calc(75vh - 80px)' }}>
-                            <AnimatePresence mode="wait">
-                                {activeTab === 'profile' ? (
-                                    <motion.div
-                                        key="profile"
-                                        initial={{ opacity: 0, x: -20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: 20 }}
-                                        transition={{ duration: 0.3 }}
-                                        className="space-y-6"
-                                    >
-                                        {/* Identity Section */}
-                                        <div className="text-center pt-2">
-                                            <h1 className="text-2xl font-bold text-slate-900 flex items-center justify-center gap-2">
-                                                {staffData.fullName}
-                                                <BadgeCheck className="w-5 h-5 text-blue-500" />
-                                            </h1>
-                                            <p className="text-slate-500 mt-1">{staffData.jobTitle}</p>
-                                            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-100/80 rounded-full mt-3">
-                                                <span className="text-xs text-slate-500 uppercase tracking-wider">Corporate ID</span>
-                                                <span className="text-sm font-bold text-slate-900 font-mono">{staffData.staffId}</span>
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.3 }}
+                                className="space-y-6"
+                            >
+                                {/* Identity Section */}
+                                <div className="text-center pt-2">
+                                    <h1 className="text-2xl font-bold text-slate-900 flex items-center justify-center gap-2">
+                                        {staffData.fullName}
+                                        <BadgeCheck className="w-5 h-5 text-blue-500" />
+                                    </h1>
+                                    <p className="text-slate-500 mt-1">{staffData.jobTitle}</p>
+                                    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-100/80 rounded-full mt-3">
+                                        <span className="text-xs text-slate-500 uppercase tracking-wider">Corporate ID</span>
+                                        <span className="text-sm font-bold text-slate-900 font-mono">{staffData.staffId}</span>
+                                    </div>
+                                </div>
+
+                                {/* About Company */}
+                                <div className="bg-slate-50/50 rounded-2xl p-4">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        {staffData.companyLogo ? (
+                                            <img src={staffData.companyLogo} alt="" className="w-10 h-10 object-contain" />
+                                        ) : (
+                                            <div className="w-10 h-10 rounded-xl bg-slate-200 flex items-center justify-center">
+                                                <Building2 className="w-5 h-5 text-slate-400" />
                                             </div>
-                                        </div>
-
-                                        {/* About Company */}
-                                        <div className="bg-slate-50/50 rounded-2xl p-4">
-                                            <h3 className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                                                <Building2 className="w-4 h-4" />
-                                                About {staffData.companyName}
-                                            </h3>
-                                            <p className="text-sm text-slate-600 leading-relaxed">
-                                                {staffData.companyDescription}
-                                            </p>
-                                        </div>
-
-                                        {/* Contact Row */}
-                                        <div className="grid grid-cols-3 gap-3">
-                                            {staffData.email && (
-                                                <a
-                                                    href={`mailto:${staffData.email}`}
-                                                    className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-blue-50/80 hover:bg-blue-100/80 transition-colors"
-                                                >
-                                                    <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center">
-                                                        <Mail className="w-4 h-4 text-white" />
-                                                    </div>
-                                                    <span className="text-xs font-medium text-slate-700">Email</span>
-                                                </a>
-                                            )}
-                                            {staffData.companyWebsite && (
-                                                <a
-                                                    href={staffData.companyWebsite}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-green-50/80 hover:bg-green-100/80 transition-colors"
-                                                >
-                                                    <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center">
-                                                        <Globe className="w-4 h-4 text-white" />
-                                                    </div>
-                                                    <span className="text-xs font-medium text-slate-700">Website</span>
-                                                </a>
-                                            )}
-                                            {staffData.phone && (
-                                                <a
-                                                    href={`tel:${staffData.phone}`}
-                                                    className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-purple-50/80 hover:bg-purple-100/80 transition-colors"
-                                                >
-                                                    <div className="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center">
-                                                        <PhoneIcon className="w-4 h-4 text-white" />
-                                                    </div>
-                                                    <span className="text-xs font-medium text-slate-700">Call</span>
-                                                </a>
-                                            )}
-                                        </div>
-                                    </motion.div>
-                                ) : (
-                                    <motion.div
-                                        key="company"
-                                        initial={{ opacity: 0, x: 20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: -20 }}
-                                        transition={{ duration: 0.3 }}
-                                        className="space-y-6"
-                                    >
-                                        {/* Company Header */}
-                                        <div className="flex items-center gap-4 pt-2">
-                                            {staffData.companyLogo ? (
-                                                <img src={staffData.companyLogo} alt="" className="w-14 h-14 object-contain" />
-                                            ) : (
-                                                <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center">
-                                                    <Building2 className="w-7 h-7 text-slate-400" />
-                                                </div>
-                                            )}
-                                            <div>
-                                                <h2 className="text-xl font-bold text-slate-900">{staffData.companyName}</h2>
-                                                <div className="flex items-center gap-1 text-green-600">
-                                                    <BadgeCheck className="w-4 h-4" />
-                                                    <span className="text-sm font-medium">Verified Company</span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* About Section */}
-                                        <div className="bg-slate-50/50 rounded-2xl p-4">
-                                            <h3 className="text-sm font-semibold text-slate-700 mb-2">About</h3>
-                                            <p className="text-sm text-slate-600 leading-relaxed">
-                                                {staffData.companyDescription}
-                                            </p>
-                                        </div>
-
-                                        {/* Quick Actions */}
-                                        {staffData.companyWebsite && (
-                                            <a
-                                                href={staffData.companyWebsite}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50/80 hover:bg-slate-100/80 transition-colors"
-                                            >
-                                                <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
-                                                    <Globe className="w-5 h-5 text-blue-600" />
-                                                </div>
-                                                <div className="flex-1">
-                                                    <p className="font-medium text-slate-900">Visit Website</p>
-                                                    <p className="text-sm text-slate-500 truncate">{staffData.companyWebsite}</p>
-                                                </div>
-                                            </a>
                                         )}
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
+                                        <div>
+                                            <h3 className="text-sm font-semibold text-slate-700">{staffData.companyName}</h3>
+                                            <div className="flex items-center gap-1 text-green-600">
+                                                <BadgeCheck className="w-3 h-3" />
+                                                <span className="text-xs font-medium">Verified</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p className="text-sm text-slate-600 leading-relaxed">
+                                        {staffData.companyDescription}
+                                    </p>
+                                </div>
+
+                                {/* Contact Row */}
+                                <div className="grid grid-cols-3 gap-3">
+                                    {staffData.email && (
+                                        <a
+                                            href={`mailto:${staffData.email}`}
+                                            className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-blue-50/80 hover:bg-blue-100/80 transition-colors"
+                                        >
+                                            <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center">
+                                                <Mail className="w-4 h-4 text-white" />
+                                            </div>
+                                            <span className="text-xs font-medium text-slate-700">Email</span>
+                                        </a>
+                                    )}
+                                    {staffData.companyWebsite && (
+                                        <a
+                                            href={staffData.companyWebsite}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-green-50/80 hover:bg-green-100/80 transition-colors"
+                                        >
+                                            <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center">
+                                                <Globe className="w-4 h-4 text-white" />
+                                            </div>
+                                            <span className="text-xs font-medium text-slate-700">Website</span>
+                                        </a>
+                                    )}
+                                    {staffData.phone && (
+                                        <a
+                                            href={`tel:${staffData.phone}`}
+                                            className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-purple-50/80 hover:bg-purple-100/80 transition-colors"
+                                        >
+                                            <div className="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center">
+                                                <PhoneIcon className="w-4 h-4 text-white" />
+                                            </div>
+                                            <span className="text-xs font-medium text-slate-700">Call</span>
+                                        </a>
+                                    )}
+                                </div>
+                            </motion.div>
 
                             {/* PWA Install Button - Only show if installable */}
                             {canInstall && (
