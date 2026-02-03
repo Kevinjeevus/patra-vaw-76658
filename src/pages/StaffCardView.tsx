@@ -2,10 +2,19 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2, Share2, Building2, Mail, Globe, Phone as PhoneIcon, BadgeCheck, Download, ChevronUp } from 'lucide-react';
+import { ArrowLeft, Loader2, Share2, Building2, Globe, BadgeCheck, Download, ChevronUp } from 'lucide-react';
+import { FaLinkedin, FaTwitter, FaInstagram, FaFacebook, FaYoutube } from 'react-icons/fa';
 import { CorporateIDCard } from '@/components/card/CorporateIDCard';
 import { updateOGMetaTags } from '@/lib/og-utils';
 import { motion, AnimatePresence, useScroll, useTransform, useMotionValueEvent } from 'framer-motion';
+
+interface SocialLinks {
+    linkedin?: string;
+    twitter?: string;
+    instagram?: string;
+    facebook?: string;
+    youtube?: string;
+}
 
 interface StaffData {
     fullName: string;
@@ -21,6 +30,7 @@ interface StaffData {
     themeColor?: string;
     companyDescription?: string;
     companyWebsite?: string;
+    socialLinks?: SocialLinks;
 }
 
 // Helper function to adjust color brightness
@@ -156,6 +166,13 @@ export const StaffCardView: React.FC = () => {
                     themeColor: displayParams?.cardViewTheme || '#8B1538',
                     companyDescription: companyProfile.bio || 'A technology and creative innovation company focused on AI, immersive media, and next-generation digital experiences.',
                     companyWebsite: displayParams?.website || '',
+                    socialLinks: {
+                        linkedin: displayParams?.linkedin || '',
+                        twitter: displayParams?.twitter || '',
+                        instagram: displayParams?.instagram || '',
+                        facebook: displayParams?.facebook || '',
+                        youtube: displayParams?.youtube || '',
+                    },
                 });
 
                 updateOGMetaTags({
@@ -418,43 +435,75 @@ export const StaffCardView: React.FC = () => {
                                     </p>
                                 </div>
 
-                                {/* Contact Row */}
-                                <div className="grid grid-cols-3 gap-3">
-                                    {staffData.email && (
-                                        <a
-                                            href={`mailto:${staffData.email}`}
-                                            className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-blue-50/80 hover:bg-blue-100/80 transition-colors"
-                                        >
-                                            <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center">
-                                                <Mail className="w-4 h-4 text-white" />
-                                            </div>
-                                            <span className="text-xs font-medium text-slate-700">Email</span>
-                                        </a>
-                                    )}
+                                {/* Social Media & Website Row */}
+                                <div className="flex items-center justify-center gap-3 flex-wrap">
                                     {staffData.companyWebsite && (
                                         <a
                                             href={staffData.companyWebsite}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-green-50/80 hover:bg-green-100/80 transition-colors"
+                                            className="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors"
                                         >
-                                            <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center">
-                                                <Globe className="w-4 h-4 text-white" />
-                                            </div>
-                                            <span className="text-xs font-medium text-slate-700">Website</span>
+                                            <Globe className="w-4 h-4 text-slate-600" />
                                         </a>
                                     )}
-                                    {staffData.phone && (
+                                    {staffData.socialLinks?.linkedin && (
                                         <a
-                                            href={`tel:${staffData.phone}`}
-                                            className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-purple-50/80 hover:bg-purple-100/80 transition-colors"
+                                            href={staffData.socialLinks.linkedin}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="w-10 h-10 rounded-full bg-[#0077B5]/10 hover:bg-[#0077B5]/20 flex items-center justify-center transition-colors"
                                         >
-                                            <div className="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center">
-                                                <PhoneIcon className="w-4 h-4 text-white" />
-                                            </div>
-                                            <span className="text-xs font-medium text-slate-700">Call</span>
+                                            <FaLinkedin className="w-4 h-4 text-[#0077B5]" />
                                         </a>
                                     )}
+                                    {staffData.socialLinks?.twitter && (
+                                        <a
+                                            href={staffData.socialLinks.twitter}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="w-10 h-10 rounded-full bg-[#1DA1F2]/10 hover:bg-[#1DA1F2]/20 flex items-center justify-center transition-colors"
+                                        >
+                                            <FaTwitter className="w-4 h-4 text-[#1DA1F2]" />
+                                        </a>
+                                    )}
+                                    {staffData.socialLinks?.instagram && (
+                                        <a
+                                            href={staffData.socialLinks.instagram}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="w-10 h-10 rounded-full bg-[#E4405F]/10 hover:bg-[#E4405F]/20 flex items-center justify-center transition-colors"
+                                        >
+                                            <FaInstagram className="w-4 h-4 text-[#E4405F]" />
+                                        </a>
+                                    )}
+                                    {staffData.socialLinks?.facebook && (
+                                        <a
+                                            href={staffData.socialLinks.facebook}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="w-10 h-10 rounded-full bg-[#1877F2]/10 hover:bg-[#1877F2]/20 flex items-center justify-center transition-colors"
+                                        >
+                                            <FaFacebook className="w-4 h-4 text-[#1877F2]" />
+                                        </a>
+                                    )}
+                                    {staffData.socialLinks?.youtube && (
+                                        <a
+                                            href={staffData.socialLinks.youtube}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="w-10 h-10 rounded-full bg-[#FF0000]/10 hover:bg-[#FF0000]/20 flex items-center justify-center transition-colors"
+                                        >
+                                            <FaYoutube className="w-4 h-4 text-[#FF0000]" />
+                                        </a>
+                                    )}
+                                </div>
+
+                                {/* Powered by Patra watermark */}
+                                <div className="text-center pt-4">
+                                    <p className="text-xs text-slate-400">
+                                        Powered by <span className="font-semibold text-slate-500">Patra</span>
+                                    </p>
                                 </div>
                             </motion.div>
 
