@@ -291,14 +291,9 @@ export const StaffCardView: React.FC = () => {
                 </div>
             </header>
 
-            {/* User Name and Corporate ID Title */}
+            {/* Corporate ID Card Title */}
             <div className="fixed top-20 left-0 right-0 z-40 px-4">
-                <div className="flex justify-center">
-                    <div className="bg-white/10 backdrop-blur-md rounded-full px-5 py-2.5 border border-white/10 text-center">
-                        <h2 className="text-white font-semibold text-base">{staffData.fullName}</h2>
-                        <p className="text-white/60 text-xs uppercase tracking-wider mt-0.5">Corporate ID Card</p>
-                    </div>
-                </div>
+                <p className="text-center text-white/70 text-xs uppercase tracking-widest font-medium">Corporate ID Card</p>
             </div>
 
             {/* Floating ID Card - Fixed in center, scales on scroll */}
