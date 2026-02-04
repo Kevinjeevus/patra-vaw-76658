@@ -1495,6 +1495,8 @@ export const CompanyDashboard: React.FC = () => {
                           cardCustomization: cardCustomization,
                           studioXTemplateId: selectedStudioXTemplate?.id || null,
                           cardViewTheme: (cardCustomization as any)?.cardViewTheme || '#6366f1',
+                          cardViewBgType: (cardCustomization as any)?.cardViewBgType || 'color',
+                          cardViewBgImage: (cardCustomization as any)?.cardViewBgImage || null,
                         }
                       })
                       .eq('id', profile!.id);
@@ -1518,57 +1520,162 @@ export const CompanyDashboard: React.FC = () => {
                     <div className="w-5 h-5 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600" />
                     Card View Theme
                   </CardTitle>
-                  <CardDescription>Set the background theme color for your staff ID card public view page</CardDescription>
+                  <CardDescription>Set the background theme color or custom image for your staff ID card public view page</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex flex-wrap gap-3">
-                      {[
-                        { name: 'Indigo', color: '#6366f1' },
-                        { name: 'Rose', color: '#e11d48' },
-                        { name: 'Emerald', color: '#059669' },
-                        { name: 'Amber', color: '#d97706' },
-                        { name: 'Slate', color: '#475569' },
-                        { name: 'Purple', color: '#7c3aed' },
-                        { name: 'Blue', color: '#2563eb' },
-                        { name: 'Teal', color: '#0d9488' },
-                      ].map(preset => (
-                        <button
-                          key={preset.color}
-                          onClick={() => {
-                            setCardCustomization(prev => ({
-                              ...prev,
-                              cardViewTheme: preset.color
-                            }));
-                          }}
-                          className={`w-12 h-12 rounded-xl border-2 transition-all hover:scale-110 ${
-                            (cardCustomization as any)?.cardViewTheme === preset.color 
-                              ? 'border-slate-900 ring-2 ring-offset-2 ring-slate-400' 
-                              : 'border-transparent'
-                          }`}
-                          style={{ backgroundColor: preset.color }}
-                          title={preset.name}
-                        />
-                      ))}
-                      {/* Custom color picker */}
-                      <label className="relative">
-                        <input
-                          type="color"
-                          value={(cardCustomization as any)?.cardViewTheme || '#6366f1'}
-                          onChange={(e) => {
-                            setCardCustomization(prev => ({
-                              ...prev,
-                              cardViewTheme: e.target.value
-                            }));
-                          }}
-                          className="sr-only"
-                        />
-                        <div className="w-12 h-12 rounded-xl border-2 border-dashed border-slate-300 flex items-center justify-center cursor-pointer hover:border-slate-400 transition-colors">
-                          <Plus className="w-5 h-5 text-slate-400" />
-                        </div>
-                      </label>
+                  <div className="space-y-6">
+                    {/* Background Type Toggle */}
+                    <div className="flex gap-3">
+                      <Button
+                        variant={(cardCustomization as any)?.cardViewBgType !== 'image' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setCardCustomization(prev => ({ ...prev, cardViewBgType: 'color' }))}
+                      >
+                        Solid Color
+                      </Button>
+                      <Button
+                        variant={(cardCustomization as any)?.cardViewBgType === 'image' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setCardCustomization(prev => ({ ...prev, cardViewBgType: 'image' }))}
+                      >
+                        Custom Image
+                      </Button>
                     </div>
-                    <p className="text-xs text-slate-500">This color will be used as the background gradient for staff ID card public pages</p>
+
+                    {/* Color Presets - shown when color is selected */}
+                    {(cardCustomization as any)?.cardViewBgType !== 'image' && (
+                      <div className="space-y-4">
+                        <div className="flex flex-wrap gap-3">
+                          {[
+                            { name: 'Indigo', color: '#6366f1' },
+                            { name: 'Rose', color: '#e11d48' },
+                            { name: 'Emerald', color: '#059669' },
+                            { name: 'Amber', color: '#d97706' },
+                            { name: 'Slate', color: '#475569' },
+                            { name: 'Purple', color: '#7c3aed' },
+                            { name: 'Blue', color: '#2563eb' },
+                            { name: 'Teal', color: '#0d9488' },
+                          ].map(preset => (
+                            <button
+                              key={preset.color}
+                              onClick={() => {
+                                setCardCustomization(prev => ({
+                                  ...prev,
+                                  cardViewTheme: preset.color
+                                }));
+                              }}
+                              className={`w-12 h-12 rounded-xl border-2 transition-all hover:scale-110 ${
+                                (cardCustomization as any)?.cardViewTheme === preset.color 
+                                  ? 'border-slate-900 ring-2 ring-offset-2 ring-slate-400' 
+                                  : 'border-transparent'
+                              }`}
+                              style={{ backgroundColor: preset.color }}
+                              title={preset.name}
+                            />
+                          ))}
+                          {/* Custom color picker */}
+                          <label className="relative">
+                            <input
+                              type="color"
+                              value={(cardCustomization as any)?.cardViewTheme || '#6366f1'}
+                              onChange={(e) => {
+                                setCardCustomization(prev => ({
+                                  ...prev,
+                                  cardViewTheme: e.target.value
+                                }));
+                              }}
+                              className="sr-only"
+                            />
+                            <div className="w-12 h-12 rounded-xl border-2 border-dashed border-slate-300 flex items-center justify-center cursor-pointer hover:border-slate-400 transition-colors">
+                              <Plus className="w-5 h-5 text-slate-400" />
+                            </div>
+                          </label>
+                        </div>
+                        <p className="text-xs text-slate-500">This color will be used as the background gradient for staff ID card public pages</p>
+                      </div>
+                    )}
+
+                    {/* Image Upload - shown when image is selected */}
+                    {(cardCustomization as any)?.cardViewBgType === 'image' && (
+                      <div className="space-y-4">
+                        <div className="group relative w-full h-48 bg-slate-100 rounded-xl overflow-hidden border-2 border-dashed border-slate-300 hover:border-indigo-500 transition-colors cursor-pointer">
+                          {(cardCustomization as any)?.cardViewBgImage ? (
+                            <img
+                              src={(cardCustomization as any)?.cardViewBgImage}
+                              alt="Background Preview"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex flex-col items-center justify-center h-full gap-2 text-slate-400">
+                              <Upload className="w-10 h-10" />
+                              <span className="text-sm font-medium">Click to upload background image</span>
+                              <span className="text-xs">PNG, JPG or WEBP. Recommended: 1920x1080</span>
+                            </div>
+                          )}
+                          <input
+                            type="file"
+                            className="absolute inset-0 opacity-0 cursor-pointer"
+                            accept="image/png,image/jpeg,image/jpg,image/webp"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file || !user || !profile) return;
+                              
+                              try {
+                                const fileExt = file.name.split('.').pop();
+                                const fileName = `card-bg-${Date.now()}.${fileExt}`;
+                                const filePath = `${user.id}/backgrounds/${fileName}`;
+
+                                const { error: uploadError } = await supabase.storage
+                                  .from('avatars')
+                                  .upload(filePath, file, {
+                                    contentType: file.type || undefined,
+                                    upsert: true,
+                                  });
+
+                                if (uploadError) throw uploadError;
+
+                                const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
+                                const bgUrl = urlData.publicUrl;
+
+                                setCardCustomization(prev => ({
+                                  ...prev,
+                                  cardViewBgImage: bgUrl,
+                                  cardViewBgType: 'image'
+                                }));
+                                
+                                toast({ title: "Background uploaded", description: "Save your changes to apply the new background." });
+                              } catch (error: any) {
+                                console.error('Background upload error:', error);
+                                toast({ title: "Upload failed", description: error.message, variant: "destructive" });
+                              }
+                            }}
+                          />
+                          {(cardCustomization as any)?.cardViewBgImage && (
+                            <div className="absolute inset-x-0 bottom-0 bg-black/50 text-white text-xs py-2 text-center opacity-0 group-hover:opacity-100 transition-opacity">
+                              Click to change image
+                            </div>
+                          )}
+                        </div>
+                        {(cardCustomization as any)?.cardViewBgImage && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => {
+                              setCardCustomization(prev => ({
+                                ...prev,
+                                cardViewBgImage: null,
+                                cardViewBgType: 'color'
+                              }));
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Remove Background Image
+                          </Button>
+                        )}
+                        <p className="text-xs text-slate-500">This image will be used as the full-screen background for staff ID card public pages</p>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
