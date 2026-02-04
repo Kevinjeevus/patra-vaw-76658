@@ -28,6 +28,8 @@ interface StaffData {
     companyLogo?: string;
     displayParameters: string[];
     themeColor?: string;
+    bgType?: 'color' | 'image';
+    bgImage?: string;
     companyDescription?: string;
     companyWebsite?: string;
     socialLinks?: SocialLinks;
@@ -166,9 +168,11 @@ export const StaffCardView: React.FC = () => {
                     displayParameters: Array.isArray(displayParams)
                         ? displayParams
                         : displayParams?.visibility || ['display_name', 'email', 'job_title'],
-                    themeColor: displayParams?.cardViewTheme || '#8B1538',
+                    themeColor: displayParams?.cardViewTheme || displayParams?.cardCustomization?.cardViewTheme || '#8B1538',
+                    bgType: displayParams?.cardViewBgType || displayParams?.cardCustomization?.cardViewBgType || 'color',
+                    bgImage: displayParams?.cardViewBgImage || displayParams?.cardCustomization?.cardViewBgImage || undefined,
                     companyDescription: companyProfile.bio || 'A technology and creative innovation company focused on AI, immersive media, and next-generation digital experiences.',
-                    companyWebsite: displayParams?.website || '',
+                    companyWebsite: displayParams?.website || displayParams?.branding?.company_website || '',
                     socialLinks: {
                         linkedin: displayParams?.linkedin || '',
                         twitter: displayParams?.twitter || '',
@@ -243,19 +247,36 @@ export const StaffCardView: React.FC = () => {
     return (
         <div className="min-h-[250vh] relative overflow-x-hidden" style={{ scrollBehavior: 'smooth' }}>
             {/* Fixed themed background - always visible */}
-            <div 
-                className="fixed inset-0 z-0"
-                style={{
-                    background: `linear-gradient(135deg, ${themeColor} 0%, ${darkerTheme} 100%)`
-                }}
-            />
+            {staffData.bgType === 'image' && staffData.bgImage ? (
+                <>
+                    <div 
+                        className="fixed inset-0 z-0"
+                        style={{
+                            backgroundImage: `url(${staffData.bgImage})`,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                            backgroundRepeat: 'no-repeat',
+                        }}
+                    />
+                    {/* Overlay for readability */}
+                    <div className="fixed inset-0 z-0 bg-black/30" />
+                </>
+            ) : (
+                <div 
+                    className="fixed inset-0 z-0"
+                    style={{
+                        background: `linear-gradient(135deg, ${themeColor} 0%, ${darkerTheme} 100%)`
+                    }}
+                />
+            )}
             
-            {/* Ambient glow effects */}
-            <div 
-                className="fixed top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full blur-[100px] opacity-30 pointer-events-none z-0"
-                style={{ backgroundColor: adjustColor(themeColor, 30) }}
-            />
-
+            {/* Ambient glow effects - only for solid color background */}
+            {staffData.bgType !== 'image' && (
+                <div 
+                    className="fixed top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full blur-[100px] opacity-30 pointer-events-none z-0"
+                    style={{ backgroundColor: adjustColor(themeColor, 30) }}
+                />
+            )}
             {/* Fixed Header */}
             <header className="fixed top-0 left-0 right-0 z-50 px-4 py-4 safe-area-inset-top">
                 <div className="flex items-center justify-between max-w-lg mx-auto">
