@@ -271,7 +271,7 @@ export const StaffCardView: React.FC = () => {
                             <img 
                                 src={staffData.companyLogo} 
                                 alt={staffData.companyName}
-                                className="h-8 object-contain filter brightness-0 invert"
+                                className="h-8 object-contain"
                             />
                         ) : (
                             <span className="text-white font-bold text-lg tracking-tight">{staffData.companyName}</span>
