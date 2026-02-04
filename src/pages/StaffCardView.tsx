@@ -66,13 +66,16 @@ export const StaffCardView: React.FC = () => {
     
     const { scrollY } = useScroll();
     
-    // Scroll-based animations - card shrinks and moves up
-    const cardScale = useTransform(scrollY, [0, 300], [1, 0.85]);
-    const cardY = useTransform(scrollY, [0, 300], [0, -80]);
+    // Scroll-based animations - card smoothly shrinks and moves up as user scrolls
+    // Phase 1 (0-200px): Card starts scaling down and moving up
+    // Phase 2 (200-400px): Card continues shrinking more and moves higher
+    const cardScale = useTransform(scrollY, [0, 150, 350], [1, 0.75, 0.55]);
+    const cardY = useTransform(scrollY, [0, 150, 350], [0, -60, -140]);
+    const cardOpacity = useTransform(scrollY, [300, 400], [1, 0.6]);
     
-    // Bottom sheet slides up from bottom
-    const sheetY = useTransform(scrollY, [0, 200], ['100%', '0%']);
-    const sheetOpacity = useTransform(scrollY, [50, 200], [0, 1]);
+    // Bottom sheet slides up from bottom with iOS-style smooth reveal
+    const sheetY = useTransform(scrollY, [80, 280], ['100%', '0%']);
+    const sheetOpacity = useTransform(scrollY, [80, 200], [0, 1]);
     
     // Track scroll progress for UI hints
     const [scrollProgress, setScrollProgress] = useState(0);
@@ -238,7 +241,7 @@ export const StaffCardView: React.FC = () => {
     const darkerTheme = adjustColor(themeColor, -40);
 
     return (
-        <div className="min-h-[200vh] relative overflow-x-hidden">
+        <div className="min-h-[250vh] relative overflow-x-hidden" style={{ scrollBehavior: 'smooth' }}>
             {/* Fixed themed background - always visible */}
             <div 
                 className="fixed inset-0 z-0"
@@ -296,12 +299,13 @@ export const StaffCardView: React.FC = () => {
                 <p className="text-center text-white/70 text-xs uppercase tracking-widest font-medium">Corporate ID Card</p>
             </div>
 
-            {/* Floating ID Card - Fixed in center, scales on scroll */}
+            {/* Floating ID Card - Fixed in center, scales down and moves up on scroll */}
             <motion.div 
-                className="fixed top-36 left-0 right-0 z-10 flex flex-col items-center pointer-events-none"
+                className="fixed top-32 left-0 right-0 z-10 flex flex-col items-center pointer-events-none"
                 style={{
                     scale: cardScale,
                     y: cardY,
+                    opacity: cardOpacity,
                 }}
             >
                 {/* Card glow effect */}
