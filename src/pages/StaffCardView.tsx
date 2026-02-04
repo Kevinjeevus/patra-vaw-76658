@@ -210,7 +210,7 @@ export const StaffCardView: React.FC = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-[#8B1538] to-[#5a0f25] flex items-center justify-center">
+            <div className="min-h-screen bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center">
                 <div className="text-center">
                     <Loader2 className="w-12 h-12 animate-spin text-white mx-auto mb-4" />
                     <p className="text-white/70">Loading...</p>
