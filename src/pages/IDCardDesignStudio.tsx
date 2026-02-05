@@ -28,16 +28,33 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { 
   Save, Download, Upload, Undo, Redo, ZoomIn, ZoomOut, 
-  LayoutGrid, Eye, ArrowLeft, Globe, Lock, Sparkles
+  LayoutGrid, Eye, ArrowLeft, Globe, Lock, Sparkles, FlipHorizontal
 } from 'lucide-react';
+
+type CardSide = 'front' | 'back';
+
+interface CardSideData {
+  elements: CanvasElement[];
+  background: CanvasBackground;
+}
 
 const IDCardDesignStudio: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   
-  // Canvas state
-  const [elements, setElements] = useState<CanvasElement[]>([]);
-  const [background, setBackground] = useState<CanvasBackground>({ type: 'color', value: '#ffffff' });
+  // Current side being edited
+  const [activeSide, setActiveSide] = useState<CardSide>('front');
+  
+  // Separate state for front and back
+  const [frontData, setFrontData] = useState<CardSideData>({
+    elements: [],
+    background: { type: 'color', value: '#ffffff' },
+  });
+  const [backData, setBackData] = useState<CardSideData>({
+    elements: [],
+    background: { type: 'color', value: '#f8fafc' },
+  });
+  
   const [dimensions, setDimensions] = useState<CardDimensions>(DEFAULT_CARD_DIMENSIONS);
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   const [scale, setScale] = useState(1.5);
@@ -52,6 +69,14 @@ const IDCardDesignStudio: React.FC = () => {
   const [showPublishDialog, setShowPublishDialog] = useState(false);
   const [isPublic, setIsPublic] = useState(false);
   const [activeTab, setActiveTab] = useState('elements');
+  
+  // Get current side data
+  const currentSideData = activeSide === 'front' ? frontData : backData;
+  const setCurrentSideData = activeSide === 'front' ? setFrontData : setBackData;
+  
+  // Convenience accessors
+  const elements = currentSideData.elements;
+  const background = currentSideData.background;
   
   // Preview data (sample data for preview)
   const [previewData] = useState({
@@ -69,6 +94,12 @@ const IDCardDesignStudio: React.FC = () => {
   // Get selected element
   const selectedElement = elements.find(el => el.id === selectedElementId) || null;
 
+  // Clear selection when switching sides
+  const handleSideChange = (side: CardSide) => {
+    setSelectedElementId(null);
+    setActiveSide(side);
+  };
+
   // Add element
   const handleAddElement = useCallback((type: ElementType) => {
     const defaultConfig = DEFAULT_ELEMENTS[type];
@@ -82,25 +113,40 @@ const IDCardDesignStudio: React.FC = () => {
       locked: false,
     } as CanvasElement;
 
-    setElements(prev => [...prev, newElement]);
+    setCurrentSideData(prev => ({
+      ...prev,
+      elements: [...prev.elements, newElement],
+    }));
     setSelectedElementId(newElement.id);
-    toast({ title: `${defaultConfig.label} added` });
-  }, [elements.length]);
+    toast({ title: `${defaultConfig.label} added to ${activeSide}` });
+  }, [elements.length, activeSide, setCurrentSideData]);
 
   // Update element
   const handleUpdateElement = useCallback((id: string, updates: Partial<CanvasElement>) => {
-    setElements(prev => prev.map(el => 
-      el.id === id ? { ...el, ...updates } : el
-    ));
-  }, []);
+    setCurrentSideData(prev => ({
+      ...prev,
+      elements: prev.elements.map(el => el.id === id ? { ...el, ...updates } : el),
+    }));
+  }, [setCurrentSideData]);
+
+  // Update background
+  const handleUpdateBackground = useCallback((bg: CanvasBackground) => {
+    setCurrentSideData(prev => ({
+      ...prev,
+      background: bg,
+    }));
+  }, [setCurrentSideData]);
 
   // Delete element
   const handleDeleteElement = useCallback(() => {
     if (!selectedElementId) return;
-    setElements(prev => prev.filter(el => el.id !== selectedElementId));
+    setCurrentSideData(prev => ({
+      ...prev,
+      elements: prev.elements.filter(el => el.id !== selectedElementId),
+    }));
     setSelectedElementId(null);
     toast({ title: 'Element deleted' });
-  }, [selectedElementId]);
+  }, [selectedElementId, setCurrentSideData]);
 
   // Duplicate element
   const handleDuplicateElement = useCallback(() => {
@@ -112,10 +158,13 @@ const IDCardDesignStudio: React.FC = () => {
       y: selectedElement.y + 20,
       zIndex: elements.length + 1,
     };
-    setElements(prev => [...prev, newElement]);
+    setCurrentSideData(prev => ({
+      ...prev,
+      elements: [...prev.elements, newElement],
+    }));
     setSelectedElementId(newElement.id);
     toast({ title: 'Element duplicated' });
-  }, [selectedElement, elements.length]);
+  }, [selectedElement, elements.length, setCurrentSideData]);
 
   // Layer operations
   const handleBringForward = useCallback(() => {
@@ -133,7 +182,7 @@ const IDCardDesignStudio: React.FC = () => {
     }
   }, [selectedElement, handleUpdateElement]);
 
-  // Save template
+  // Save template (saves both front and back)
   const handleSave = async () => {
     if (!user) {
       toast({ title: 'Please log in to save', variant: 'destructive' });
@@ -145,10 +194,13 @@ const IDCardDesignStudio: React.FC = () => {
       const templateData = {
         name: templateName,
         description: templateDescription,
-        elements: JSON.parse(JSON.stringify(elements)),
-        background: JSON.parse(JSON.stringify(background)),
+        elements: JSON.parse(JSON.stringify(frontData.elements)),
+        background: JSON.parse(JSON.stringify(frontData.background)),
         card_dimensions: JSON.parse(JSON.stringify(dimensions)),
-        canvas_config: {},
+        canvas_config: {
+          back_elements: JSON.parse(JSON.stringify(backData.elements)),
+          back_background: JSON.parse(JSON.stringify(backData.background)),
+        },
         is_published: false,
         is_public: false,
         created_by: user.id,
@@ -181,7 +233,6 @@ const IDCardDesignStudio: React.FC = () => {
       setIsSaving(false);
     }
   };
-
   // Publish template
   const handlePublish = async () => {
     if (!user || !currentTemplateId) {
@@ -217,13 +268,25 @@ const IDCardDesignStudio: React.FC = () => {
 
   // Use template from gallery
   const handleUseTemplate = (template: DesignTemplate) => {
-    setElements(template.elements || []);
-    setBackground(template.background || { type: 'color', value: '#ffffff' });
+    // Load front side data
+    setFrontData({
+      elements: template.elements || [],
+      background: template.background || { type: 'color', value: '#ffffff' },
+    });
+    
+    // Load back side data from canvas_config if available
+    const canvasConfig = template.canvas_config as { back_elements?: CanvasElement[]; back_background?: CanvasBackground } | null;
+    setBackData({
+      elements: canvasConfig?.back_elements || [],
+      background: canvasConfig?.back_background || { type: 'color', value: '#f8fafc' },
+    });
+    
     setDimensions(template.card_dimensions || DEFAULT_CARD_DIMENSIONS);
     setTemplateName(`${template.name} (Copy)`);
     setTemplateDescription(template.description || '');
     setCurrentTemplateId(null); // This is a new copy
     setActiveTab('elements');
+    setActiveSide('front');
     toast({ title: 'Template loaded!', description: 'Customize it as you like.' });
   };
 
@@ -301,7 +364,7 @@ const IDCardDesignStudio: React.FC = () => {
               <BackgroundSettings
                 background={background}
                 dimensions={dimensions}
-                onUpdateBackground={setBackground}
+                onUpdateBackground={handleUpdateBackground}
                 onUpdateDimensions={setDimensions}
               />
             </TabsContent>
@@ -313,17 +376,51 @@ const IDCardDesignStudio: React.FC = () => {
         </aside>
 
         {/* Canvas Area */}
-        <main className="flex-1 overflow-auto">
-          <DesignCanvas
-            elements={elements}
-            background={background}
-            dimensions={dimensions}
-            selectedElementId={selectedElementId}
-            onSelectElement={setSelectedElementId}
-            onUpdateElement={handleUpdateElement}
-            previewData={previewData}
-            scale={scale}
-          />
+        <main className="flex-1 overflow-auto flex flex-col">
+          {/* Side Toggle */}
+          <div className="flex items-center justify-center gap-2 py-3 border-b bg-muted/30">
+            <span className="text-xs text-muted-foreground mr-2">Editing:</span>
+            <div className="flex items-center gap-1 bg-background rounded-lg p-1 border">
+              <Button
+                variant={activeSide === 'front' ? 'default' : 'ghost'}
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => handleSideChange('front')}
+              >
+                Front
+              </Button>
+              <Button
+                variant={activeSide === 'back' ? 'default' : 'ghost'}
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => handleSideChange('back')}
+              >
+                Back
+              </Button>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 ml-2"
+              onClick={() => handleSideChange(activeSide === 'front' ? 'back' : 'front')}
+              title="Flip card"
+            >
+              <FlipHorizontal className="w-4 h-4" />
+            </Button>
+          </div>
+          
+          <div className="flex-1 overflow-auto">
+            <DesignCanvas
+              elements={elements}
+              background={background}
+              dimensions={dimensions}
+              selectedElementId={selectedElementId}
+              onSelectElement={setSelectedElementId}
+              onUpdateElement={handleUpdateElement}
+              previewData={previewData}
+              scale={scale}
+            />
+          </div>
         </main>
 
         {/* Right Sidebar - Properties */}
