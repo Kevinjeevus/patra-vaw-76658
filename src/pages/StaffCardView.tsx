@@ -8,6 +8,34 @@ import { CorporateIDCard } from '@/components/card/CorporateIDCard';
 import { updateOGMetaTags } from '@/lib/og-utils';
 import { motion, AnimatePresence, useScroll, useTransform, useMotionValueEvent } from 'framer-motion';
 
+// Dynamic manifest for PWA installation
+function createDynamicManifest(staffData: StaffData, themeColor: string): string {
+    const manifest = {
+        name: `${staffData.fullName} | ${staffData.companyName}`,
+        short_name: staffData.fullName.split(' ')[0] || 'ID Card',
+        description: `${staffData.jobTitle} at ${staffData.companyName}`,
+        start_url: `/${staffData.companyVanity}/${staffData.staffId}`,
+        scope: `/${staffData.companyVanity}/${staffData.staffId}`,
+        display: 'standalone',
+        background_color: themeColor,
+        theme_color: themeColor,
+        icons: [
+            {
+                src: staffData.avatar_url || '/android-chrome-192x192.png',
+                sizes: '192x192',
+                type: 'image/png',
+                purpose: 'any maskable'
+            },
+            {
+                src: staffData.companyLogo || '/android-chrome-512x512.png',
+                sizes: '512x512',
+                type: 'image/png'
+            }
+        ]
+    };
+    return JSON.stringify(manifest);
+}
+
 interface SocialLinks {
     linkedin?: string;
     twitter?: string;
@@ -86,7 +114,51 @@ export const StaffCardView: React.FC = () => {
         setScrollProgress(Math.min(latest / 300, 1));
     });
 
-    // PWA install prompt capture
+    // Dynamic manifest injection for staff-specific PWA
+    useEffect(() => {
+        if (!staffData) return;
+
+        const themeColor = staffData.themeColor || '#8B1538';
+        const manifestContent = createDynamicManifest(staffData, themeColor);
+        const blob = new Blob([manifestContent], { type: 'application/json' });
+        const manifestUrl = URL.createObjectURL(blob);
+
+        // Remove existing manifest link if any
+        const existingManifest = document.querySelector('link[rel="manifest"]');
+        if (existingManifest) {
+            existingManifest.remove();
+        }
+
+        // Create and inject new dynamic manifest
+        const link = document.createElement('link');
+        link.rel = 'manifest';
+        link.href = manifestUrl;
+        document.head.appendChild(link);
+
+        // Update theme-color meta tag
+        let themeMetaTag = document.querySelector('meta[name="theme-color"]');
+        if (!themeMetaTag) {
+            themeMetaTag = document.createElement('meta');
+            themeMetaTag.setAttribute('name', 'theme-color');
+            document.head.appendChild(themeMetaTag);
+        }
+        themeMetaTag.setAttribute('content', themeColor);
+
+        // Update apple-mobile-web-app-title
+        let appleTitleTag = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+        if (!appleTitleTag) {
+            appleTitleTag = document.createElement('meta');
+            appleTitleTag.setAttribute('name', 'apple-mobile-web-app-title');
+            document.head.appendChild(appleTitleTag);
+        }
+        appleTitleTag.setAttribute('content', staffData.fullName);
+
+        return () => {
+            URL.revokeObjectURL(manifestUrl);
+        };
+    }, [staffData]);
+
+    // PWA install prompt capture - must be captured before staffData loads
     useEffect(() => {
         const handleBeforeInstall = (e: Event) => {
             e.preventDefault();
