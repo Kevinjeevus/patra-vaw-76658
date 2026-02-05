@@ -96,16 +96,17 @@ export const StaffCardView: React.FC = () => {
     
     const { scrollY } = useScroll();
     
-    // Scroll-based animations - card smoothly shrinks and moves up as user scrolls
-    // Phase 1 (0-200px): Card starts scaling down and moving up
-    // Phase 2 (200-400px): Card continues shrinking more and moves higher
-    const cardScale = useTransform(scrollY, [0, 150, 350], [1, 0.75, 0.55]);
-    const cardY = useTransform(scrollY, [0, 150, 350], [0, -60, -140]);
-    const cardOpacity = useTransform(scrollY, [300, 400], [1, 0.6]);
+    // Scroll-based animations with "sticky" pause point
+    // Phase 1 (0-150px): Card scales down to 65% and moves up slightly - then PAUSES
+    // Phase 2 (150-300px): Card stays at same position (sticky point)
+    // Phase 3 (300-500px): Card continues shrinking and moves up more
+    const cardScale = useTransform(scrollY, [0, 150, 300, 500], [1, 0.65, 0.65, 0.45]);
+    const cardY = useTransform(scrollY, [0, 150, 300, 500], [0, -40, -40, -180]);
+    const cardOpacity = useTransform(scrollY, [400, 550], [1, 0.5]);
     
-    // Bottom sheet slides up from bottom with iOS-style smooth reveal
-    const sheetY = useTransform(scrollY, [80, 280], ['100%', '0%']);
-    const sheetOpacity = useTransform(scrollY, [80, 200], [0, 1]);
+    // Bottom sheet appears during sticky point and slides up smoothly
+    const sheetY = useTransform(scrollY, [100, 300], ['100%', '0%']);
+    const sheetOpacity = useTransform(scrollY, [100, 250], [0, 1]);
     
     // Track scroll progress for UI hints
     const [scrollProgress, setScrollProgress] = useState(0);
