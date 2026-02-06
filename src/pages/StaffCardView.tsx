@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Loader2, Share2, Building2, Globe, BadgeCheck, Download, ChevronUp } from 'lucide-react';
 import { FaLinkedin, FaTwitter, FaInstagram, FaFacebook, FaYoutube } from 'react-icons/fa';
 import { CorporateIDCard } from '@/components/card/CorporateIDCard';
+import { StudioXCardRenderer } from '@/components/card/StudioXCardRenderer';
+import { DesignTemplate, CanvasElement, CanvasBackground, CardDimensions } from '@/types/design-studio';
 import { updateOGMetaTags } from '@/lib/og-utils';
 import { motion, AnimatePresence, useScroll, useTransform, useMotionValueEvent } from 'framer-motion';
 
@@ -93,6 +95,7 @@ export const StaffCardView: React.FC = () => {
     // Removed activeTab - now showing combined profile/company info
     const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
     const [canInstall, setCanInstall] = useState(false);
+    const [studioXTemplate, setStudioXTemplate] = useState<DesignTemplate | null>(null);
     
     const { scrollY } = useScroll();
     
@@ -227,6 +230,36 @@ export const StaffCardView: React.FC = () => {
 
                 const submittedData = employee.data_submitted as any;
                 const displayParams = companyProfile.display_parameters as any;
+
+                // Fetch Studio X template if configured
+                const studioXTemplateId = displayParams?.studioXTemplateId;
+                if (studioXTemplateId) {
+                    const { data: templateData } = await supabase
+                        .from('custom_id_templates')
+                        .select('*')
+                        .eq('id', studioXTemplateId)
+                        .single();
+                    
+                    if (templateData) {
+                        const mappedTemplate: DesignTemplate = {
+                            id: templateData.id,
+                            created_by: templateData.created_by,
+                            name: templateData.name,
+                            description: templateData.description,
+                            thumbnail_url: templateData.thumbnail_url,
+                            canvas_config: templateData.canvas_config,
+                            elements: (templateData.elements as unknown as CanvasElement[]) || [],
+                            background: (templateData.background as unknown as CanvasBackground) || { type: 'color', value: '#ffffff' },
+                            card_dimensions: (templateData.card_dimensions as unknown as CardDimensions) || { width: 340, height: 214, orientation: 'horizontal' },
+                            is_published: templateData.is_published || false,
+                            is_public: templateData.is_public || false,
+                            use_count: templateData.use_count || 0,
+                            created_at: templateData.created_at,
+                            updated_at: templateData.updated_at,
+                        };
+                        setStudioXTemplate(mappedTemplate);
+                    }
+                }
 
                 setStaffData({
                     fullName: submittedData?.display_name || 'Employee',
@@ -421,23 +454,43 @@ export const StaffCardView: React.FC = () => {
                     }}
                     className="relative pointer-events-auto"
                 >
-                    <CorporateIDCard
-                        user={{
-                            fullName: staffData.fullName,
-                            jobTitle: staffData.jobTitle,
-                            email: staffData.email,
-                            phone: staffData.phone,
-                            avatarUrl: staffData.avatar_url,
-                            companyName: staffData.companyName,
-                            staffId: staffData.staffId,
-                            companyVanity: staffData.companyVanity,
-                        }}
-                        companyLogo={staffData.companyLogo}
-                        displayParameters={staffData.displayParameters}
-                        isFlipped={flipped}
-                        onFlip={() => setFlipped(!flipped)}
-                        scale={1}
-                    />
+                    {studioXTemplate ? (
+                        <div onClick={() => setFlipped(!flipped)} className="cursor-pointer">
+                            <StudioXCardRenderer
+                                template={studioXTemplate}
+                                userData={{
+                                    company_logo_url: staffData.companyLogo,
+                                    avatar_url: staffData.avatar_url,
+                                    display_name: staffData.fullName,
+                                    job_title: staffData.jobTitle,
+                                    employee_display_id: staffData.staffId,
+                                    department: '',
+                                    email: staffData.email,
+                                    phone: staffData.phone,
+                                    vanity_url: `${window.location.origin}/${staffData.companyVanity}/${staffData.staffId}`,
+                                }}
+                                scale={1}
+                            />
+                        </div>
+                    ) : (
+                        <CorporateIDCard
+                            user={{
+                                fullName: staffData.fullName,
+                                jobTitle: staffData.jobTitle,
+                                email: staffData.email,
+                                phone: staffData.phone,
+                                avatarUrl: staffData.avatar_url,
+                                companyName: staffData.companyName,
+                                staffId: staffData.staffId,
+                                companyVanity: staffData.companyVanity,
+                            }}
+                            companyLogo={staffData.companyLogo}
+                            displayParameters={staffData.displayParameters}
+                            isFlipped={flipped}
+                            onFlip={() => setFlipped(!flipped)}
+                            scale={1}
+                        />
+                    )}
                 </motion.div>
 
                 {/* Tap to flip hint - fades out on scroll */}
