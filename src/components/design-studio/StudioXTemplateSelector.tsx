@@ -6,9 +6,54 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { DesignTemplate, CanvasElement, CanvasBackground, CardDimensions } from '@/types/design-studio';
 import { supabase } from '@/integrations/supabase/client';
-import { Sparkles, Eye, Check, Layout } from 'lucide-react';
+import { Sparkles, Eye, Check, Layout, FlipHorizontal } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import QRCode from 'react-qr-code';
+
+// Default back side elements when template doesn't have back configured
+const getDefaultBackElements = (dimensions: CardDimensions): CanvasElement[] => [
+  {
+    id: 'default-back-logo',
+    type: 'company_logo',
+    label: 'Company Logo',
+    dataField: 'company_logo_url',
+    x: dimensions.width / 2 - 30,
+    y: 20,
+    width: 60,
+    height: 60,
+    zIndex: 1,
+    visible: true,
+    style: { borderRadius: 8 },
+  },
+  {
+    id: 'default-back-qr',
+    type: 'qr_code',
+    label: 'QR Code',
+    dataField: 'vanity_url',
+    x: dimensions.width / 2 - 50,
+    y: 90,
+    width: 100,
+    height: 100,
+    zIndex: 2,
+    visible: true,
+    style: { backgroundColor: '#ffffff', borderRadius: 8, padding: 8 },
+  },
+  {
+    id: 'default-back-brand',
+    type: 'custom_text',
+    label: 'Patra',
+    content: 'Patra',
+    x: dimensions.width / 2 - 30,
+    y: dimensions.height - 30,
+    width: 60,
+    height: 20,
+    zIndex: 3,
+    visible: true,
+    style: { fontSize: 12, fontWeight: 'semibold', color: '#6366f1', textAlign: 'center' },
+  },
+];
+
+const defaultBackBackground: CanvasBackground = { type: 'color', value: '#f8fafc' };
 
 interface StudioXTemplateSelectorProps {
   selectedTemplateId: string | null;
@@ -33,19 +78,30 @@ const TemplatePreview: React.FC<{
   dimensions: CardDimensions;
   previewData: Record<string, any>;
   scale?: number;
-}> = ({ elements, background, dimensions, previewData, scale = 0.4 }) => {
+  showBack?: boolean;
+  backElements?: CanvasElement[];
+  backBackground?: CanvasBackground;
+}> = ({ elements, background, dimensions, previewData, scale = 0.4, showBack = false, backElements, backBackground }) => {
+  
+  // Use back side data if showing back, with defaults if not configured
+  const displayElements = showBack 
+    ? (backElements && backElements.length > 0 ? backElements : getDefaultBackElements(dimensions))
+    : elements;
+  const displayBackground = showBack 
+    ? (backBackground || defaultBackBackground)
+    : background;
   
   const getBackgroundStyle = (): React.CSSProperties => {
-    switch (background.type) {
+    switch (displayBackground.type) {
       case 'color':
-        return { backgroundColor: background.value };
+        return { backgroundColor: displayBackground.value };
       case 'gradient':
         return {
-          background: `linear-gradient(${background.gradientDirection || '135deg'}, ${background.value}, ${background.secondaryValue || background.value})`,
+          background: `linear-gradient(${displayBackground.gradientDirection || '135deg'}, ${displayBackground.value}, ${displayBackground.secondaryValue || displayBackground.value})`,
         };
       case 'image':
         return {
-          backgroundImage: `url(${background.value})`,
+          backgroundImage: `url(${displayBackground.value})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         };
@@ -120,7 +176,7 @@ const TemplatePreview: React.FC<{
     );
   };
 
-  const sortedElements = [...elements].filter(el => el.visible !== false).sort((a, b) => a.zIndex - b.zIndex);
+  const sortedElements = [...displayElements].filter(el => el.visible !== false).sort((a, b) => a.zIndex - b.zIndex);
 
   return (
     <div
@@ -157,6 +213,16 @@ export const StudioXTemplateSelector: React.FC<StudioXTemplateSelectorProps> = (
   const [templates, setTemplates] = useState<DesignTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [previewTemplate, setPreviewTemplate] = useState<DesignTemplate | null>(null);
+  const [showBackSide, setShowBackSide] = useState(false);
+
+  // Helper to extract back side data from canvas_config
+  const getBackSideData = (template: DesignTemplate) => {
+    const config = template.canvas_config || {};
+    return {
+      elements: config.backElements as CanvasElement[] || [],
+      background: config.backBackground as CanvasBackground || null,
+    };
+  };
 
   // Sample preview data merged with provided data
   const sampleData = {
@@ -343,7 +409,12 @@ export const StudioXTemplateSelector: React.FC<StudioXTemplateSelectorProps> = (
       </CardContent>
 
       {/* Preview Modal */}
-      <Dialog open={!!previewTemplate} onOpenChange={() => setPreviewTemplate(null)}>
+      <Dialog open={!!previewTemplate} onOpenChange={(open) => { 
+        if (!open) {
+          setPreviewTemplate(null);
+          setShowBackSide(false);
+        }
+      }}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>{previewTemplate?.name}</DialogTitle>
@@ -354,6 +425,32 @@ export const StudioXTemplateSelector: React.FC<StudioXTemplateSelectorProps> = (
           
           {previewTemplate && (
             <div className="flex flex-col items-center py-4">
+              {/* Flip toggle */}
+              <div className="flex items-center gap-2 mb-4">
+                <Button
+                  variant={showBackSide ? 'outline' : 'default'}
+                  size="sm"
+                  onClick={() => setShowBackSide(false)}
+                >
+                  Front
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowBackSide(!showBackSide)}
+                  className="h-8 w-8"
+                >
+                  <FlipHorizontal className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={showBackSide ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setShowBackSide(true)}
+                >
+                  Back
+                </Button>
+              </div>
+
               {/* Large preview */}
               <TemplatePreview
                 elements={previewTemplate.elements}
@@ -361,6 +458,9 @@ export const StudioXTemplateSelector: React.FC<StudioXTemplateSelectorProps> = (
                 dimensions={previewTemplate.card_dimensions}
                 previewData={sampleData}
                 scale={0.9}
+                showBack={showBackSide}
+                backElements={getBackSideData(previewTemplate).elements}
+                backBackground={getBackSideData(previewTemplate).background}
               />
               
               <div className="flex items-center gap-2 mt-4 text-sm text-muted-foreground">
@@ -371,7 +471,7 @@ export const StudioXTemplateSelector: React.FC<StudioXTemplateSelectorProps> = (
           )}
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setPreviewTemplate(null)}>
+            <Button variant="outline" onClick={() => { setPreviewTemplate(null); setShowBackSide(false); }}>
               Cancel
             </Button>
             <Button onClick={() => previewTemplate && handleSelectTemplate(previewTemplate)}>
