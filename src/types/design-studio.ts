@@ -40,6 +40,7 @@ export interface CanvasElement {
   style: ElementStyle;
   content?: string; // For custom text
   dataField?: string; // Maps to actual data
+  qrContentType?: 'url' | 'employee_id'; // What data the QR code encodes
   locked?: boolean;
   visible?: boolean;
   zIndex: number;

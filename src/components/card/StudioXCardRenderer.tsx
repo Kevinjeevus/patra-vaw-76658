@@ -137,7 +137,12 @@ export const StudioXCardRenderer: React.FC<StudioXCardRendererProps> = ({
     }
 
     if (element.type === 'qr_code') {
-      const qrValue = (value as string) || 'https://patra.app';
+      let qrValue: string;
+      if (element.qrContentType === 'employee_id') {
+        qrValue = (userData.employee_display_id as string) || 'EMP-000';
+      } else {
+        qrValue = (userData.vanity_url as string) || 'https://patra.app';
+      }
       return (
         <div 
           className="w-full h-full flex items-center justify-center"

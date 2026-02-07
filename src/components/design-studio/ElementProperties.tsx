@@ -244,6 +244,27 @@ export const ElementProperties: React.FC<ElementPropertiesProps> = ({
                 Appearance
               </h4>
               <div className="space-y-2">
+            {element.type === 'qr_code' && (
+                  <div>
+                    <Label className="text-xs">QR Code Content</Label>
+                    <Select
+                      value={element.qrContentType || 'url'}
+                      onValueChange={(value: 'url' | 'employee_id') => onUpdate({ qrContentType: value })}
+                    >
+                      <SelectTrigger className="h-8 text-xs mt-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="url">Profile URL</SelectItem>
+                        <SelectItem value="employee_id">Employee ID</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      {element.qrContentType === 'employee_id' ? 'QR will encode the employee ID' : 'QR will encode the profile URL'}
+                    </p>
+                  </div>
+                )}
+
                 {(element.type === 'shape' || element.type === 'divider' || element.type === 'qr_code') && (
                   <div>
                     <Label className="text-xs">Background Color</Label>
