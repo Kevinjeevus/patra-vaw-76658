@@ -1,6 +1,57 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { DesignTemplate, CanvasElement, CanvasBackground, CardDimensions } from '@/types/design-studio';
 import QRCode from 'react-qr-code';
+
+// Default back side elements when template doesn't have back configured
+const getDefaultBackElements = (dimensions: CardDimensions): CanvasElement[] => [
+  {
+    id: 'default-back-logo',
+    type: 'company_logo',
+    label: 'Company Logo',
+    dataField: 'company_logo_url',
+    x: dimensions.width / 2 - 30,
+    y: 20,
+    width: 60,
+    height: 60,
+    zIndex: 1,
+    visible: true,
+    style: { borderRadius: 8 },
+  },
+  {
+    id: 'default-back-qr',
+    type: 'qr_code',
+    label: 'QR Code',
+    dataField: 'vanity_url',
+    x: dimensions.width / 2 - 50,
+    y: 90,
+    width: 100,
+    height: 100,
+    zIndex: 2,
+    visible: true,
+    style: { backgroundColor: '#ffffff', borderRadius: 8, padding: 8 },
+  },
+  {
+    id: 'default-back-brand',
+    type: 'custom_text',
+    label: 'Patra',
+    content: 'Patra',
+    x: dimensions.width / 2 - 30,
+    y: dimensions.height - 30,
+    width: 60,
+    height: 20,
+    zIndex: 3,
+    visible: true,
+    style: {
+      fontSize: 14,
+      fontWeight: 'bold',
+      color: '#1e293b',
+      textAlign: 'center',
+      fontFamily: 'serif',
+    },
+  },
+];
+
+const DEFAULT_BACK_BACKGROUND: CanvasBackground = { type: 'color', value: '#f8fafc' };
 
 interface StudioXCardRendererProps {
   template: DesignTemplate;
@@ -16,26 +67,46 @@ interface StudioXCardRendererProps {
     vanity_url?: string;
   };
   scale?: number;
+  isFlipped?: boolean;
+  onFlip?: () => void;
 }
 
 export const StudioXCardRenderer: React.FC<StudioXCardRendererProps> = ({
   template,
   userData,
   scale = 1,
+  isFlipped: controlledFlipped,
+  onFlip,
 }) => {
+  const [internalFlipped, setInternalFlipped] = useState(false);
+  const isFlipped = controlledFlipped !== undefined ? controlledFlipped : internalFlipped;
+
   const { elements, background, card_dimensions: dimensions } = template;
 
-  const getBackgroundStyle = (): React.CSSProperties => {
-    switch (background.type) {
+  // Extract back side data from canvas_config
+  const canvasConfig = template.canvas_config as any;
+  const backElements: CanvasElement[] = canvasConfig?.backElements || getDefaultBackElements(dimensions);
+  const backBackground: CanvasBackground = canvasConfig?.backBackground || DEFAULT_BACK_BACKGROUND;
+
+  const handleFlip = () => {
+    if (onFlip) {
+      onFlip();
+    } else {
+      setInternalFlipped(!internalFlipped);
+    }
+  };
+
+  const getBackgroundStyle = (bg: CanvasBackground): React.CSSProperties => {
+    switch (bg.type) {
       case 'color':
-        return { backgroundColor: background.value };
+        return { backgroundColor: bg.value };
       case 'gradient':
         return {
-          background: `linear-gradient(${background.gradientDirection || '135deg'}, ${background.value}, ${background.secondaryValue || background.value})`,
+          background: `linear-gradient(${bg.gradientDirection || '135deg'}, ${bg.value}, ${bg.secondaryValue || bg.value})`,
         };
       case 'image':
         return {
-          backgroundImage: `url(${background.value})`,
+          backgroundImage: `url(${bg.value})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         };
@@ -128,33 +199,88 @@ export const StudioXCardRenderer: React.FC<StudioXCardRendererProps> = ({
     );
   };
 
-  const sortedElements = [...elements]
-    .filter(el => el.visible !== false)
-    .sort((a, b) => a.zIndex - b.zIndex);
+  const renderSide = (sideElements: CanvasElement[], bg: CanvasBackground) => {
+    const sorted = [...sideElements]
+      .filter(el => el.visible !== false)
+      .sort((a, b) => a.zIndex - b.zIndex);
+
+    return (
+      <div
+        className="absolute inset-0 rounded-xl overflow-hidden"
+        style={getBackgroundStyle(bg)}
+      >
+        {sorted.map((element) => (
+          <div
+            key={element.id}
+            className="absolute"
+            style={{
+              left: element.x * scale,
+              top: element.y * scale,
+              width: element.width * scale,
+              height: element.height * scale,
+            }}
+          >
+            {renderElement(element)}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const width = dimensions.width * scale;
+  const height = dimensions.height * scale;
 
   return (
     <div
-      className="relative rounded-xl overflow-hidden shadow-lg"
+      className="perspective-card-sx"
+      onClick={handleFlip}
       style={{
-        width: dimensions.width * scale,
-        height: dimensions.height * scale,
-        ...getBackgroundStyle(),
+        width,
+        height,
+        cursor: 'pointer',
       }}
     >
-      {sortedElements.map((element) => (
-        <div
-          key={element.id}
-          className="absolute"
-          style={{
-            left: element.x * scale,
-            top: element.y * scale,
-            width: element.width * scale,
-            height: element.height * scale,
-          }}
-        >
-          {renderElement(element)}
+      <div
+        className={`card-container-sx ${isFlipped ? 'flipped-sx' : ''}`}
+        style={{ width: '100%', height: '100%' }}
+      >
+        {/* Front */}
+        <div className="card-face-sx card-front-sx shadow-lg">
+          {renderSide(elements, background)}
         </div>
-      ))}
+
+        {/* Back */}
+        <div className="card-face-sx card-back-sx shadow-lg">
+          {renderSide(backElements, backBackground)}
+        </div>
+      </div>
+
+      <style>{`
+        .perspective-card-sx {
+          perspective: 2000px;
+        }
+        .card-container-sx {
+          position: relative;
+          transition: transform 0.7s ease;
+          transform-style: preserve-3d;
+        }
+        .card-face-sx {
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          backface-visibility: hidden;
+          border-radius: 12px;
+        }
+        .card-front-sx {
+          transform: rotateY(0deg);
+        }
+        .card-back-sx {
+          transform: rotateY(180deg);
+        }
+        .card-container-sx.flipped-sx {
+          transform: rotateY(180deg);
+        }
+      `}</style>
     </div>
   );
 };

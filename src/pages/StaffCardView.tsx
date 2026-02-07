@@ -455,23 +455,23 @@ export const StaffCardView: React.FC = () => {
                     className="relative pointer-events-auto"
                 >
                     {studioXTemplate ? (
-                        <div onClick={() => setFlipped(!flipped)} className="cursor-pointer">
-                            <StudioXCardRenderer
-                                template={studioXTemplate}
-                                userData={{
-                                    company_logo_url: staffData.companyLogo,
-                                    avatar_url: staffData.avatar_url,
-                                    display_name: staffData.fullName,
-                                    job_title: staffData.jobTitle,
-                                    employee_display_id: staffData.staffId,
-                                    department: '',
-                                    email: staffData.email,
-                                    phone: staffData.phone,
-                                    vanity_url: `${window.location.origin}/${staffData.companyVanity}/${staffData.staffId}`,
-                                }}
-                                scale={1}
-                            />
-                        </div>
+                        <StudioXCardRenderer
+                            template={studioXTemplate}
+                            userData={{
+                                company_logo_url: staffData.companyLogo,
+                                avatar_url: staffData.avatar_url,
+                                display_name: staffData.fullName,
+                                job_title: staffData.jobTitle,
+                                employee_display_id: staffData.staffId,
+                                department: '',
+                                email: staffData.email,
+                                phone: staffData.phone,
+                                vanity_url: `${window.location.origin}/${staffData.companyVanity}/${staffData.staffId}`,
+                            }}
+                            scale={1.5}
+                            isFlipped={flipped}
+                            onFlip={() => setFlipped(!flipped)}
+                        />
                     ) : (
                         <CorporateIDCard
                             user={{
