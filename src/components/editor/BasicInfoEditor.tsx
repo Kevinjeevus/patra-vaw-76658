@@ -4,10 +4,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Upload, Check, Loader2, Camera, User as UserIcon, ArrowRightLeft } from 'lucide-react';
+import { Upload, Check, Loader2, Camera, User as UserIcon, ArrowRightLeft, Sparkles, ChevronDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { User } from '@supabase/supabase-js';
+import { AiAvatarGenerator } from './AiAvatarGenerator';
 
 interface BasicInfoEditorProps {
     cardData: CardData;
@@ -20,6 +21,7 @@ export const BasicInfoEditor: React.FC<BasicInfoEditorProps> = ({ cardData, setC
     const [urlAvailable, setUrlAvailable] = useState<boolean | null>(null);
     const [checkingUrl, setCheckingUrl] = useState(false);
     const [urlRestrictionReason, setUrlRestrictionReason] = useState<string | null>(null);
+    const [showAdvanced, setShowAdvanced] = useState(false);
 
     // Avatar State
     const [googleAvatarUrl, setGoogleAvatarUrl] = useState<string | null>(null);
@@ -237,6 +239,35 @@ export const BasicInfoEditor: React.FC<BasicInfoEditorProps> = ({ cardData, setC
                             </div>
                         )}
                     </div>
+
+                    {/* Advanced Options - AI Avatar */}
+                    {user && (
+                        <div className="w-full">
+                            <button
+                                onClick={() => setShowAdvanced(!showAdvanced)}
+                                className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors w-full justify-center"
+                            >
+                                <Sparkles className="w-4 h-4" />
+                                <span>Advanced: AI Profile Image</span>
+                                <ChevronDown className={`w-4 h-4 transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
+                            </button>
+
+                            {showAdvanced && (
+                                <div className="mt-4 p-4 border border-border rounded-lg bg-card animate-fade-in">
+                                    <AiAvatarGenerator
+                                        userId={user.id}
+                                        currentName={cardData.fullName}
+                                        onImageGenerated={(imageUrl) => {
+                                            setCardData({ ...cardData, avatarUrl: imageUrl });
+                                            setCustomAvatarUrl(imageUrl);
+                                            // Save to user metadata
+                                            supabase.auth.updateUser({ data: { custom_avatar_url: imageUrl } });
+                                        }}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
 
