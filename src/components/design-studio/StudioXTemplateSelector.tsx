@@ -82,15 +82,15 @@ const TemplatePreview: React.FC<{
   backElements?: CanvasElement[];
   backBackground?: CanvasBackground;
 }> = ({ elements, background, dimensions, previewData, scale = 0.4, showBack = false, backElements, backBackground }) => {
-  
+
   // Use back side data if showing back, with defaults if not configured
-  const displayElements = showBack 
+  const displayElements = showBack
     ? (backElements && backElements.length > 0 ? backElements : getDefaultBackElements(dimensions))
     : elements;
-  const displayBackground = showBack 
+  const displayBackground = showBack
     ? (backBackground || defaultBackBackground)
     : background;
-  
+
   const getBackgroundStyle = (): React.CSSProperties => {
     switch (displayBackground.type) {
       case 'color':
@@ -115,14 +115,14 @@ const TemplatePreview: React.FC<{
 
     if (element.type === 'company_logo' || element.type === 'profile_photo') {
       return value ? (
-        <img 
-          src={value} 
+        <img
+          src={value}
           alt={element.label}
           className="w-full h-full object-cover"
           style={{ borderRadius: element.style.borderRadius }}
         />
       ) : (
-        <div 
+        <div
           className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground"
           style={{ borderRadius: element.style.borderRadius, fontSize: 8 * scale }}
         >
@@ -133,7 +133,7 @@ const TemplatePreview: React.FC<{
 
     if (element.type === 'qr_code') {
       return (
-        <div 
+        <div
           className="w-full h-full flex items-center justify-center bg-white"
           style={{ borderRadius: element.style.borderRadius, padding: 2 }}
         >
@@ -144,7 +144,7 @@ const TemplatePreview: React.FC<{
 
     if (element.type === 'shape') {
       return (
-        <div 
+        <div
           className="w-full h-full"
           style={{
             backgroundColor: element.style.backgroundColor,
@@ -208,7 +208,7 @@ const TemplatePreview: React.FC<{
 export const StudioXTemplateSelector: React.FC<StudioXTemplateSelectorProps> = ({
   selectedTemplateId,
   onSelectTemplate,
-  previewData = {},
+  previewData = {} as StudioXTemplateSelectorProps['previewData'],
 }) => {
   const [templates, setTemplates] = useState<DesignTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -287,8 +287,79 @@ export const StudioXTemplateSelector: React.FC<StudioXTemplateSelectorProps> = (
       console.error('Error updating use count:', error);
     }
 
-    onSelectTemplate(template);
+    // Check if template has back side elements
+    const canvasConfig = template.canvas_config as { back_elements?: CanvasElement[]; back_background?: CanvasBackground } | null;
+    const backElements = canvasConfig?.back_elements || [];
+
+    // If no back side elements, add default elements (logo, QR, patra)
+    if (backElements.length === 0) {
+      const defaultBackElements: CanvasElement[] = [
+        {
+          id: 'default-logo',
+          type: 'company_logo',
+          label: 'Company Logo',
+          x: 20,
+          y: 20,
+          width: 60,
+          height: 60,
+          style: { borderRadius: 8 },
+          dataField: 'company_logo_url',
+          zIndex: 1,
+          visible: true,
+          locked: false,
+        },
+        {
+          id: 'default-qr',
+          type: 'qr_code',
+          label: 'QR Code',
+          x: 135,
+          y: 72,
+          width: 70,
+          height: 70,
+          style: { backgroundColor: '#ffffff', padding: 4 },
+          dataField: 'vanity_url',
+          zIndex: 2,
+          visible: true,
+          locked: false,
+        },
+        {
+          id: 'default-patra',
+          type: 'custom_text',
+          label: 'Patra',
+          x: 120,
+          y: 160,
+          width: 100,
+          height: 24,
+          style: {
+            fontSize: 16,
+            fontWeight: 'semibold',
+            color: '#1e293b',
+            textAlign: 'center',
+          },
+          content: 'patra',
+          zIndex: 3,
+          visible: true,
+          locked: false,
+        },
+      ];
+
+      // Create enhanced template with default back elements
+      const enhancedTemplate: DesignTemplate = {
+        ...template,
+        canvas_config: {
+          ...canvasConfig,
+          back_elements: defaultBackElements,
+          back_background: canvasConfig?.back_background || { type: 'color', value: '#f8fafc' },
+        },
+      };
+
+      onSelectTemplate(enhancedTemplate);
+    } else {
+      onSelectTemplate(template);
+    }
+
     setPreviewTemplate(null);
+    setPreviewSide('front');
     toast({ title: 'Template applied!', description: `"${template.name}" is now active for staff cards.` });
   };
 
@@ -358,11 +429,10 @@ export const StudioXTemplateSelector: React.FC<StudioXTemplateSelectorProps> = (
               {templates.map((template) => (
                 <div
                   key={template.id}
-                  className={`relative group cursor-pointer rounded-xl overflow-hidden border-2 transition-all hover:ring-2 hover:ring-primary ${
-                    selectedTemplateId === template.id 
-                      ? 'border-primary ring-2 ring-primary' 
-                      : 'border-muted hover:border-primary/50'
-                  }`}
+                  className={`relative group cursor-pointer rounded-xl overflow-hidden border-2 transition-all hover:ring-2 hover:ring-primary ${selectedTemplateId === template.id
+                    ? 'border-primary ring-2 ring-primary'
+                    : 'border-muted hover:border-primary/50'
+                    }`}
                   onClick={() => setPreviewTemplate(template)}
                 >
                   {/* Template preview */}
@@ -375,7 +445,7 @@ export const StudioXTemplateSelector: React.FC<StudioXTemplateSelectorProps> = (
                       scale={0.35}
                     />
                   </div>
-                  
+
                   {/* Template info */}
                   <div className="p-3 bg-card">
                     <h4 className="font-medium text-sm truncate">{template.name}</h4>
@@ -409,7 +479,7 @@ export const StudioXTemplateSelector: React.FC<StudioXTemplateSelectorProps> = (
       </CardContent>
 
       {/* Preview Modal */}
-      <Dialog open={!!previewTemplate} onOpenChange={(open) => { 
+      <Dialog open={!!previewTemplate} onOpenChange={(open) => {
         if (!open) {
           setPreviewTemplate(null);
           setShowBackSide(false);
@@ -422,7 +492,7 @@ export const StudioXTemplateSelector: React.FC<StudioXTemplateSelectorProps> = (
               {previewTemplate?.description || 'Preview this template before applying it to staff cards.'}
             </DialogDescription>
           </DialogHeader>
-          
+
           {previewTemplate && (
             <div className="flex flex-col items-center py-4">
               {/* Flip toggle */}
@@ -462,24 +532,24 @@ export const StudioXTemplateSelector: React.FC<StudioXTemplateSelectorProps> = (
                 backElements={getBackSideData(previewTemplate).elements}
                 backBackground={getBackSideData(previewTemplate).background}
               />
-              
+
               <div className="flex items-center gap-2 mt-4 text-sm text-muted-foreground">
                 <Eye className="w-4 h-4" />
                 <span>Used {previewTemplate.use_count || 0} times</span>
               </div>
-            </div>
-          )}
+              );
+          })()}
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setPreviewTemplate(null); setShowBackSide(false); }}>
-              Cancel
-            </Button>
-            <Button onClick={() => previewTemplate && handleSelectTemplate(previewTemplate)}>
-              <Check className="w-4 h-4 mr-2" />
-              Apply Template
-            </Button>
-          </DialogFooter>
-        </DialogContent>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => { setPreviewTemplate(null); setShowBackSide(false); }}>
+                  Cancel
+                </Button>
+                <Button onClick={() => previewTemplate && handleSelectTemplate(previewTemplate)}>
+                  <Check className="w-4 h-4 mr-2" />
+                  Apply Template
+                </Button>
+              </DialogFooter>
+            </DialogContent>
       </Dialog>
     </Card>
   );
