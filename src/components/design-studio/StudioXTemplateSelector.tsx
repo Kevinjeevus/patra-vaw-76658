@@ -287,79 +287,8 @@ export const StudioXTemplateSelector: React.FC<StudioXTemplateSelectorProps> = (
       console.error('Error updating use count:', error);
     }
 
-    // Check if template has back side elements
-    const canvasConfig = template.canvas_config as { back_elements?: CanvasElement[]; back_background?: CanvasBackground } | null;
-    const backElements = canvasConfig?.back_elements || [];
-
-    // If no back side elements, add default elements (logo, QR, patra)
-    if (backElements.length === 0) {
-      const defaultBackElements: CanvasElement[] = [
-        {
-          id: 'default-logo',
-          type: 'company_logo',
-          label: 'Company Logo',
-          x: 20,
-          y: 20,
-          width: 60,
-          height: 60,
-          style: { borderRadius: 8 },
-          dataField: 'company_logo_url',
-          zIndex: 1,
-          visible: true,
-          locked: false,
-        },
-        {
-          id: 'default-qr',
-          type: 'qr_code',
-          label: 'QR Code',
-          x: 135,
-          y: 72,
-          width: 70,
-          height: 70,
-          style: { backgroundColor: '#ffffff', padding: 4 },
-          dataField: 'vanity_url',
-          zIndex: 2,
-          visible: true,
-          locked: false,
-        },
-        {
-          id: 'default-patra',
-          type: 'custom_text',
-          label: 'Patra',
-          x: 120,
-          y: 160,
-          width: 100,
-          height: 24,
-          style: {
-            fontSize: 16,
-            fontWeight: 'semibold',
-            color: '#1e293b',
-            textAlign: 'center',
-          },
-          content: 'patra',
-          zIndex: 3,
-          visible: true,
-          locked: false,
-        },
-      ];
-
-      // Create enhanced template with default back elements
-      const enhancedTemplate: DesignTemplate = {
-        ...template,
-        canvas_config: {
-          ...canvasConfig,
-          back_elements: defaultBackElements,
-          back_background: canvasConfig?.back_background || { type: 'color', value: '#f8fafc' },
-        },
-      };
-
-      onSelectTemplate(enhancedTemplate);
-    } else {
-      onSelectTemplate(template);
-    }
-
+    onSelectTemplate(template);
     setPreviewTemplate(null);
-    setPreviewSide('front');
     toast({ title: 'Template applied!', description: `"${template.name}" is now active for staff cards.` });
   };
 
@@ -430,8 +359,8 @@ export const StudioXTemplateSelector: React.FC<StudioXTemplateSelectorProps> = (
                 <div
                   key={template.id}
                   className={`relative group cursor-pointer rounded-xl overflow-hidden border-2 transition-all hover:ring-2 hover:ring-primary ${selectedTemplateId === template.id
-                    ? 'border-primary ring-2 ring-primary'
-                    : 'border-muted hover:border-primary/50'
+                      ? 'border-primary ring-2 ring-primary'
+                      : 'border-muted hover:border-primary/50'
                     }`}
                   onClick={() => setPreviewTemplate(template)}
                 >
@@ -450,10 +379,10 @@ export const StudioXTemplateSelector: React.FC<StudioXTemplateSelectorProps> = (
                   <div className="p-3 bg-card">
                     <h4 className="font-medium text-sm truncate">{template.name}</h4>
                     <div className="flex items-center gap-2 mt-1">
-                      <Badge variant="secondary" className="text-[10px]">
-                        <Eye className="w-2.5 h-2.5 mr-1" />
-                        {template.use_count || 0}
-                      </Badge>
+                      <div className="flex items-center gap-1 px-2 py-0.5 bg-secondary text-secondary-foreground rounded-md text-[10px]">
+                        <Eye className="w-2.5 h-2.5" />
+                        <span>{template.use_count || 0}</span>
+                      </div>
                     </div>
                   </div>
 
@@ -537,19 +466,19 @@ export const StudioXTemplateSelector: React.FC<StudioXTemplateSelectorProps> = (
                 <Eye className="w-4 h-4" />
                 <span>Used {previewTemplate.use_count || 0} times</span>
               </div>
-              );
-          })()}
+            </div>
+          )}
 
-              <DialogFooter>
-                <Button variant="outline" onClick={() => { setPreviewTemplate(null); setShowBackSide(false); }}>
-                  Cancel
-                </Button>
-                <Button onClick={() => previewTemplate && handleSelectTemplate(previewTemplate)}>
-                  <Check className="w-4 h-4 mr-2" />
-                  Apply Template
-                </Button>
-              </DialogFooter>
-            </DialogContent>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setPreviewTemplate(null); setShowBackSide(false); }}>
+              Cancel
+            </Button>
+            <Button onClick={() => previewTemplate && handleSelectTemplate(previewTemplate)}>
+              <Check className="w-4 h-4 mr-2" />
+              Apply Template
+            </Button>
+          </DialogFooter>
+        </DialogContent>
       </Dialog>
     </Card>
   );
