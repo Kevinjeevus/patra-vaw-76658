@@ -13,7 +13,7 @@ import { toast } from '@/hooks/use-toast';
 import {
   Shield, Plus, Edit, Trash2, Eye, Send, Mail, Megaphone,
   TrendingUp, Users, CreditCard, Activity,
-  CheckCircle, Clock, XCircle, ExternalLink, ChevronDown
+  CheckCircle, Clock, XCircle, ExternalLink, ChevronDown, Layout, Palette
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
@@ -71,6 +71,8 @@ const Admin: React.FC = () => {
   const [feedback, setFeedback] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [templates, setTemplates] = useState<any[]>([]);
+  const [customTemplates, setCustomTemplates] = useState<any[]>([]);
+  const [approvals, setApprovals] = useState<any[]>([]);
   const [selectedDoc, setSelectedDoc] = useState<string>('');
   const [docContent, setDocContent] = useState<string>('');
 
@@ -148,6 +150,10 @@ const Admin: React.FC = () => {
       loadTemplates();
       loadBackgroundImages();
       loadExistingTags();
+    } else if (isAdmin && activeSection === 'studio-x') {
+      loadCustomTemplates();
+    } else if (isAdmin && activeSection === 'approvals') {
+      loadApprovals();
     } else if (isAdmin && activeSection === 'settings') {
       loadSystemSettings();
     }
@@ -307,6 +313,59 @@ const Admin: React.FC = () => {
       .select('*')
       .order('created_at', { ascending: false });
     if (data) setTemplates(data);
+  };
+
+  const loadCustomTemplates = async () => {
+    const { data } = await supabase
+      .from('custom_id_templates')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (data) setCustomTemplates(data);
+  };
+
+  const loadApprovals = async () => {
+    // Load unpublished templates as approvals for now
+    const { data } = await supabase
+      .from('custom_id_templates')
+      .select('*')
+      .eq('is_published', false) // Assuming unpublished templates are drafts/pending
+      .order('created_at', { ascending: false });
+    if (data) setApprovals(data);
+  };
+
+  const handleApproveTemplate = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('custom_id_templates')
+        .update({ is_published: true })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({ title: 'Approved', description: 'Template published successfully' });
+      loadApprovals();
+      loadCustomTemplates();
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to approve template', variant: 'destructive' });
+    }
+  };
+
+  const handleDeleteCustomTemplate = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this template?')) return;
+    try {
+      const { error } = await supabase
+        .from('custom_id_templates')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({ title: 'Deleted', description: 'Template deleted successfully' });
+      loadCustomTemplates();
+      loadApprovals();
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to delete template', variant: 'destructive' });
+    }
   };
 
   const loadBackgroundImages = async () => {
@@ -1080,13 +1139,116 @@ const Admin: React.FC = () => {
             </div>
           )}
 
+          {/* Approvals Section */}
+          {activeSection === 'approvals' && (
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-3xl font-bold">Approvals</h1>
+                <p className="text-muted-foreground">Verify and approve requested designs</p>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Pending Approvals</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {approvals.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <CheckCircle className="w-12 h-12 mx-auto mb-4 opacity-20" />
+                      <p>No pending approvals found.</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {approvals.map((item: any) => (
+                        <Card key={item.id} className="overflow-hidden">
+                          <div className="aspect-video bg-muted relative group">
+                            {item.thumbnail_url ? (
+                              <img src={item.thumbnail_url} alt={item.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-muted/50">
+                                <Palette className="w-8 h-8 text-muted-foreground opacity-50" />
+                              </div>
+                            )}
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <Button size="sm" variant="secondary" onClick={() => navigate('/design-studio', { state: { templateId: item.id, mode: 'preview' } })}>
+                                <Eye className="w-4 h-4 mr-2" /> Preview
+                              </Button>
+                            </div>
+                          </div>
+                          <CardHeader className="p-4">
+                            <CardTitle className="text-base truncate">{item.name}</CardTitle>
+                            <CardDescription className="text-xs">
+                              Created: {new Date(item.created_at).toLocaleDateString()}
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="p-4 pt-0 flex gap-2">
+                            <Button
+                              className="flex-1 bg-green-600 hover:bg-green-700 h-8 text-xs"
+                              onClick={() => handleApproveTemplate(item.id)}
+                            >
+                              <CheckCircle className="w-3 h-3 mr-1" /> Approve
+                            </Button>
+                            <Button
+                              className="flex-1 h-8 text-xs"
+                              variant="destructive"
+                              onClick={() => handleDeleteCustomTemplate(item.id)}
+                            >
+                              <XCircle className="w-3 h-3 mr-1" /> Reject
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
           {/* Templates Section */}
           {activeSection === 'templates' && (
             <div className="space-y-6">
               <div>
-                <h1 className="text-3xl font-bold">Background Templates</h1>
-                <p className="text-muted-foreground">Manage background images and templates</p>
+                <h1 className="text-3xl font-bold">Templates Management</h1>
+                <p className="text-muted-foreground">Manage card templates and background images</p>
               </div>
+
+              {/* Standard Templates List */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Standard Templates ({templates.length})</CardTitle>
+                  <CardDescription>Core system templates</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {templates.length === 0 ? (
+                    <div className="text-center py-4 text-muted-foreground">No standard templates found.</div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {templates.map((template: any) => (
+                        <Card key={template.id} className="overflow-hidden">
+                          <div className="bg-muted h-24 flex items-center justify-center">
+                            <Layout className="w-8 h-8 text-muted-foreground opacity-50" />
+                          </div>
+                          <CardHeader className="p-3">
+                            <CardTitle className="text-sm truncate" title={template.name}>{template.name}</CardTitle>
+                          </CardHeader>
+                          <CardContent className="p-3 pt-0">
+                            <div className="flex gap-2">
+                              <Button variant="outline" size="sm" className="flex-1 h-8 text-xs">Edit</Button>
+                              <Button variant="destructive" size="sm" className="flex-1 h-8 text-xs" onClick={() => {
+                                if (confirm('Delete template?')) {
+                                  /* Add delete logic if needed, currently no API endpoint in frontend for this specific table */
+                                  toast({ title: "Coming soon", description: "Delete functionality for core templates is restricted." });
+                                }
+                              }}>Delete</Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
               {/* Add New Background Image Form */}
               <Card>
@@ -1247,6 +1409,81 @@ const Admin: React.FC = () => {
                   </p>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* StudioX Section */}
+          {activeSection === 'studio-x' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-3xl font-bold">Studio X Design</h1>
+                  <p className="text-muted-foreground">Manage Studio X templates and designs</p>
+                </div>
+                <Button onClick={() => navigate('/design-studio')}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create New Design
+                </Button>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Published Designs ({customTemplates.length})</CardTitle>
+                  <CardDescription>Community designs and templates</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {customTemplates.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <Palette className="w-12 h-12 mx-auto mb-4 opacity-20" />
+                      <p>No designs found. Create one to get started.</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                      {customTemplates.map((template: any) => (
+                        <Card key={template.id} className="overflow-hidden group">
+                          <div className="aspect-video bg-muted relative">
+                            {template.thumbnail_url ? (
+                              <img src={template.thumbnail_url} alt={template.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-muted/50">
+                                <Palette className="w-8 h-8 text-muted-foreground opacity-50" />
+                              </div>
+                            )}
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                              <Button size="sm" variant="secondary" onClick={() => navigate('/design-studio', { state: { templateId: template.id, mode: 'preview' } })}>
+                                <Eye className="w-4 h-4 mr-2" /> Preview
+                              </Button>
+                            </div>
+                          </div>
+                          <CardHeader className="p-4">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <CardTitle className="text-sm truncate w-32" title={template.name}>{template.name}</CardTitle>
+                                <CardDescription className="text-xs">
+                                  Used: {template.use_count || 0}
+                                </CardDescription>
+                              </div>
+                              <Badge variant={template.is_published ? 'default' : 'secondary'} className="text-[10px]">
+                                {template.is_published ? 'Published' : 'Draft'}
+                              </Badge>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="p-4 pt-0">
+                            <div className="flex gap-2">
+                              <Button size="sm" variant="outline" className="flex-1 h-8 text-xs" onClick={() => navigate('/design-studio', { state: { templateId: template.id } })}>
+                                <Edit className="w-3 h-3 mr-1" /> Edit
+                              </Button>
+                              <Button size="sm" variant="destructive" className="flex-1 h-8 text-xs" onClick={() => handleDeleteCustomTemplate(template.id)}>
+                                <Trash2 className="w-3 h-3 mr-1" /> Delete
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </div>
           )}
 

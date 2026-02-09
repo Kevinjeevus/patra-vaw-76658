@@ -15,6 +15,8 @@ import {
   LogOut,
   Menu,
   X,
+  CheckCircle,
+  Layout,
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -32,7 +34,9 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeSection, onSec
     { id: 'announcements', label: 'Announcements', icon: Megaphone },
     { id: 'feedback', label: 'Feedback & Support', icon: MessageSquare },
     { id: 'users', label: 'Users', icon: Users },
-    { id: 'templates', label: 'Templates', icon: Palette },
+    { id: 'approvals', label: 'Approvals', icon: CheckCircle },
+    { id: 'templates', label: 'Templates', icon: Layout },
+    { id: 'studio-x', label: 'Studio X', icon: Palette },
     { id: 'docs', label: 'Documentation', icon: FileText },
     { id: 'settings', label: 'Settings', icon: Key },
   ];
@@ -51,14 +55,14 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeSection, onSec
 
       {/* Overlay for mobile */}
       {isMobile && isExpanded && (
-        <div 
+        <div
           className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40"
           onClick={() => setIsExpanded(false)}
         />
       )}
 
       {/* Sidebar */}
-      <aside 
+      <aside
         className={cn(
           "min-h-screen bg-card border-r border-border sticky top-0 transition-all duration-300 z-40",
           isMobile ? (
