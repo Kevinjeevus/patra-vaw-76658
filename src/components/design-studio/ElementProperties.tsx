@@ -7,6 +7,8 @@ import { Slider } from '@/components/ui/slider';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import { CanvasElement, FONT_FAMILIES } from '@/types/design-studio';
 import {
   AlignLeft, AlignCenter, AlignRight, Bold, Lock, Unlock,
@@ -209,13 +211,39 @@ export const ElementProperties: React.FC<ElementPropertiesProps> = ({
                   </div>
 
                   {user && (
-                    <div className="mt-4">
+                    <div className="mt-4 space-y-3">
+                      <div className="flex items-center justify-between p-2 border rounded-lg bg-primary/5">
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="w-3.5 h-3.5 text-primary" />
+                          <Label className="text-[10px] font-medium">Auto AI Style</Label>
+                        </div>
+                        <Switch
+                          checked={element.aiStylizationEnabled || false}
+                          onCheckedChange={(checked) => onUpdate({ aiStylizationEnabled: checked })}
+                        />
+                      </div>
+
+                      {(element.aiStylizationEnabled) && (
+                        <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                          <Label className="text-[10px]">AI Style Prompt</Label>
+                          <Textarea
+                            placeholder="e.g. professional headshot in cyberpunk style..."
+                            className="text-[10px] min-h-[60px] resize-none"
+                            value={element.aiPrompt || ''}
+                            onChange={(e) => onUpdate({ aiPrompt: e.target.value })}
+                          />
+                          <p className="text-[9px] text-muted-foreground leading-tight">
+                            When enabled, the user's profile photo will be automatically regenerated in this style when they view their card.
+                          </p>
+                        </div>
+                      )}
+
                       <button
                         onClick={() => setShowAdvanced(!showAdvanced)}
-                        className="flex items-center gap-2 text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors w-full justify-center"
+                        className="flex items-center gap-2 text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors w-full justify-center pt-2 border-t mt-2"
                       >
-                        <Sparkles className="w-3 h-3" />
-                        <span>Advanced: AI Profile Image</span>
+                        <Camera className="w-3 h-3" />
+                        <span>Preview with AI</span>
                         <ChevronDown className={`w-3 h-3 transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
                       </button>
 

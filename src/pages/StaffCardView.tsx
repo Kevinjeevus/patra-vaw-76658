@@ -76,8 +76,8 @@ function adjustColor(hex: string, amount: number): string {
 
 // Check if app is installed as PWA
 function isPWAInstalled(): boolean {
-    return window.matchMedia('(display-mode: standalone)').matches || 
-           (window.navigator as any).standalone === true;
+    return window.matchMedia('(display-mode: standalone)').matches ||
+        (window.navigator as any).standalone === true;
 }
 
 // PWA install prompt interface
@@ -96,9 +96,9 @@ export const StaffCardView: React.FC = () => {
     const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
     const [canInstall, setCanInstall] = useState(false);
     const [studioXTemplate, setStudioXTemplate] = useState<DesignTemplate | null>(null);
-    
+
     const { scrollY } = useScroll();
-    
+
     // Scroll-based animations with "sticky" pause point
     // Phase 1 (0-150px): Card scales down to 65% and moves up slightly - then PAUSES
     // Phase 2 (150-300px): Card stays at same position (sticky point)
@@ -106,14 +106,14 @@ export const StaffCardView: React.FC = () => {
     const cardScale = useTransform(scrollY, [0, 150, 300, 500], [1, 0.65, 0.65, 0.45]);
     const cardY = useTransform(scrollY, [0, 150, 300, 500], [0, -40, -40, -180]);
     const cardOpacity = useTransform(scrollY, [400, 550], [1, 0.5]);
-    
+
     // Bottom sheet appears during sticky point and slides up smoothly
     const sheetY = useTransform(scrollY, [100, 300], ['100%', '0%']);
     const sheetOpacity = useTransform(scrollY, [100, 250], [0, 1]);
-    
+
     // Track scroll progress for UI hints
     const [scrollProgress, setScrollProgress] = useState(0);
-    
+
     useMotionValueEvent(scrollY, "change", (latest) => {
         setScrollProgress(Math.min(latest / 300, 1));
     });
@@ -233,15 +233,16 @@ export const StaffCardView: React.FC = () => {
 
                 // Fetch Studio X template if configured
                 const studioXTemplateId = displayParams?.studioXTemplateId;
+                let fetchedTemplate: DesignTemplate | null = null;
                 if (studioXTemplateId) {
                     const { data: templateData } = await supabase
                         .from('custom_id_templates')
                         .select('*')
                         .eq('id', studioXTemplateId)
                         .single();
-                    
+
                     if (templateData) {
-                        const mappedTemplate: DesignTemplate = {
+                        fetchedTemplate = {
                             id: templateData.id,
                             created_by: templateData.created_by,
                             name: templateData.name,
@@ -257,16 +258,17 @@ export const StaffCardView: React.FC = () => {
                             created_at: templateData.created_at,
                             updated_at: templateData.updated_at,
                         };
-                        setStudioXTemplate(mappedTemplate);
+                        setStudioXTemplate(fetchedTemplate);
                     }
                 }
 
-                setStaffData({
+                const sData = {
                     fullName: submittedData?.display_name || 'Employee',
                     jobTitle: employee.designation || submittedData?.job_title || 'Team Member',
                     email: submittedData?.email || '',
                     phone: submittedData?.phone || '',
                     avatar_url: submittedData?.avatar_url || '',
+                    stylized_avatar_url: submittedData?.stylized_avatar_url || '',
                     staffId: employee.staff_id || '',
                     companyName: companyProfile.company_name,
                     companyVanity: companyVanity,
@@ -286,7 +288,40 @@ export const StaffCardView: React.FC = () => {
                         facebook: displayParams?.facebook || '',
                         youtube: displayParams?.youtube || '',
                     },
-                });
+                };
+
+                setStaffData(sData as any);
+
+                // Auto AI Stylization Logic
+                if (fetchedTemplate && sData.avatar_url && !sData.stylized_avatar_url) {
+                    const aiElement = fetchedTemplate.elements.find(el => el.type === 'profile_photo' && el.aiStylizationEnabled);
+                    if (aiElement && aiElement.aiPrompt) {
+                        // Trigger AI generation
+                        console.log('Triggering auto AI stylization for prompt:', aiElement.aiPrompt);
+                        supabase.functions.invoke('generate-avatar', {
+                            body: {
+                                prompt: aiElement.aiPrompt,
+                                userId: employee.id, // Using invited_employee id as userId for context
+                                baseImageUrl: sData.avatar_url
+                            },
+                        }).then(async ({ data, error }) => {
+                            if (!error && data?.imageUrl) {
+                                // Update staffData and DB
+                                setStaffData(prev => prev ? { ...prev, stylized_avatar_url: data.imageUrl } : null);
+
+                                const updatedSubmittedData = {
+                                    ...submittedData,
+                                    stylized_avatar_url: data.imageUrl
+                                };
+
+                                await supabase
+                                    .from('invited_employees')
+                                    .update({ data_submitted: updatedSubmittedData as any })
+                                    .eq('id', employee.id);
+                            }
+                        });
+                    }
+                }
 
                 updateOGMetaTags({
                     title: `${submittedData?.display_name || 'Employee'} | ${companyProfile.company_name}`,
@@ -355,7 +390,7 @@ export const StaffCardView: React.FC = () => {
             {/* Fixed themed background - always visible */}
             {staffData.bgType === 'image' && staffData.bgImage ? (
                 <>
-                    <div 
+                    <div
                         className="fixed inset-0 z-0"
                         style={{
                             backgroundImage: `url(${staffData.bgImage})`,
@@ -368,17 +403,17 @@ export const StaffCardView: React.FC = () => {
                     <div className="fixed inset-0 z-0 bg-black/30" />
                 </>
             ) : (
-                <div 
+                <div
                     className="fixed inset-0 z-0"
                     style={{
                         background: `linear-gradient(135deg, ${themeColor} 0%, ${darkerTheme} 100%)`
                     }}
                 />
             )}
-            
+
             {/* Ambient glow effects - only for solid color background */}
             {staffData.bgType !== 'image' && (
-                <div 
+                <div
                     className="fixed top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full blur-[100px] opacity-30 pointer-events-none z-0"
                     style={{ backgroundColor: adjustColor(themeColor, 30) }}
                 />
@@ -398,8 +433,8 @@ export const StaffCardView: React.FC = () => {
                     {/* Company Logo/Name */}
                     <div className="flex items-center gap-2">
                         {staffData.companyLogo ? (
-                            <img 
-                                src={staffData.companyLogo} 
+                            <img
+                                src={staffData.companyLogo}
                                 alt={staffData.companyName}
                                 className="h-8 object-contain"
                             />
@@ -427,7 +462,7 @@ export const StaffCardView: React.FC = () => {
             </div>
 
             {/* Floating ID Card - Fixed in center, scales down and moves up on scroll */}
-            <motion.div 
+            <motion.div
                 className="fixed top-32 left-0 right-0 z-10 flex flex-col items-center pointer-events-none"
                 style={{
                     scale: cardScale,
@@ -436,21 +471,21 @@ export const StaffCardView: React.FC = () => {
                 }}
             >
                 {/* Card glow effect */}
-                <div 
+                <div
                     className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[520px] rounded-3xl blur-[60px] opacity-40"
                     style={{ backgroundColor: adjustColor(themeColor, 40) }}
                 />
-                
+
                 {/* Floating animation wrapper */}
                 <motion.div
-                    animate={{ 
+                    animate={{
                         y: [0, -10, 0],
                         rotateY: [0, 2, 0, -2, 0]
                     }}
-                    transition={{ 
-                        duration: 6, 
-                        repeat: Infinity, 
-                        ease: "easeInOut" 
+                    transition={{
+                        duration: 6,
+                        repeat: Infinity,
+                        ease: "easeInOut"
                     }}
                     className="relative pointer-events-auto"
                 >
@@ -460,6 +495,7 @@ export const StaffCardView: React.FC = () => {
                             userData={{
                                 company_logo_url: staffData.companyLogo,
                                 avatar_url: staffData.avatar_url,
+                                stylized_avatar_url: (staffData as any).stylized_avatar_url,
                                 display_name: staffData.fullName,
                                 job_title: staffData.jobTitle,
                                 employee_display_id: staffData.staffId,
@@ -494,7 +530,7 @@ export const StaffCardView: React.FC = () => {
                 </motion.div>
 
                 {/* Tap to flip hint - fades out on scroll */}
-                <motion.p 
+                <motion.p
                     className="mt-6 text-white/60 text-sm font-medium"
                     style={{ opacity: 1 - scrollProgress * 2 }}
                 >
@@ -503,7 +539,7 @@ export const StaffCardView: React.FC = () => {
             </motion.div>
 
             {/* Scroll hint arrow - only visible when not scrolled */}
-            <motion.div 
+            <motion.div
                 className="fixed bottom-8 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-2"
                 style={{ opacity: 1 - scrollProgress * 3 }}
             >
@@ -518,7 +554,7 @@ export const StaffCardView: React.FC = () => {
             </motion.div>
 
             {/* Frosted Glass Bottom Sheet */}
-            <motion.div 
+            <motion.div
                 className="fixed bottom-0 left-0 right-0 z-40"
                 style={{
                     y: sheetY,
@@ -526,7 +562,7 @@ export const StaffCardView: React.FC = () => {
                 }}
             >
                 <div className="max-w-lg mx-auto">
-                    <div 
+                    <div
                         className="bg-white/80 backdrop-blur-xl rounded-t-[32px] shadow-2xl border-t border-white/50 overflow-hidden"
                         style={{
                             minHeight: '60vh',
@@ -655,7 +691,7 @@ export const StaffCardView: React.FC = () => {
 
                             {/* PWA Install Button - Only show if installable */}
                             {canInstall && (
-                                <motion.div 
+                                <motion.div
                                     className="mt-6 pt-4 border-t border-slate-200/50"
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
@@ -673,7 +709,7 @@ export const StaffCardView: React.FC = () => {
 
                             {/* iOS PWA hint - show on iOS if not installed */}
                             {!canInstall && !isPWAInstalled() && /iPhone|iPad|iPod/.test(navigator.userAgent) && (
-                                <motion.div 
+                                <motion.div
                                     className="mt-6 pt-4 border-t border-slate-200/50"
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}

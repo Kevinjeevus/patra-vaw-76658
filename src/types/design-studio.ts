@@ -1,6 +1,6 @@
 // ID Card Design Studio Types
 
-export type ElementType = 
+export type ElementType =
   | 'company_logo'
   | 'profile_photo'
   | 'name'
@@ -44,6 +44,8 @@ export interface CanvasElement {
   locked?: boolean;
   visible?: boolean;
   zIndex: number;
+  aiStylizationEnabled?: boolean;
+  aiPrompt?: string;
 }
 
 export interface CanvasBackground {

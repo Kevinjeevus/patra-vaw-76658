@@ -119,15 +119,24 @@ export const StudioXCardRenderer: React.FC<StudioXCardRendererProps> = ({
     const value = element.dataField ? userData[element.dataField as keyof typeof userData] : element.content;
 
     if (element.type === 'company_logo' || element.type === 'profile_photo') {
-      return value ? (
-        <img 
-          src={value as string} 
-          alt={element.label}
-          className="w-full h-full object-cover"
-          style={{ borderRadius: element.style.borderRadius }}
-        />
+      const isAiStylized = element.type === 'profile_photo' && element.aiStylizationEnabled;
+      const displayValue = isAiStylized ? (userData as any).stylized_avatar_url || value : value;
+
+      return displayValue ? (
+        <div className="relative w-full h-full overflow-hidden" style={{ borderRadius: element.style.borderRadius }}>
+          <img
+            src={displayValue as string}
+            alt={element.label}
+            className={`w-full h-full object-cover transition-opacity duration-300 ${isAiStylized && !(userData as any).stylized_avatar_url ? 'opacity-40 grayscale' : 'opacity-100'}`}
+          />
+          {isAiStylized && !(userData as any).stylized_avatar_url && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/5 animate-pulse">
+              <span className="text-[8px] font-bold text-primary px-1 bg-white/80 rounded tracking-tighter uppercase">AI Processing</span>
+            </div>
+          )}
+        </div>
       ) : (
-        <div 
+        <div
           className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-400"
           style={{ borderRadius: element.style.borderRadius, fontSize: 10 * scale }}
         >
@@ -144,17 +153,17 @@ export const StudioXCardRenderer: React.FC<StudioXCardRendererProps> = ({
         qrValue = (userData.vanity_url as string) || 'https://patra.app';
       }
       return (
-        <div 
+        <div
           className="w-full h-full flex items-center justify-center"
-          style={{ 
+          style={{
             backgroundColor: element.style.backgroundColor || '#ffffff',
             borderRadius: element.style.borderRadius,
             padding: (element.style.padding || 4) * scale,
           }}
         >
-          <QRCode 
-            value={qrValue} 
-            size={Math.min(element.width, element.height) * scale - ((element.style.padding || 4) * scale * 2)} 
+          <QRCode
+            value={qrValue}
+            size={Math.min(element.width, element.height) * scale - ((element.style.padding || 4) * scale * 2)}
             level="M"
           />
         </div>
@@ -163,7 +172,7 @@ export const StudioXCardRenderer: React.FC<StudioXCardRendererProps> = ({
 
     if (element.type === 'shape') {
       return (
-        <div 
+        <div
           className="w-full h-full"
           style={{
             backgroundColor: element.style.backgroundColor,
@@ -185,13 +194,13 @@ export const StudioXCardRenderer: React.FC<StudioXCardRendererProps> = ({
         style={{
           fontSize: (element.style.fontSize || 14) * scale,
           fontFamily: element.style.fontFamily,
-          fontWeight: element.style.fontWeight === 'bold' ? 700 : 
-                     element.style.fontWeight === 'semibold' ? 600 :
-                     element.style.fontWeight === 'medium' ? 500 : 400,
+          fontWeight: element.style.fontWeight === 'bold' ? 700 :
+            element.style.fontWeight === 'semibold' ? 600 :
+              element.style.fontWeight === 'medium' ? 500 : 400,
           color: element.style.color,
           textAlign: element.style.textAlign,
-          justifyContent: element.style.textAlign === 'center' ? 'center' : 
-                         element.style.textAlign === 'right' ? 'flex-end' : 'flex-start',
+          justifyContent: element.style.textAlign === 'center' ? 'center' :
+            element.style.textAlign === 'right' ? 'flex-end' : 'flex-start',
           backgroundColor: element.style.backgroundColor,
           borderRadius: element.style.borderRadius,
           padding: element.style.padding ? element.style.padding * scale : undefined,
