@@ -24,6 +24,7 @@ import {
   DEFAULT_CARD_DIMENSIONS,
   DesignTemplate
 } from '@/types/design-studio';
+import { arrayMove } from '@dnd-kit/sortable';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
@@ -228,6 +229,21 @@ const IDCardDesignStudio: React.FC = () => {
     if (selectedElementId) handleReorder(selectedElementId, 'back');
   }, [selectedElementId, handleReorder]);
 
+  const handleMoveLayer = useCallback((activeId: string, overId: string) => {
+    setCurrentSideData(prev => {
+      const oldIndex = prev.elements.findIndex(el => el.id === activeId);
+      const newIndex = prev.elements.findIndex(el => el.id === overId);
+
+      if (oldIndex === -1 || newIndex === -1) return prev;
+
+      const newElements = arrayMove(prev.elements, oldIndex, newIndex);
+      return {
+        ...prev,
+        elements: normalizeZIndices(newElements),
+      };
+    });
+  }, [setCurrentSideData, normalizeZIndices]);
+
   // Save template (saves both front and back)
   const handleSave = async () => {
     if (!user) {
@@ -414,6 +430,7 @@ const IDCardDesignStudio: React.FC = () => {
                 onSelectElement={setSelectedElementId}
                 onUpdateElement={handleUpdateElement}
                 onReorder={handleReorder}
+                onMoveLayer={handleMoveLayer}
               />
             </TabsContent>
 
