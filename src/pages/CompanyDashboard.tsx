@@ -1029,1248 +1029,1247 @@ export const CompanyDashboard: React.FC = () => {
                                               })}
                                             />
                                           </div>
-                                        </div>
+                                          <div className="space-y-2">
+                                            <Label>Date of Birth</Label>
+                                            <Input
+                                              type="date"
+                                              value={String(editingEmployee.data_submitted?.dob || '')}
+                                              onChange={(e) => setEditingEmployee({
+                                                ...editingEmployee,
+                                                data_submitted: { ...editingEmployee.data_submitted, dob: e.target.value }
+                                              })}
+                                            />
                                           </div>
-                                        </div>
-                                        <div className="space-y-2">
-                                          <Label>Date of Birth</Label>
-                                          <Input
-                                            type="date"
-                                            value={String(editingEmployee.data_submitted?.dob || '')}
-                                            onChange={(e) => setEditingEmployee({
-                                              ...editingEmployee,
-                                              data_submitted: { ...editingEmployee.data_submitted, dob: e.target.value }
-                                            })}
-                                          />
-                                        </div>
-                                        <div className="space-y-2">
-                                          <Label>Gender</Label>
-                                          <select
-                                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                            value={String(editingEmployee.data_submitted?.gender || '')}
-                                            onChange={(e) => setEditingEmployee({
-                                              ...editingEmployee,
-                                              data_submitted: { ...editingEmployee.data_submitted, gender: e.target.value }
-                                            })}
-                                          >
-                                            <option value="">Select Gender</option>
-                                            <option value="male">Male</option>
-                                            <option value="female">Female</option>
-                                            <option value="other">Other</option>
-                                            <option value="prefer_not_to_say">Prefer not to say</option>
-                                          </select>
+                                          <div className="space-y-2">
+                                            <Label>Gender</Label>
+                                            <select
+                                              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                              value={String(editingEmployee.data_submitted?.gender || '')}
+                                              onChange={(e) => setEditingEmployee({
+                                                ...editingEmployee,
+                                                data_submitted: { ...editingEmployee.data_submitted, gender: e.target.value }
+                                              })}
+                                            >
+                                              <option value="">Select Gender</option>
+                                              <option value="male">Male</option>
+                                              <option value="female">Female</option>
+                                              <option value="other">Other</option>
+                                              <option value="prefer_not_to_say">Prefer not to say</option>
+                                            </select>
+                                          </div>
                                         </div>
                                       </div>
 
-                                <div className="space-y-4">
-                                  <h4 className="font-semibold text-sm text-slate-900 uppercase tracking-wider pb-2 border-b">Contact Information</h4>
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                      <Label>Email Address</Label>
-                                      <Input
-                                        value={String(editingEmployee.data_submitted?.email || '')}
-                                        onChange={(e) => setEditingEmployee({
-                                          ...editingEmployee,
-                                          data_submitted: { ...editingEmployee.data_submitted, email: e.target.value }
-                                        })}
-                                      />
+                                      <div className="space-y-4">
+                                        <h4 className="font-semibold text-sm text-slate-900 uppercase tracking-wider pb-2 border-b">Contact Information</h4>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                          <div className="space-y-2">
+                                            <Label>Email Address</Label>
+                                            <Input
+                                              value={String(editingEmployee.data_submitted?.email || '')}
+                                              onChange={(e) => setEditingEmployee({
+                                                ...editingEmployee,
+                                                data_submitted: { ...editingEmployee.data_submitted, email: e.target.value }
+                                              })}
+                                            />
+                                          </div>
+                                          <div className="space-y-2">
+                                            <Label>Phone Number</Label>
+                                            <Input
+                                              value={String(editingEmployee.data_submitted?.phone || '')}
+                                              onChange={(e) => setEditingEmployee({
+                                                ...editingEmployee,
+                                                data_submitted: { ...editingEmployee.data_submitted, phone: e.target.value }
+                                              })}
+                                            />
+                                          </div>
+                                        </div>
+                                      </div>
                                     </div>
-                                    <div className="space-y-2">
-                                      <Label>Phone Number</Label>
-                                      <Input
-                                        value={String(editingEmployee.data_submitted?.phone || '')}
-                                        onChange={(e) => setEditingEmployee({
-                                          ...editingEmployee,
-                                          data_submitted: { ...editingEmployee.data_submitted, phone: e.target.value }
-                                        })}
-                                      />
-                                    </div>
-                                  </div>
-                                </div>
                                   )}
 
-                                <DialogFooter className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2 w-full">
-                                  <Button
-                                    variant="destructive"
-                                    onClick={handleDeleteEmployee}
-                                    className="w-full sm:w-auto"
-                                  >
-                                    <Trash2 className="w-4 h-4 mr-2" />
-                                    Remove
-                                  </Button>
-                                  <div className="flex gap-2">
-                                    <Button variant="outline" onClick={() => {
-                                      setEditingEmployee(null);
-                                      setEditingImage(null);
-                                    }}>Cancel</Button>
+                                  <DialogFooter className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2 w-full">
                                     <Button
-                                      className="bg-indigo-600 hover:bg-indigo-700"
-                                      disabled={isUpdatingStaff}
-                                      onClick={handleUpdateStaff}
+                                      variant="destructive"
+                                      onClick={handleDeleteEmployee}
+                                      className="w-full sm:w-auto"
                                     >
-                                      {isUpdatingStaff ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
-                                      Save All Changes
+                                      <Trash2 className="w-4 h-4 mr-2" />
+                                      Remove
                                     </Button>
-                                  </div>
-                                </DialogFooter>
-                              </DialogContent>
-                            </Dialog>
+                                    <div className="flex gap-2">
+                                      <Button variant="outline" onClick={() => {
+                                        setEditingEmployee(null);
+                                        setEditingImage(null);
+                                      }}>Cancel</Button>
+                                      <Button
+                                        className="bg-indigo-600 hover:bg-indigo-700"
+                                        disabled={isUpdatingStaff}
+                                        onClick={handleUpdateStaff}
+                                      >
+                                        {isUpdatingStaff ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
+                                        Save All Changes
+                                      </Button>
+                                    </div>
+                                  </DialogFooter>
+                                </DialogContent>
+                              </Dialog>
                             </div>
                           )}
-                      </TableCell>
+                        </TableCell>
                       </TableRow>
                     ))}
-                </TableBody>
-              </Table>
-            </div>
-          </Card>
-        </TabsContent>
+                  </TableBody>
+                </Table>
+              </div>
+            </Card>
+          </TabsContent>
 
-        <TabsContent value="directors">
-          <Card className="shadow-md border-none">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Leadership & Executive Cards</CardTitle>
-                <CardDescription>Manage cards for your leadership team and key personnel. (Limited to 2 free cards)</CardDescription>
-              </div>
-              <Button
-                size="sm"
-                disabled={cards.length >= 2}
-                className="bg-indigo-600 hover:bg-indigo-700 w-full sm:w-auto"
-                onClick={() => navigate('/editor?new=true')}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Create Leadership Card
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {cards.map((card) => (
-                  <div key={card.id} className="p-4 border border-slate-200 rounded-2xl bg-white shadow-sm flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-indigo-600">
-                        <CreditCard className="w-6 h-6" />
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-slate-900">{card.title}</h4>
-                        <p className="text-xs text-slate-500 font-mono">{window.location.host}/{card.vanity_url}</p>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button variant="ghost" size="icon" onClick={() => navigate(`/editor?id=${card.id}`)}>
-                        <Edit3 className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => window.open(`/${card.vanity_url}`, '_blank')}>
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => handleDeleteCard(card.id)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-                {cards.length === 0 && (
-                  <div className="col-span-2 py-12 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50">
-                    <CreditCard className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                    <p className="text-slate-500 font-medium">No leadership cards created yet</p>
-                    <p className="text-xs text-slate-400 mt-1">Create up to 2 high-priority cards for your leadership team</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="invites">
-          <Card className="shadow-md border-none">
-            <CardHeader>
-              <CardTitle>Company Invitation System</CardTitle>
-              <CardDescription>Generate and manage unique links for employees to join your organization.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-8">
-              <div className="p-6 bg-slate-900 rounded-2xl text-white relative overflow-hidden">
-                <div className="relative z-10">
-                  <Label className="text-slate-400 text-xs uppercase font-bold tracking-widest mb-4 block">Active Invite Link</Label>
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                    <div className="flex-1 bg-white/10 backdrop-blur-md rounded-xl p-4 font-mono text-sm sm:text-lg border border-white/10 select-all overflow-hidden text-ellipsis break-all">
-                      {currentInviteLink}
-                    </div>
-                    <Button className="h-12 sm:h-full py-4 bg-white text-slate-900 hover:bg-slate-100" onClick={() => {
-                      navigator.clipboard.writeText(currentInviteLink);
-                      toast({ title: "Copied!", description: "Invite link copied to clipboard" });
-                    }}>
-                      <Copy className="w-5 h-5" />
-                    </Button>
-                  </div>
+          <TabsContent value="directors">
+            <Card className="shadow-md border-none">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Leadership & Executive Cards</CardTitle>
+                  <CardDescription>Manage cards for your leadership team and key personnel. (Limited to 2 free cards)</CardDescription>
                 </div>
-                <div className="absolute top-0 right-0 p-8 opacity-10">
-                  <UserPlus className="w-32 h-32" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="p-6 border border-slate-200 rounded-2xl space-y-4">
-                  <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 mb-2">
-                    <RefreshCw className="w-6 h-6" />
-                  </div>
-                  <h4 className="font-bold text-slate-900">Security Control</h4>
-                  <p className="text-sm text-slate-500">Regenerating the link will invalidate all previous invite codes immediately.</p>
-                  <Button variant="outline" className="w-full" onClick={handleRegenerateInviteCode}>Regenerate Code</Button>
-                </div>
-                <div className="p-6 border border-slate-200 rounded-2xl space-y-4">
-                  <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center text-green-600 mb-2">
-                    <BarChart3 className="w-6 h-6" />
-                  </div>
-                  <h4 className="font-bold text-slate-900">Invite Usage</h4>
-                  <p className="text-sm text-slate-500">You have {employees.length} employees currently in your directory.</p>
-                  <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                    <div className="bg-green-500 h-full transition-all duration-500" style={{ width: `${Math.min((employees.length / 50) * 100, 100)}%` }} />
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="branding">
-          <Card className="shadow-md border-none">
-            <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6">
-              <div>
-                <CardTitle>Company Details & Branding</CardTitle>
-                <CardDescription>Complete your company profile with essential business information.</CardDescription>
-              </div>
-              {!profile?.company_verified && (
                 <Button
-                  variant="outline"
                   size="sm"
-                  className="border-indigo-200 text-indigo-600 hover:bg-indigo-50 font-bold"
-                  onClick={() => toast({ title: "Verification Request Sent", description: "Our team will review your details shortly." })}
+                  disabled={cards.length >= 2}
+                  className="bg-indigo-600 hover:bg-indigo-700 w-full sm:w-auto"
+                  onClick={() => navigate('/editor?new=true')}
                 >
-                  <ShieldCheck className="w-4 h-4 mr-2" />
-                  Request Verification
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Leadership Card
                 </Button>
-              )}
-              {profile?.company_verified && (
-                <Badge className="bg-green-100 text-green-700 border-none px-4 py-2 flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4" />
-                  Verified Business
-                </Badge>
-              )}
-            </CardHeader>
-            <CardContent className="space-y-8">
-              {/* Essential Information */}
-              <div className="space-y-6">
-                <h4 className="font-bold text-slate-900 flex items-center gap-2">
-                  <AlertCircle className="w-5 h-5 text-red-500" />
-                  Essential Information
-                  <Badge variant="destructive" className="ml-2">Required</Badge>
-                </h4>
-
+              </CardHeader>
+              <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Company Name */}
-                  <div className="space-y-2">
-                    <Label htmlFor="company-name">Company Name *</Label>
-                    <Input
-                      id="company-name"
-                      value={brandingData.company_name}
-                      onChange={(e) => setBrandingData(prev => ({ ...prev, company_name: e.target.value }))}
-                      placeholder="Enter company name"
-                      className="bg-slate-50"
-                    />
-                  </div>
-
-                  {/* Company Email */}
-                  <div className="space-y-2">
-                    <Label htmlFor="company-email">Company Email *</Label>
-                    <Input
-                      id="company-email"
-                      type="email"
-                      value={brandingData.company_email}
-                      onChange={(e) => setBrandingData(prev => ({ ...prev, company_email: e.target.value }))}
-                      placeholder="contact@company.com"
-                      className="bg-slate-50"
-                    />
-                  </div>
-
-                  {/* Company Phone */}
-                  <div className="space-y-2">
-                    <Label htmlFor="company-phone">Company Phone *</Label>
-                    <Input
-                      id="company-phone"
-                      type="tel"
-                      value={brandingData.company_phone}
-                      onChange={(e) => setBrandingData(prev => ({ ...prev, company_phone: e.target.value }))}
-                      placeholder="+1 (555) 123-4567"
-                      className="bg-slate-50"
-                    />
-                  </div>
-
-                  {/* Company Logo Upload */}
-                  <div className="space-y-2">
-                    <Label htmlFor="company-logo">Company Logo *</Label>
-                    <div className="flex flex-col gap-3">
-                      <div className="group relative w-full h-32 bg-slate-100 rounded-xl overflow-hidden border-2 border-dashed border-slate-300 hover:border-indigo-500 transition-colors cursor-pointer flex items-center justify-center">
-                        {companyLogoFile ? (
-                          <img
-                            src={URL.createObjectURL(companyLogoFile)}
-                            alt="Logo Preview"
-                            className="max-h-full max-w-full object-contain p-2"
-                          />
-                        ) : profile?.company_logo_url ? (
-                          <img
-                            src={profile.company_logo_url}
-                            alt="Company Logo"
-                            className="max-h-full max-w-full object-contain p-2"
-                          />
-                        ) : (
-                          <div className="flex flex-col items-center gap-2 text-slate-400">
-                            <Camera className="w-8 h-8" />
-                            <span className="text-xs">Click to upload logo</span>
-                          </div>
-                        )}
-                        <input
-                          type="file"
-                          id="company-logo"
-                          className="absolute inset-0 opacity-0 cursor-pointer"
-                          accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
-                          onChange={(e) => {
-                            if (e.target.files?.[0]) {
-                              setCompanyLogoFile(e.target.files[0]);
-                            }
-                          }}
-                        />
-                        <div className="absolute inset-x-0 bottom-0 bg-black/50 text-white text-[10px] py-1 text-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          {profile?.company_logo_url || companyLogoFile ? 'Click to change' : 'Click to upload'}
+                  {cards.map((card) => (
+                    <div key={card.id} className="p-4 border border-slate-200 rounded-2xl bg-white shadow-sm flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-indigo-600">
+                          <CreditCard className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-slate-900">{card.title}</h4>
+                          <p className="text-xs text-slate-500 font-mono">{window.location.host}/{card.vanity_url}</p>
                         </div>
                       </div>
-                      {companyLogoFile && (
-                        <Button
-                          size="sm"
-                          className="bg-indigo-600 hover:bg-indigo-700"
-                          disabled={isUploadingLogo}
-                          onClick={async () => {
-                            if (!companyLogoFile || !user || !profile) return;
-                            setIsUploadingLogo(true);
-                            try {
-                              const fileExt = companyLogoFile.name.split('.').pop();
-                              const fileName = `logo-${Date.now()}.${fileExt}`;
-                              const filePath = `${user.id}/company/${fileName}`;
-
-                              const { error: uploadError } = await supabase.storage
-                                .from('avatars')
-                                .upload(filePath, companyLogoFile, {
-                                  contentType: companyLogoFile.type || undefined,
-                                  upsert: true,
-                                });
-
-                              if (uploadError) throw uploadError;
-
-                              const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
-                              const logoUrl = urlData.publicUrl;
-
-                              const { error: updateError } = await supabase
-                                .from('profiles')
-                                .update({ company_logo_url: logoUrl })
-                                .eq('id', profile.id);
-
-                              if (updateError) throw updateError;
-
-                              toast({ title: "Logo uploaded", description: "Your company logo has been updated successfully." });
-                              setCompanyLogoFile(null);
-                              fetchProfile();
-                            } catch (error: any) {
-                              console.error('Logo upload error:', error);
-                              toast({ title: "Upload failed", description: error.message, variant: "destructive" });
-                            } finally {
-                              setIsUploadingLogo(false);
-                            }
-                          }}
-                        >
-                          {isUploadingLogo ? (
-                            <>
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              Uploading...
-                            </>
-                          ) : (
-                            <>
-                              <Upload className="w-4 h-4 mr-2" />
-                              Save Logo
-                            </>
-                          )}
+                      <div className="flex gap-2">
+                        <Button variant="ghost" size="icon" onClick={() => navigate(`/editor?id=${card.id}`)}>
+                          <Edit3 className="w-4 h-4" />
                         </Button>
-                      )}
-                      <p className="text-xs text-slate-500">PNG, JPG or SVG. Max 2MB recommended.</p>
+                        <Button variant="ghost" size="icon" onClick={() => window.open(`/${card.vanity_url}`, '_blank')}>
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => handleDeleteCard(card.id)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  {cards.length === 0 && (
+                    <div className="col-span-2 py-12 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50">
+                      <CreditCard className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                      <p className="text-slate-500 font-medium">No leadership cards created yet</p>
+                      <p className="text-xs text-slate-400 mt-1">Create up to 2 high-priority cards for your leadership team</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="invites">
+            <Card className="shadow-md border-none">
+              <CardHeader>
+                <CardTitle>Company Invitation System</CardTitle>
+                <CardDescription>Generate and manage unique links for employees to join your organization.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-8">
+                <div className="p-6 bg-slate-900 rounded-2xl text-white relative overflow-hidden">
+                  <div className="relative z-10">
+                    <Label className="text-slate-400 text-xs uppercase font-bold tracking-widest mb-4 block">Active Invite Link</Label>
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                      <div className="flex-1 bg-white/10 backdrop-blur-md rounded-xl p-4 font-mono text-sm sm:text-lg border border-white/10 select-all overflow-hidden text-ellipsis break-all">
+                        {currentInviteLink}
+                      </div>
+                      <Button className="h-12 sm:h-full py-4 bg-white text-slate-900 hover:bg-slate-100" onClick={() => {
+                        navigator.clipboard.writeText(currentInviteLink);
+                        toast({ title: "Copied!", description: "Invite link copied to clipboard" });
+                      }}>
+                        <Copy className="w-5 h-5" />
+                      </Button>
                     </div>
                   </div>
+                  <div className="absolute top-0 right-0 p-8 opacity-10">
+                    <UserPlus className="w-32 h-32" />
+                  </div>
                 </div>
-              </div>
-
-              {/* Optional Information */}
-              <div className="pt-6 border-t border-slate-100 space-y-6">
-                <h4 className="font-bold text-slate-900 flex items-center gap-2">
-                  <Info className="w-5 h-5 text-blue-500" />
-                  Additional Details
-                  <Badge variant="outline" className="ml-2">Optional</Badge>
-                </h4>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Website */}
-                  <div className="space-y-2">
-                    <Label htmlFor="company-website">Website</Label>
-                    <Input
-                      id="company-website"
-                      type="url"
-                      value={brandingData.company_website}
-                      onChange={(e) => setBrandingData(prev => ({ ...prev, company_website: e.target.value }))}
-                      placeholder="https://www.company.com"
-                      className="bg-slate-50"
-                    />
-                  </div>
-
-                  {/* Industry */}
-                  <div className="space-y-2">
-                    <Label htmlFor="company-industry">Industry</Label>
-                    <Input
-                      id="company-industry"
-                      value={brandingData.company_industry}
-                      onChange={(e) => setBrandingData(prev => ({ ...prev, company_industry: e.target.value }))}
-                      placeholder="e.g., Technology, Healthcare"
-                      className="bg-slate-50"
-                    />
-                  </div>
-
-                  {/* GST Number */}
-                  <div className="space-y-2">
-                    <Label htmlFor="company-gst">GST Number</Label>
-                    <Input
-                      id="company-gst"
-                      value={brandingData.company_gst}
-                      onChange={(e) => setBrandingData(prev => ({ ...prev, company_gst: e.target.value }))}
-                      placeholder="e.g., 22AAAAA0000A1Z5"
-                      className="bg-slate-50"
-                    />
-                  </div>
-
-                  {/* Company Vanity URL */}
-                  <div className="space-y-2">
-                    <Label>Company Vanity URL</Label>
-                    <div className="flex gap-2">
-                      <div className="flex-1 flex items-center bg-slate-100 rounded-lg px-3 border border-slate-200 h-10 min-h-[40px]">
-                        <Globe className="w-4 h-4 text-slate-400 mr-2 flex-shrink-0" />
-                        <span className="text-slate-500 text-sm whitespace-nowrap">{window.location.host}/</span>
-                        <input
-                          className="bg-transparent border-none outline-none text-sm font-medium text-slate-900 flex-1 ml-1 min-w-0"
-                          value={companyVanity}
-                          onChange={(e) => setCompanyVanity(e.target.value)}
-                          placeholder="your-company-name"
-                        />
-                      </div>
+                  <div className="p-6 border border-slate-200 rounded-2xl space-y-4">
+                    <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 mb-2">
+                      <RefreshCw className="w-6 h-6" />
                     </div>
-                    <p className="text-xs text-slate-500 italic">This URL will be used to host your corporate ID cards.</p>
+                    <h4 className="font-bold text-slate-900">Security Control</h4>
+                    <p className="text-sm text-slate-500">Regenerating the link will invalidate all previous invite codes immediately.</p>
+                    <Button variant="outline" className="w-full" onClick={handleRegenerateInviteCode}>Regenerate Code</Button>
+                  </div>
+                  <div className="p-6 border border-slate-200 rounded-2xl space-y-4">
+                    <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center text-green-600 mb-2">
+                      <BarChart3 className="w-6 h-6" />
+                    </div>
+                    <h4 className="font-bold text-slate-900">Invite Usage</h4>
+                    <p className="text-sm text-slate-500">You have {employees.length} employees currently in your directory.</p>
+                    <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                      <div className="bg-green-500 h-full transition-all duration-500" style={{ width: `${Math.min((employees.length / 50) * 100, 100)}%` }} />
+                    </div>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-                {/* Company Address */}
-                <div className="space-y-2">
-                  <Label htmlFor="company-address">Company Address</Label>
-                  <textarea
-                    id="company-address"
-                    rows={3}
-                    value={brandingData.company_address}
-                    onChange={(e) => setBrandingData(prev => ({ ...prev, company_address: e.target.value }))}
-                    placeholder="Enter full company address"
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
+          <TabsContent value="branding">
+            <Card className="shadow-md border-none">
+              <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6">
+                <div>
+                  <CardTitle>Company Details & Branding</CardTitle>
+                  <CardDescription>Complete your company profile with essential business information.</CardDescription>
                 </div>
-
-                {/* Company Description */}
-                <div className="space-y-2">
-                  <Label htmlFor="company-description">Company Description</Label>
-                  <textarea
-                    id="company-description"
-                    rows={4}
-                    value={brandingData.company_description}
-                    onChange={(e) => setBrandingData(prev => ({ ...prev, company_description: e.target.value }))}
-                    placeholder="Brief description of your company and what you do"
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
-              </div>
-
-              {/* Global Security & Policy */}
-              <div className="pt-6 border-t border-slate-100">
-                <h4 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
-                  <ShieldCheck className="w-5 h-5 text-indigo-600" />
-                  Global Security & Policy
-                </h4>
-                <div className="space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-slate-50 rounded-xl gap-4">
-                    <div>
-                      <p className="font-medium text-slate-900">Auto-Deactivate on Termination</p>
-                      <p className="text-sm text-slate-500">Automatically disable card if employee is removed from directory.</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Checkbox checked={true} id="auto-deactivate" />
-                      <Label htmlFor="auto-deactivate" className="sm:hidden text-xs text-slate-500">Enable</Label>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
-                    <div>
-                      <p className="font-medium text-slate-900">Corporate Theme Lock</p>
-                      <p className="text-sm text-slate-500">Prevent employees from changing the standard corporate theme.</p>
-                    </div>
-                    <Checkbox />
-                  </div>
-                </div>
-              </div>
-
-              {/* Save Button */}
-              <div className="flex gap-3 pt-4">
-                <Button
-                  className="bg-indigo-600 hover:bg-indigo-700 px-8 flex-1 sm:flex-none shadow-lg shadow-indigo-100"
-                  onClick={async () => {
-                    await handleSaveBranding();
-                  }}
-                >
-                  Save All Changes
-                </Button>
-                <Button variant="outline">Reset to Default</Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-
-        <TabsContent value="parameters">
-          <Card className="shadow-md border-none">
-            <CardHeader>
-              <CardTitle>Onboarding Requirements</CardTitle>
-              <CardDescription>Select what data points employees must provide when joining your organization.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {AVAILABLE_PARAMETERS.map(param => (
-                  <div key={param.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
-                    <div className="flex items-center gap-3">
-                      <Checkbox
-                        id={`collect-${param.id}`}
-                        checked={selectedParameters.includes(param.id)}
-                        onCheckedChange={(checked) => {
-                          if (param.required) return;
-                          setSelectedParameters(prev =>
-                            checked
-                              ? [...prev, param.id]
-                              : prev.filter(p => p !== param.id)
-                          );
-                        }}
-                        disabled={param.required}
-                      />
-                      <Label htmlFor={`collect-${param.id}`} className="font-medium cursor-pointer">{param.label}</Label>
-                    </div>
-                    {param.required && <Badge variant="secondary" className="bg-slate-200 text-slate-600 border-none">Required</Badge>}
-                  </div>
-                ))}
-              </div>
-              <Button className="mt-8 bg-indigo-600 hover:bg-indigo-700 px-8" onClick={async () => {
-                const { error } = await supabase.from('profiles').update({ invite_parameters: selectedParameters }).eq('id', profile!.id);
-                if (!error) toast({ title: "Requirements updated" });
-              }}>
-                Save Requirements
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="display">
-          <div className="space-y-8">
-            {/* Design Studio CTA */}
-            <Card className="shadow-md border-none bg-gradient-to-r from-primary/5 to-accent/5">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <h3 className="text-lg font-semibold flex items-center gap-2">
-                      <Edit3 className="w-5 h-5 text-primary" />
-                      ID Card Design Studio
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      Create custom ID card designs with drag-and-drop. Place elements freely, upload backgrounds, and publish templates for others to use.
-                    </p>
-                  </div>
-                  <Button onClick={() => navigate('/design-studio')} className="gap-2">
-                    Open Design Studio
-                    <Plus className="w-4 h-4" />
+                {!profile?.company_verified && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-indigo-200 text-indigo-600 hover:bg-indigo-50 font-bold"
+                    onClick={() => toast({ title: "Verification Request Sent", description: "Our team will review your details shortly." })}
+                  >
+                    <ShieldCheck className="w-4 h-4 mr-2" />
+                    Request Verification
                   </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Template Customizer with Studio X */}
-            <IDCardCustomizer
-              customization={cardCustomization}
-              onCustomizationChange={setCardCustomization}
-              brandColors={{
-                primary: '#1e293b',
-                secondary: '#64748b',
-                accent: '#3b82f6',
-              }}
-              selectedStudioXTemplate={selectedStudioXTemplate}
-              onStudioXTemplateChange={setSelectedStudioXTemplate}
-              studioXPreviewData={{
-                company_logo_url: profile?.company_logo_url,
-                display_name: 'Alex Johnson',
-                job_title: 'Product Designer',
-                email: 'alex@company.com',
-              }}
-              onSave={async () => {
-                setIsSavingCardDesign(true);
-                try {
-                  const { error } = await supabase
-                    .from('profiles')
-                    .update({
-                      display_parameters: {
-                        ...displayParameters,
-                        cardCustomization: cardCustomization,
-                        studioXTemplateId: selectedStudioXTemplate?.id || null,
-                        cardViewTheme: (cardCustomization as any)?.cardViewTheme || '#6366f1',
-                        cardViewBgType: (cardCustomization as any)?.cardViewBgType || 'color',
-                        cardViewBgImage: (cardCustomization as any)?.cardViewBgImage || null,
-                      }
-                    })
-                    .eq('id', profile!.id);
-
-                  if (error) throw error;
-                  toast({ title: "Card design saved successfully" });
-                } catch (err) {
-                  console.error('Error saving card design:', err);
-                  toast({ title: "Failed to save card design", variant: "destructive" });
-                } finally {
-                  setIsSavingCardDesign(false);
-                }
-              }}
-              isSaving={isSavingCardDesign}
-            />
-
-            {/* Card View Theme Color */}
-            <Card className="shadow-md border-none">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <div className="w-5 h-5 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600" />
-                  Card View Theme
-                </CardTitle>
-                <CardDescription>Set the background theme color or custom image for your staff ID card public view page</CardDescription>
+                )}
+                {profile?.company_verified && (
+                  <Badge className="bg-green-100 text-green-700 border-none px-4 py-2 flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4" />
+                    Verified Business
+                  </Badge>
+                )}
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-8">
+                {/* Essential Information */}
                 <div className="space-y-6">
-                  {/* Background Type Toggle */}
-                  <div className="flex gap-3">
-                    <Button
-                      variant={(cardCustomization as any)?.cardViewBgType !== 'image' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setCardCustomization(prev => ({ ...prev, cardViewBgType: 'color' }))}
-                    >
-                      Solid Color
-                    </Button>
-                    <Button
-                      variant={(cardCustomization as any)?.cardViewBgType === 'image' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setCardCustomization(prev => ({ ...prev, cardViewBgType: 'image' }))}
-                    >
-                      Custom Image
-                    </Button>
+                  <h4 className="font-bold text-slate-900 flex items-center gap-2">
+                    <AlertCircle className="w-5 h-5 text-red-500" />
+                    Essential Information
+                    <Badge variant="destructive" className="ml-2">Required</Badge>
+                  </h4>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Company Name */}
+                    <div className="space-y-2">
+                      <Label htmlFor="company-name">Company Name *</Label>
+                      <Input
+                        id="company-name"
+                        value={brandingData.company_name}
+                        onChange={(e) => setBrandingData(prev => ({ ...prev, company_name: e.target.value }))}
+                        placeholder="Enter company name"
+                        className="bg-slate-50"
+                      />
+                    </div>
+
+                    {/* Company Email */}
+                    <div className="space-y-2">
+                      <Label htmlFor="company-email">Company Email *</Label>
+                      <Input
+                        id="company-email"
+                        type="email"
+                        value={brandingData.company_email}
+                        onChange={(e) => setBrandingData(prev => ({ ...prev, company_email: e.target.value }))}
+                        placeholder="contact@company.com"
+                        className="bg-slate-50"
+                      />
+                    </div>
+
+                    {/* Company Phone */}
+                    <div className="space-y-2">
+                      <Label htmlFor="company-phone">Company Phone *</Label>
+                      <Input
+                        id="company-phone"
+                        type="tel"
+                        value={brandingData.company_phone}
+                        onChange={(e) => setBrandingData(prev => ({ ...prev, company_phone: e.target.value }))}
+                        placeholder="+1 (555) 123-4567"
+                        className="bg-slate-50"
+                      />
+                    </div>
+
+                    {/* Company Logo Upload */}
+                    <div className="space-y-2">
+                      <Label htmlFor="company-logo">Company Logo *</Label>
+                      <div className="flex flex-col gap-3">
+                        <div className="group relative w-full h-32 bg-slate-100 rounded-xl overflow-hidden border-2 border-dashed border-slate-300 hover:border-indigo-500 transition-colors cursor-pointer flex items-center justify-center">
+                          {companyLogoFile ? (
+                            <img
+                              src={URL.createObjectURL(companyLogoFile)}
+                              alt="Logo Preview"
+                              className="max-h-full max-w-full object-contain p-2"
+                            />
+                          ) : profile?.company_logo_url ? (
+                            <img
+                              src={profile.company_logo_url}
+                              alt="Company Logo"
+                              className="max-h-full max-w-full object-contain p-2"
+                            />
+                          ) : (
+                            <div className="flex flex-col items-center gap-2 text-slate-400">
+                              <Camera className="w-8 h-8" />
+                              <span className="text-xs">Click to upload logo</span>
+                            </div>
+                          )}
+                          <input
+                            type="file"
+                            id="company-logo"
+                            className="absolute inset-0 opacity-0 cursor-pointer"
+                            accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
+                            onChange={(e) => {
+                              if (e.target.files?.[0]) {
+                                setCompanyLogoFile(e.target.files[0]);
+                              }
+                            }}
+                          />
+                          <div className="absolute inset-x-0 bottom-0 bg-black/50 text-white text-[10px] py-1 text-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            {profile?.company_logo_url || companyLogoFile ? 'Click to change' : 'Click to upload'}
+                          </div>
+                        </div>
+                        {companyLogoFile && (
+                          <Button
+                            size="sm"
+                            className="bg-indigo-600 hover:bg-indigo-700"
+                            disabled={isUploadingLogo}
+                            onClick={async () => {
+                              if (!companyLogoFile || !user || !profile) return;
+                              setIsUploadingLogo(true);
+                              try {
+                                const fileExt = companyLogoFile.name.split('.').pop();
+                                const fileName = `logo-${Date.now()}.${fileExt}`;
+                                const filePath = `${user.id}/company/${fileName}`;
+
+                                const { error: uploadError } = await supabase.storage
+                                  .from('avatars')
+                                  .upload(filePath, companyLogoFile, {
+                                    contentType: companyLogoFile.type || undefined,
+                                    upsert: true,
+                                  });
+
+                                if (uploadError) throw uploadError;
+
+                                const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
+                                const logoUrl = urlData.publicUrl;
+
+                                const { error: updateError } = await supabase
+                                  .from('profiles')
+                                  .update({ company_logo_url: logoUrl })
+                                  .eq('id', profile.id);
+
+                                if (updateError) throw updateError;
+
+                                toast({ title: "Logo uploaded", description: "Your company logo has been updated successfully." });
+                                setCompanyLogoFile(null);
+                                fetchProfile();
+                              } catch (error: any) {
+                                console.error('Logo upload error:', error);
+                                toast({ title: "Upload failed", description: error.message, variant: "destructive" });
+                              } finally {
+                                setIsUploadingLogo(false);
+                              }
+                            }}
+                          >
+                            {isUploadingLogo ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Uploading...
+                              </>
+                            ) : (
+                              <>
+                                <Upload className="w-4 h-4 mr-2" />
+                                Save Logo
+                              </>
+                            )}
+                          </Button>
+                        )}
+                        <p className="text-xs text-slate-500">PNG, JPG or SVG. Max 2MB recommended.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Optional Information */}
+                <div className="pt-6 border-t border-slate-100 space-y-6">
+                  <h4 className="font-bold text-slate-900 flex items-center gap-2">
+                    <Info className="w-5 h-5 text-blue-500" />
+                    Additional Details
+                    <Badge variant="outline" className="ml-2">Optional</Badge>
+                  </h4>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Website */}
+                    <div className="space-y-2">
+                      <Label htmlFor="company-website">Website</Label>
+                      <Input
+                        id="company-website"
+                        type="url"
+                        value={brandingData.company_website}
+                        onChange={(e) => setBrandingData(prev => ({ ...prev, company_website: e.target.value }))}
+                        placeholder="https://www.company.com"
+                        className="bg-slate-50"
+                      />
+                    </div>
+
+                    {/* Industry */}
+                    <div className="space-y-2">
+                      <Label htmlFor="company-industry">Industry</Label>
+                      <Input
+                        id="company-industry"
+                        value={brandingData.company_industry}
+                        onChange={(e) => setBrandingData(prev => ({ ...prev, company_industry: e.target.value }))}
+                        placeholder="e.g., Technology, Healthcare"
+                        className="bg-slate-50"
+                      />
+                    </div>
+
+                    {/* GST Number */}
+                    <div className="space-y-2">
+                      <Label htmlFor="company-gst">GST Number</Label>
+                      <Input
+                        id="company-gst"
+                        value={brandingData.company_gst}
+                        onChange={(e) => setBrandingData(prev => ({ ...prev, company_gst: e.target.value }))}
+                        placeholder="e.g., 22AAAAA0000A1Z5"
+                        className="bg-slate-50"
+                      />
+                    </div>
+
+                    {/* Company Vanity URL */}
+                    <div className="space-y-2">
+                      <Label>Company Vanity URL</Label>
+                      <div className="flex gap-2">
+                        <div className="flex-1 flex items-center bg-slate-100 rounded-lg px-3 border border-slate-200 h-10 min-h-[40px]">
+                          <Globe className="w-4 h-4 text-slate-400 mr-2 flex-shrink-0" />
+                          <span className="text-slate-500 text-sm whitespace-nowrap">{window.location.host}/</span>
+                          <input
+                            className="bg-transparent border-none outline-none text-sm font-medium text-slate-900 flex-1 ml-1 min-w-0"
+                            value={companyVanity}
+                            onChange={(e) => setCompanyVanity(e.target.value)}
+                            placeholder="your-company-name"
+                          />
+                        </div>
+                      </div>
+                      <p className="text-xs text-slate-500 italic">This URL will be used to host your corporate ID cards.</p>
+                    </div>
                   </div>
 
-                  {/* Color Presets - shown when color is selected */}
-                  {(cardCustomization as any)?.cardViewBgType !== 'image' && (
-                    <div className="space-y-4">
-                      <div className="flex flex-wrap gap-3">
-                        {[
-                          { name: 'Indigo', color: '#6366f1' },
-                          { name: 'Rose', color: '#e11d48' },
-                          { name: 'Emerald', color: '#059669' },
-                          { name: 'Amber', color: '#d97706' },
-                          { name: 'Slate', color: '#475569' },
-                          { name: 'Purple', color: '#7c3aed' },
-                          { name: 'Blue', color: '#2563eb' },
-                          { name: 'Teal', color: '#0d9488' },
-                        ].map(preset => (
-                          <button
-                            key={preset.color}
-                            onClick={() => {
-                              setCardCustomization(prev => ({
-                                ...prev,
-                                cardViewTheme: preset.color
-                              }));
-                            }}
-                            className={`w-12 h-12 rounded-xl border-2 transition-all hover:scale-110 ${(cardCustomization as any)?.cardViewTheme === preset.color
-                              ? 'border-slate-900 ring-2 ring-offset-2 ring-slate-400'
-                              : 'border-transparent'
-                              }`}
-                            style={{ backgroundColor: preset.color }}
-                            title={preset.name}
-                          />
-                        ))}
-                        {/* Custom color picker */}
-                        <label className="relative">
-                          <input
-                            type="color"
-                            value={(cardCustomization as any)?.cardViewTheme || '#6366f1'}
-                            onChange={(e) => {
-                              setCardCustomization(prev => ({
-                                ...prev,
-                                cardViewTheme: e.target.value
-                              }));
-                            }}
-                            className="sr-only"
-                          />
-                          <div className="w-12 h-12 rounded-xl border-2 border-dashed border-slate-300 flex items-center justify-center cursor-pointer hover:border-slate-400 transition-colors">
-                            <Plus className="w-5 h-5 text-slate-400" />
-                          </div>
-                        </label>
+                  {/* Company Address */}
+                  <div className="space-y-2">
+                    <Label htmlFor="company-address">Company Address</Label>
+                    <textarea
+                      id="company-address"
+                      rows={3}
+                      value={brandingData.company_address}
+                      onChange={(e) => setBrandingData(prev => ({ ...prev, company_address: e.target.value }))}
+                      placeholder="Enter full company address"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+
+                  {/* Company Description */}
+                  <div className="space-y-2">
+                    <Label htmlFor="company-description">Company Description</Label>
+                    <textarea
+                      id="company-description"
+                      rows={4}
+                      value={brandingData.company_description}
+                      onChange={(e) => setBrandingData(prev => ({ ...prev, company_description: e.target.value }))}
+                      placeholder="Brief description of your company and what you do"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Global Security & Policy */}
+                <div className="pt-6 border-t border-slate-100">
+                  <h4 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
+                    <ShieldCheck className="w-5 h-5 text-indigo-600" />
+                    Global Security & Policy
+                  </h4>
+                  <div className="space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-slate-50 rounded-xl gap-4">
+                      <div>
+                        <p className="font-medium text-slate-900">Auto-Deactivate on Termination</p>
+                        <p className="text-sm text-slate-500">Automatically disable card if employee is removed from directory.</p>
                       </div>
-                      <p className="text-xs text-slate-500">This color will be used as the background gradient for staff ID card public pages</p>
-                    </div>
-                  )}
-
-                  {/* Image Upload - shown when image is selected */}
-                  {(cardCustomization as any)?.cardViewBgType === 'image' && (
-                    <div className="space-y-4">
-                      <div className="group relative w-full h-48 bg-slate-100 rounded-xl overflow-hidden border-2 border-dashed border-slate-300 hover:border-indigo-500 transition-colors cursor-pointer">
-                        {(cardCustomization as any)?.cardViewBgImage ? (
-                          <img
-                            src={(cardCustomization as any)?.cardViewBgImage}
-                            alt="Background Preview"
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="flex flex-col items-center justify-center h-full gap-2 text-slate-400">
-                            <Upload className="w-10 h-10" />
-                            <span className="text-sm font-medium">Click to upload background image</span>
-                            <span className="text-xs">PNG, JPG or WEBP. Recommended: 1920x1080</span>
-                          </div>
-                        )}
-                        <input
-                          type="file"
-                          className="absolute inset-0 opacity-0 cursor-pointer"
-                          accept="image/png,image/jpeg,image/jpg,image/webp"
-                          onChange={async (e) => {
-                            const file = e.target.files?.[0];
-                            if (!file || !user || !profile) return;
-
-                            try {
-                              const fileExt = file.name.split('.').pop();
-                              const fileName = `card-bg-${Date.now()}.${fileExt}`;
-                              const filePath = `${user.id}/backgrounds/${fileName}`;
-
-                              const { error: uploadError } = await supabase.storage
-                                .from('avatars')
-                                .upload(filePath, file, {
-                                  contentType: file.type || undefined,
-                                  upsert: true,
-                                });
-
-                              if (uploadError) throw uploadError;
-
-                              const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
-                              const bgUrl = urlData.publicUrl;
-
-                              setCardCustomization(prev => ({
-                                ...prev,
-                                cardViewBgImage: bgUrl,
-                                cardViewBgType: 'image'
-                              }));
-
-                              toast({ title: "Background uploaded", description: "Save your changes to apply the new background." });
-                            } catch (error: any) {
-                              console.error('Background upload error:', error);
-                              toast({ title: "Upload failed", description: error.message, variant: "destructive" });
-                            }
-                          }}
-                        />
-                        {(cardCustomization as any)?.cardViewBgImage && (
-                          <div className="absolute inset-x-0 bottom-0 bg-black/50 text-white text-xs py-2 text-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            Click to change image
-                          </div>
-                        )}
+                      <div className="flex items-center gap-3">
+                        <Checkbox checked={true} id="auto-deactivate" />
+                        <Label htmlFor="auto-deactivate" className="sm:hidden text-xs text-slate-500">Enable</Label>
                       </div>
-                      {(cardCustomization as any)?.cardViewBgImage && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                          onClick={() => {
-                            setCardCustomization(prev => ({
-                              ...prev,
-                              cardViewBgImage: null,
-                              cardViewBgType: 'color'
-                            }));
-                          }}
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Remove Background Image
-                        </Button>
-                      )}
-                      <p className="text-xs text-slate-500">This image will be used as the full-screen background for staff ID card public pages</p>
                     </div>
-                  )}
+                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
+                      <div>
+                        <p className="font-medium text-slate-900">Corporate Theme Lock</p>
+                        <p className="text-sm text-slate-500">Prevent employees from changing the standard corporate theme.</p>
+                      </div>
+                      <Checkbox />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Save Button */}
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    className="bg-indigo-600 hover:bg-indigo-700 px-8 flex-1 sm:flex-none shadow-lg shadow-indigo-100"
+                    onClick={async () => {
+                      await handleSaveBranding();
+                    }}
+                  >
+                    Save All Changes
+                  </Button>
+                  <Button variant="outline">Reset to Default</Button>
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
 
-            {/* Data Visibility Settings */}
+
+          <TabsContent value="parameters">
             <Card className="shadow-md border-none">
               <CardHeader>
-                <CardTitle>Data Visibility Settings</CardTitle>
-                <CardDescription>Choose which pieces of collected data should be visible on the public ID card.</CardDescription>
+                <CardTitle>Onboarding Requirements</CardTitle>
+                <CardDescription>Select what data points employees must provide when joining your organization.</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {AVAILABLE_PARAMETERS.map(param => (
-                    <div key={param.id} className={`flex items-center justify-between p-4 rounded-xl border transition-colors ${selectedParameters.includes(param.id) ? 'bg-slate-50 border-slate-200' : 'bg-slate-50/30 border-dashed border-slate-200 opacity-50'}`}>
+                    <div key={param.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
                       <div className="flex items-center gap-3">
                         <Checkbox
-                          id={`show-${param.id}`}
-                          checked={displayParameters.includes(param.id)}
-                          disabled={!selectedParameters.includes(param.id)}
+                          id={`collect-${param.id}`}
+                          checked={selectedParameters.includes(param.id)}
                           onCheckedChange={(checked) => {
-                            setDisplayParameters(prev =>
+                            if (param.required) return;
+                            setSelectedParameters(prev =>
                               checked
                                 ? [...prev, param.id]
                                 : prev.filter(p => p !== param.id)
                             );
                           }}
+                          disabled={param.required}
                         />
-                        <div className="flex flex-col">
-                          <Label htmlFor={`show-${param.id}`} className="font-medium cursor-pointer">{param.label}</Label>
-                          {!selectedParameters.includes(param.id) && <span className="text-[10px] text-amber-600 font-bold">Not being collected</span>}
-                        </div>
+                        <Label htmlFor={`collect-${param.id}`} className="font-medium cursor-pointer">{param.label}</Label>
                       </div>
-                      <Badge variant="outline" className={`${displayParameters.includes(param.id) ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
-                        {displayParameters.includes(param.id) ? 'Visible' : 'Hidden'}
-                      </Badge>
+                      {param.required && <Badge variant="secondary" className="bg-slate-200 text-slate-600 border-none">Required</Badge>}
                     </div>
                   ))}
                 </div>
+                <Button className="mt-8 bg-indigo-600 hover:bg-indigo-700 px-8" onClick={async () => {
+                  const { error } = await supabase.from('profiles').update({ invite_parameters: selectedParameters }).eq('id', profile!.id);
+                  if (!error) toast({ title: "Requirements updated" });
+                }}>
+                  Save Requirements
+                </Button>
               </CardContent>
             </Card>
+          </TabsContent>
 
-            {/* Staff ID Card Preview */}
-            <Card className="shadow-md border-none">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="w-5 h-5" />
-                  Staff ID Card Preview
-                </CardTitle>
-                <CardDescription>Select an employee to preview their ID card with the current template</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {employees.filter(emp => emp.is_approved).length === 0 ? (
-                  <div className="text-center py-12 text-slate-500">
-                    <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>No approved employees yet</p>
-                    <p className="text-sm mt-2">Add staff members to preview ID cards</p>
+          <TabsContent value="display">
+            <div className="space-y-8">
+              {/* Design Studio CTA */}
+              <Card className="shadow-md border-none bg-gradient-to-r from-primary/5 to-accent/5">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <h3 className="text-lg font-semibold flex items-center gap-2">
+                        <Edit3 className="w-5 h-5 text-primary" />
+                        ID Card Design Studio
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        Create custom ID card designs with drag-and-drop. Place elements freely, upload backgrounds, and publish templates for others to use.
+                      </p>
+                    </div>
+                    <Button onClick={() => navigate('/design-studio')} className="gap-2">
+                      Open Design Studio
+                      <Plus className="w-4 h-4" />
+                    </Button>
                   </div>
-                ) : (
-                  <div className="space-y-6">
-                    {/* Employee Selector */}
-                    <div className="max-w-md">
-                      <Label htmlFor="employee-select" className="text-sm font-medium mb-2 block">
-                        Select Employee
-                      </Label>
-                      <select
-                        id="employee-select"
-                        className="w-full px-4 py-2 border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                        value={selectedEmployeeId || ''}
-                        onChange={(e) => setSelectedEmployeeId(e.target.value)}
-                      >
-                        {!selectedEmployeeId && <option value="">-- Choose an employee --</option>}
-                        {employees.filter(emp => emp.is_approved).map(employee => {
-                          const empProfile = Array.isArray(employee.profiles) ? employee.profiles[0] : employee.profiles;
-                          const submittedData = employee.data_submitted as any;
-                          const displayName = empProfile?.display_name || submittedData?.display_name || 'Employee';
-                          const designation = employee.designation || submittedData?.job_title || 'Team Member';
+                </CardContent>
+              </Card>
 
-                          return (
-                            <option key={employee.id} value={employee.id}>
-                              {displayName} - {designation}
-                            </option>
-                          );
-                        })}
-                      </select>
+              {/* Template Customizer with Studio X */}
+              <IDCardCustomizer
+                customization={cardCustomization}
+                onCustomizationChange={setCardCustomization}
+                brandColors={{
+                  primary: '#1e293b',
+                  secondary: '#64748b',
+                  accent: '#3b82f6',
+                }}
+                selectedStudioXTemplate={selectedStudioXTemplate}
+                onStudioXTemplateChange={setSelectedStudioXTemplate}
+                studioXPreviewData={{
+                  company_logo_url: profile?.company_logo_url,
+                  display_name: 'Alex Johnson',
+                  job_title: 'Product Designer',
+                  email: 'alex@company.com',
+                }}
+                onSave={async () => {
+                  setIsSavingCardDesign(true);
+                  try {
+                    const { error } = await supabase
+                      .from('profiles')
+                      .update({
+                        display_parameters: {
+                          ...displayParameters,
+                          cardCustomization: cardCustomization,
+                          studioXTemplateId: selectedStudioXTemplate?.id || null,
+                          cardViewTheme: (cardCustomization as any)?.cardViewTheme || '#6366f1',
+                          cardViewBgType: (cardCustomization as any)?.cardViewBgType || 'color',
+                          cardViewBgImage: (cardCustomization as any)?.cardViewBgImage || null,
+                        }
+                      })
+                      .eq('id', profile!.id);
+
+                    if (error) throw error;
+                    toast({ title: "Card design saved successfully" });
+                  } catch (err) {
+                    console.error('Error saving card design:', err);
+                    toast({ title: "Failed to save card design", variant: "destructive" });
+                  } finally {
+                    setIsSavingCardDesign(false);
+                  }
+                }}
+                isSaving={isSavingCardDesign}
+              />
+
+              {/* Card View Theme Color */}
+              <Card className="shadow-md border-none">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <div className="w-5 h-5 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600" />
+                    Card View Theme
+                  </CardTitle>
+                  <CardDescription>Set the background theme color or custom image for your staff ID card public view page</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    {/* Background Type Toggle */}
+                    <div className="flex gap-3">
+                      <Button
+                        variant={(cardCustomization as any)?.cardViewBgType !== 'image' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setCardCustomization(prev => ({ ...prev, cardViewBgType: 'color' }))}
+                      >
+                        Solid Color
+                      </Button>
+                      <Button
+                        variant={(cardCustomization as any)?.cardViewBgType === 'image' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setCardCustomization(prev => ({ ...prev, cardViewBgType: 'image' }))}
+                      >
+                        Custom Image
+                      </Button>
                     </div>
 
-                    {/* Selected Employee Card Preview */}
-                    {(() => {
-                      const approvedEmployees = employees.filter(emp => emp.is_approved);
-                      const currentSelectedId = selectedEmployeeId || approvedEmployees[0]?.id;
-                      const selectedEmployee = approvedEmployees.find(emp => emp.id === currentSelectedId);
-
-                      if (!selectedEmployee) return null;
-
-                      const empProfile = Array.isArray(selectedEmployee.profiles) ? selectedEmployee.profiles[0] : selectedEmployee.profiles;
-                      const submittedData = selectedEmployee.data_submitted as any;
-
-                      return (
-                        <div className="flex flex-col lg:flex-row items-center lg:items-start gap-8">
-                          {/* Card Preview */}
-                          <div className="flex flex-col items-center gap-4">
-                            <div className="bg-slate-100 rounded-[2rem] p-8 border-2 border-slate-200">
-                              {selectedStudioXTemplate ? (
-                                <StudioXCardRenderer
-                                  template={selectedStudioXTemplate}
-                                  userData={{
-                                    company_logo_url: profile?.company_logo_url,
-                                    avatar_url: empProfile?.avatar_url || submittedData?.avatar_url,
-                                    display_name: empProfile?.display_name || submittedData?.display_name || 'Employee',
-                                    job_title: selectedEmployee.designation || submittedData?.job_title || 'Team Member',
-                                    employee_display_id: selectedEmployee.staff_id || selectedEmployee.employee_display_id,
-                                    department: submittedData?.department,
-                                    email: submittedData?.email || 'email@company.com',
-                                    phone: submittedData?.phone || '',
-                                    vanity_url: empProfile?.vanity_url ? `https://patra.app/${empProfile.vanity_url}` : 'https://patra.app',
-                                  }}
-                                  scale={0.85}
-                                />
-                              ) : (
-                                <IDCardRenderer
-                                  templateId={cardCustomization.templateId}
-                                  user={{
-                                    fullName: empProfile?.display_name || submittedData?.display_name || 'Employee',
-                                    jobTitle: selectedEmployee.designation || submittedData?.job_title || 'Team Member',
-                                    email: submittedData?.email || 'email@company.com',
-                                    phone: submittedData?.phone || '',
-                                    avatarUrl: empProfile?.avatar_url || submittedData?.avatar_url || '',
-                                    vanityUrl: empProfile?.vanity_url || 'employee',
-                                    staffId: selectedEmployee.staff_id,
-                                    companyVanity: profile?.vanity_url || undefined,
-                                    companyName: profile?.company_name,
-                                    badgeRole: cardCustomization.options.badgeText || selectedEmployee.designation,
-                                    isVerified: profile?.company_verified,
-                                  }}
-                                  companyLogo={profile?.company_logo_url}
-                                  customization={cardCustomization}
-                                  displayParameters={displayParameters}
-                                  scale={0.85}
-                                />
-                              )}
+                    {/* Color Presets - shown when color is selected */}
+                    {(cardCustomization as any)?.cardViewBgType !== 'image' && (
+                      <div className="space-y-4">
+                        <div className="flex flex-wrap gap-3">
+                          {[
+                            { name: 'Indigo', color: '#6366f1' },
+                            { name: 'Rose', color: '#e11d48' },
+                            { name: 'Emerald', color: '#059669' },
+                            { name: 'Amber', color: '#d97706' },
+                            { name: 'Slate', color: '#475569' },
+                            { name: 'Purple', color: '#7c3aed' },
+                            { name: 'Blue', color: '#2563eb' },
+                            { name: 'Teal', color: '#0d9488' },
+                          ].map(preset => (
+                            <button
+                              key={preset.color}
+                              onClick={() => {
+                                setCardCustomization(prev => ({
+                                  ...prev,
+                                  cardViewTheme: preset.color
+                                }));
+                              }}
+                              className={`w-12 h-12 rounded-xl border-2 transition-all hover:scale-110 ${(cardCustomization as any)?.cardViewTheme === preset.color
+                                ? 'border-slate-900 ring-2 ring-offset-2 ring-slate-400'
+                                : 'border-transparent'
+                                }`}
+                              style={{ backgroundColor: preset.color }}
+                              title={preset.name}
+                            />
+                          ))}
+                          {/* Custom color picker */}
+                          <label className="relative">
+                            <input
+                              type="color"
+                              value={(cardCustomization as any)?.cardViewTheme || '#6366f1'}
+                              onChange={(e) => {
+                                setCardCustomization(prev => ({
+                                  ...prev,
+                                  cardViewTheme: e.target.value
+                                }));
+                              }}
+                              className="sr-only"
+                            />
+                            <div className="w-12 h-12 rounded-xl border-2 border-dashed border-slate-300 flex items-center justify-center cursor-pointer hover:border-slate-400 transition-colors">
+                              <Plus className="w-5 h-5 text-slate-400" />
                             </div>
-                            <p className="text-xs text-slate-400">
-                              {selectedStudioXTemplate ? 'Using Studio X template' : 'Tap the card to see the reverse side'}
-                            </p>
-                          </div>
+                          </label>
+                        </div>
+                        <p className="text-xs text-slate-500">This color will be used as the background gradient for staff ID card public pages</p>
+                      </div>
+                    )}
 
-                          {/* Employee Info */}
-                          <div className="flex-1 space-y-4">
-                            <div>
-                              <h3 className="text-xl font-bold text-slate-900">
-                                {empProfile?.display_name || submittedData?.display_name || 'Employee'}
-                              </h3>
-                              <p className="text-slate-600">
-                                {selectedEmployee.designation || submittedData?.job_title || 'Team Member'}
+                    {/* Image Upload - shown when image is selected */}
+                    {(cardCustomization as any)?.cardViewBgType === 'image' && (
+                      <div className="space-y-4">
+                        <div className="group relative w-full h-48 bg-slate-100 rounded-xl overflow-hidden border-2 border-dashed border-slate-300 hover:border-indigo-500 transition-colors cursor-pointer">
+                          {(cardCustomization as any)?.cardViewBgImage ? (
+                            <img
+                              src={(cardCustomization as any)?.cardViewBgImage}
+                              alt="Background Preview"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex flex-col items-center justify-center h-full gap-2 text-slate-400">
+                              <Upload className="w-10 h-10" />
+                              <span className="text-sm font-medium">Click to upload background image</span>
+                              <span className="text-xs">PNG, JPG or WEBP. Recommended: 1920x1080</span>
+                            </div>
+                          )}
+                          <input
+                            type="file"
+                            className="absolute inset-0 opacity-0 cursor-pointer"
+                            accept="image/png,image/jpeg,image/jpg,image/webp"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file || !user || !profile) return;
+
+                              try {
+                                const fileExt = file.name.split('.').pop();
+                                const fileName = `card-bg-${Date.now()}.${fileExt}`;
+                                const filePath = `${user.id}/backgrounds/${fileName}`;
+
+                                const { error: uploadError } = await supabase.storage
+                                  .from('avatars')
+                                  .upload(filePath, file, {
+                                    contentType: file.type || undefined,
+                                    upsert: true,
+                                  });
+
+                                if (uploadError) throw uploadError;
+
+                                const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
+                                const bgUrl = urlData.publicUrl;
+
+                                setCardCustomization(prev => ({
+                                  ...prev,
+                                  cardViewBgImage: bgUrl,
+                                  cardViewBgType: 'image'
+                                }));
+
+                                toast({ title: "Background uploaded", description: "Save your changes to apply the new background." });
+                              } catch (error: any) {
+                                console.error('Background upload error:', error);
+                                toast({ title: "Upload failed", description: error.message, variant: "destructive" });
+                              }
+                            }}
+                          />
+                          {(cardCustomization as any)?.cardViewBgImage && (
+                            <div className="absolute inset-x-0 bottom-0 bg-black/50 text-white text-xs py-2 text-center opacity-0 group-hover:opacity-100 transition-opacity">
+                              Click to change image
+                            </div>
+                          )}
+                        </div>
+                        {(cardCustomization as any)?.cardViewBgImage && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => {
+                              setCardCustomization(prev => ({
+                                ...prev,
+                                cardViewBgImage: null,
+                                cardViewBgType: 'color'
+                              }));
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Remove Background Image
+                          </Button>
+                        )}
+                        <p className="text-xs text-slate-500">This image will be used as the full-screen background for staff ID card public pages</p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Data Visibility Settings */}
+              <Card className="shadow-md border-none">
+                <CardHeader>
+                  <CardTitle>Data Visibility Settings</CardTitle>
+                  <CardDescription>Choose which pieces of collected data should be visible on the public ID card.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {AVAILABLE_PARAMETERS.map(param => (
+                      <div key={param.id} className={`flex items-center justify-between p-4 rounded-xl border transition-colors ${selectedParameters.includes(param.id) ? 'bg-slate-50 border-slate-200' : 'bg-slate-50/30 border-dashed border-slate-200 opacity-50'}`}>
+                        <div className="flex items-center gap-3">
+                          <Checkbox
+                            id={`show-${param.id}`}
+                            checked={displayParameters.includes(param.id)}
+                            disabled={!selectedParameters.includes(param.id)}
+                            onCheckedChange={(checked) => {
+                              setDisplayParameters(prev =>
+                                checked
+                                  ? [...prev, param.id]
+                                  : prev.filter(p => p !== param.id)
+                              );
+                            }}
+                          />
+                          <div className="flex flex-col">
+                            <Label htmlFor={`show-${param.id}`} className="font-medium cursor-pointer">{param.label}</Label>
+                            {!selectedParameters.includes(param.id) && <span className="text-[10px] text-amber-600 font-bold">Not being collected</span>}
+                          </div>
+                        </div>
+                        <Badge variant="outline" className={`${displayParameters.includes(param.id) ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                          {displayParameters.includes(param.id) ? 'Visible' : 'Hidden'}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Staff ID Card Preview */}
+              <Card className="shadow-md border-none">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="w-5 h-5" />
+                    Staff ID Card Preview
+                  </CardTitle>
+                  <CardDescription>Select an employee to preview their ID card with the current template</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {employees.filter(emp => emp.is_approved).length === 0 ? (
+                    <div className="text-center py-12 text-slate-500">
+                      <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>No approved employees yet</p>
+                      <p className="text-sm mt-2">Add staff members to preview ID cards</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      {/* Employee Selector */}
+                      <div className="max-w-md">
+                        <Label htmlFor="employee-select" className="text-sm font-medium mb-2 block">
+                          Select Employee
+                        </Label>
+                        <select
+                          id="employee-select"
+                          className="w-full px-4 py-2 border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                          value={selectedEmployeeId || ''}
+                          onChange={(e) => setSelectedEmployeeId(e.target.value)}
+                        >
+                          {!selectedEmployeeId && <option value="">-- Choose an employee --</option>}
+                          {employees.filter(emp => emp.is_approved).map(employee => {
+                            const empProfile = Array.isArray(employee.profiles) ? employee.profiles[0] : employee.profiles;
+                            const submittedData = employee.data_submitted as any;
+                            const displayName = empProfile?.display_name || submittedData?.display_name || 'Employee';
+                            const designation = employee.designation || submittedData?.job_title || 'Team Member';
+
+                            return (
+                              <option key={employee.id} value={employee.id}>
+                                {displayName} - {designation}
+                              </option>
+                            );
+                          })}
+                        </select>
+                      </div>
+
+                      {/* Selected Employee Card Preview */}
+                      {(() => {
+                        const approvedEmployees = employees.filter(emp => emp.is_approved);
+                        const currentSelectedId = selectedEmployeeId || approvedEmployees[0]?.id;
+                        const selectedEmployee = approvedEmployees.find(emp => emp.id === currentSelectedId);
+
+                        if (!selectedEmployee) return null;
+
+                        const empProfile = Array.isArray(selectedEmployee.profiles) ? selectedEmployee.profiles[0] : selectedEmployee.profiles;
+                        const submittedData = selectedEmployee.data_submitted as any;
+
+                        return (
+                          <div className="flex flex-col lg:flex-row items-center lg:items-start gap-8">
+                            {/* Card Preview */}
+                            <div className="flex flex-col items-center gap-4">
+                              <div className="bg-slate-100 rounded-[2rem] p-8 border-2 border-slate-200">
+                                {selectedStudioXTemplate ? (
+                                  <StudioXCardRenderer
+                                    template={selectedStudioXTemplate}
+                                    userData={{
+                                      company_logo_url: profile?.company_logo_url,
+                                      avatar_url: empProfile?.avatar_url || submittedData?.avatar_url,
+                                      display_name: empProfile?.display_name || submittedData?.display_name || 'Employee',
+                                      job_title: selectedEmployee.designation || submittedData?.job_title || 'Team Member',
+                                      employee_display_id: selectedEmployee.staff_id || selectedEmployee.employee_display_id,
+                                      department: submittedData?.department,
+                                      email: submittedData?.email || 'email@company.com',
+                                      phone: submittedData?.phone || '',
+                                      vanity_url: empProfile?.vanity_url ? `https://patra.app/${empProfile.vanity_url}` : 'https://patra.app',
+                                    }}
+                                    scale={0.85}
+                                  />
+                                ) : (
+                                  <IDCardRenderer
+                                    templateId={cardCustomization.templateId}
+                                    user={{
+                                      fullName: empProfile?.display_name || submittedData?.display_name || 'Employee',
+                                      jobTitle: selectedEmployee.designation || submittedData?.job_title || 'Team Member',
+                                      email: submittedData?.email || 'email@company.com',
+                                      phone: submittedData?.phone || '',
+                                      avatarUrl: empProfile?.avatar_url || submittedData?.avatar_url || '',
+                                      vanityUrl: empProfile?.vanity_url || 'employee',
+                                      staffId: selectedEmployee.staff_id,
+                                      companyVanity: profile?.vanity_url || undefined,
+                                      companyName: profile?.company_name,
+                                      badgeRole: cardCustomization.options.badgeText || selectedEmployee.designation,
+                                      isVerified: profile?.company_verified,
+                                    }}
+                                    companyLogo={profile?.company_logo_url}
+                                    customization={cardCustomization}
+                                    displayParameters={displayParameters}
+                                    scale={0.85}
+                                  />
+                                )}
+                              </div>
+                              <p className="text-xs text-slate-400">
+                                {selectedStudioXTemplate ? 'Using Studio X template' : 'Tap the card to see the reverse side'}
                               </p>
                             </div>
 
-                            <div className="p-4 bg-slate-50 rounded-xl space-y-2">
-                              <div className="flex items-center gap-2 text-sm">
-                                <Mail className="w-4 h-4 text-slate-400" />
-                                <span className="text-slate-600">{submittedData?.email || 'N/A'}</span>
+                            {/* Employee Info */}
+                            <div className="flex-1 space-y-4">
+                              <div>
+                                <h3 className="text-xl font-bold text-slate-900">
+                                  {empProfile?.display_name || submittedData?.display_name || 'Employee'}
+                                </h3>
+                                <p className="text-slate-600">
+                                  {selectedEmployee.designation || submittedData?.job_title || 'Team Member'}
+                                </p>
                               </div>
-                              {submittedData?.phone && (
-                                <div className="flex items-center gap-2 text-sm">
-                                  <Phone className="w-4 h-4 text-slate-400" />
-                                  <span className="text-slate-600">{submittedData.phone}</span>
-                                </div>
-                              )}
-                              {selectedEmployee.staff_id && (
-                                <div className="flex items-center gap-2 text-sm">
-                                  <CreditCard className="w-4 h-4 text-slate-400" />
-                                  <span className="text-slate-600 font-mono">ID: {selectedEmployee.staff_id}</span>
-                                </div>
-                              )}
-                            </div>
 
-                            <div className="text-sm text-slate-500">
-                              <p>Template: <span className="font-medium text-slate-700">{ID_CARD_TEMPLATES.find(t => t.id === cardCustomization.templateId)?.name || 'Corporate Classic'}</span></p>
+                              <div className="p-4 bg-slate-50 rounded-xl space-y-2">
+                                <div className="flex items-center gap-2 text-sm">
+                                  <Mail className="w-4 h-4 text-slate-400" />
+                                  <span className="text-slate-600">{submittedData?.email || 'N/A'}</span>
+                                </div>
+                                {submittedData?.phone && (
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <Phone className="w-4 h-4 text-slate-400" />
+                                    <span className="text-slate-600">{submittedData.phone}</span>
+                                  </div>
+                                )}
+                                {selectedEmployee.staff_id && (
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <CreditCard className="w-4 h-4 text-slate-400" />
+                                    <span className="text-slate-600 font-mono">ID: {selectedEmployee.staff_id}</span>
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="text-sm text-slate-500">
+                                <p>Template: <span className="font-medium text-slate-700">{ID_CARD_TEMPLATES.find(t => t.id === cardCustomization.templateId)?.name || 'Corporate Classic'}</span></p>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      );
-                    })()}
+                        );
+                      })()}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs >
+      </main >
+      {/* Manual Add Staff Dialog */}
+      < Dialog open={showAddStaffDialog} onOpenChange={(open) => {
+        setShowAddStaffDialog(open);
+        if (!open) {
+          setManualStaffData({});
+          setSelectedImage(null);
+        }
+      }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="w-5 h-5 text-indigo-600" />
+              Add New Staff Member
+            </DialogTitle>
+            <DialogDescription>
+              Create a new staff profile. Access credentials will be sent to the email provided.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col md:flex-row gap-6 py-4">
+            {/* Left Column: Image Upload */}
+            <div className="flex-shrink-0 flex flex-col items-center space-y-3">
+              <Label className="text-xs font-bold uppercase text-slate-500">Profile Photo</Label>
+              <div className="group relative w-32 h-32 bg-slate-100 rounded-[2rem] overflow-hidden border-2 border-dashed border-slate-300 hover:border-indigo-500 transition-colors cursor-pointer">
+                {selectedImage ? (
+                  <img
+                    src={URL.createObjectURL(selectedImage)}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                  />
+                ) : manualStaffData.avatar_url ? (
+                  <img
+                    src={manualStaffData.avatar_url}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-slate-400">
+                    <Camera className="w-8 h-8" />
                   </div>
                 )}
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-      </Tabs >
-    </main >
-  {/* Manual Add Staff Dialog */ }
-  < Dialog open={showAddStaffDialog} onOpenChange={(open) => {
-    setShowAddStaffDialog(open);
-    if (!open) {
-      setManualStaffData({});
-      setSelectedImage(null);
-    }
-  }}>
-    <DialogContent className="max-w-2xl">
-      <DialogHeader>
-        <DialogTitle className="flex items-center gap-2">
-          <UserPlus className="w-5 h-5 text-indigo-600" />
-          Add New Staff Member
-        </DialogTitle>
-        <DialogDescription>
-          Create a new staff profile. Access credentials will be sent to the email provided.
-        </DialogDescription>
-      </DialogHeader>
-
-      <div className="flex flex-col md:flex-row gap-6 py-4">
-        {/* Left Column: Image Upload */}
-        <div className="flex-shrink-0 flex flex-col items-center space-y-3">
-          <Label className="text-xs font-bold uppercase text-slate-500">Profile Photo</Label>
-          <div className="group relative w-32 h-32 bg-slate-100 rounded-[2rem] overflow-hidden border-2 border-dashed border-slate-300 hover:border-indigo-500 transition-colors cursor-pointer">
-            {selectedImage ? (
-              <img
-                src={URL.createObjectURL(selectedImage)}
-                alt="Preview"
-                className="w-full h-full object-cover"
-              />
-            ) : manualStaffData.avatar_url ? (
-              <img
-                src={manualStaffData.avatar_url}
-                alt="Preview"
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-slate-400">
-                <Camera className="w-8 h-8" />
-              </div>
-            )}
-            <input
-              type="file"
-              className="absolute inset-0 opacity-0 cursor-pointer"
-              accept="image/*"
-              onChange={(e) => {
-                if (e.target.files?.[0]) {
-                  setSelectedImage(e.target.files[0]);
-                }
-              }}
-            />
-            <div className="absolute inset-x-0 bottom-0 bg-black/50 text-white text-[10px] py-1 text-center opacity-0 group-hover:opacity-100 transition-opacity">
-              Click to Upload
-            </div>
-          </div>
-          <p className="text-[10px] text-slate-400 text-center max-w-[120px]">
-            Recommended: Square image, max 2MB
-          </p>
-        </div>
-
-        {/* Right Column: Details */}
-        <div className="flex-1 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="manual-name" className="text-xs font-bold uppercase text-slate-500">Full Name *</Label>
-              <Input
-                id="manual-name"
-                placeholder="e.g. John Doe"
-                value={manualStaffData['display_name'] || ''}
-                onChange={(e) => setManualStaffData(prev => ({ ...prev, 'display_name': e.target.value }))}
-                className="bg-slate-50"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="manual-job" className="text-xs font-bold uppercase text-slate-500">Designation</Label>
-              <Input
-                id="manual-job"
-                placeholder="e.g. Product Manager"
-                value={manualStaffData['job_title'] || ''}
-                onChange={(e) => setManualStaffData(prev => ({ ...prev, 'job_title': e.target.value }))}
-                className="bg-slate-50"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="manual-email" className="text-xs font-bold uppercase text-slate-500">Email *</Label>
-              <Input
-                id="manual-email"
-                type="email"
-                placeholder="john@company.com"
-                value={manualStaffData['email'] || ''}
-                onChange={(e) => setManualStaffData(prev => ({ ...prev, 'email': e.target.value }))}
-                className="bg-slate-50"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="manual-phone" className="text-xs font-bold uppercase text-slate-500">Phone</Label>
-              <Input
-                id="manual-phone"
-                type="tel"
-                placeholder="+1 234 567 890"
-                value={manualStaffData['phone'] || ''}
-                onChange={(e) => setManualStaffData(prev => ({ ...prev, 'phone': e.target.value }))}
-                className="bg-slate-50"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="manual-vanity" className="text-xs font-bold uppercase text-slate-500">Vanity URL</Label>
-              <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-md px-2 h-10">
-                <span className="text-[10px] text-slate-400 font-mono">/</span>
                 <input
-                  id="manual-vanity"
-                  className="bg-transparent border-none outline-none text-sm flex-1"
-                  placeholder="john-doe"
-                  value={manualStaffData['vanity_url'] || ''}
-                  onChange={(e) => setManualStaffData(prev => ({ ...prev, 'vanity_url': e.target.value }))}
+                  type="file"
+                  className="absolute inset-0 opacity-0 cursor-pointer"
+                  accept="image/*"
+                  onChange={(e) => {
+                    if (e.target.files?.[0]) {
+                      setSelectedImage(e.target.files[0]);
+                    }
+                  }}
                 />
+                <div className="absolute inset-x-0 bottom-0 bg-black/50 text-white text-[10px] py-1 text-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  Click to Upload
+                </div>
               </div>
+              <p className="text-[10px] text-slate-400 text-center max-w-[120px]">
+                Recommended: Square image, max 2MB
+              </p>
             </div>
-          </div>
 
-          {/* Additional Parameters */}
-          <div className="pt-2">
-            <div className="text-xs text-slate-400 mb-2 font-medium">Additional Information</div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {AVAILABLE_PARAMETERS
-                .filter(p => !['display_name', 'email', 'phone', 'avatar_url'].includes(p.id))
-                .map(param => (
-                  <div key={param.id} className="space-y-2">
-                    <Label htmlFor={`manual-${param.id}`} className="text-xs font-bold uppercase text-slate-500">
-                      {param.label} {param.required && <span className="text-red-500">*</span>}
-                    </Label>
-                    {param.id === 'dob' ? (
-                      <Input
-                        id={`manual-${param.id}`}
-                        type="date"
-                        value={manualStaffData[param.id] || ''}
-                        onChange={(e) => setManualStaffData(prev => ({ ...prev, [param.id]: e.target.value }))}
-                        className="bg-slate-50"
-                      />
-                    ) : param.id === 'gender' ? (
-                      <select
-                        id={`manual-${param.id}`}
-                        className="w-full h-10 px-3 py-2 bg-slate-50 border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        value={manualStaffData[param.id] || ''}
-                        onChange={(e) => setManualStaffData(prev => ({ ...prev, [param.id]: e.target.value }))}
-                      >
-                        <option value="">Select Gender</option>
-                        <option value="male">Male</option>
-                        <option value="female">Female</option>
-                        <option value="other">Other</option>
-                        <option value="prefer_not_to_say">Prefer not to say</option>
-                      </select>
-                    ) : (
-                      <Input
-                        id={`manual-${param.id}`}
-                        placeholder={`Enter ${param.label.toLowerCase()}`}
-                        value={manualStaffData[param.id] || ''}
-                        onChange={(e) => setManualStaffData(prev => ({ ...prev, [param.id]: e.target.value }))}
-                        className="bg-slate-50"
-                      />
-                    )}
+            {/* Right Column: Details */}
+            <div className="flex-1 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="manual-name" className="text-xs font-bold uppercase text-slate-500">Full Name *</Label>
+                  <Input
+                    id="manual-name"
+                    placeholder="e.g. John Doe"
+                    value={manualStaffData['display_name'] || ''}
+                    onChange={(e) => setManualStaffData(prev => ({ ...prev, 'display_name': e.target.value }))}
+                    className="bg-slate-50"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="manual-job" className="text-xs font-bold uppercase text-slate-500">Designation</Label>
+                  <Input
+                    id="manual-job"
+                    placeholder="e.g. Product Manager"
+                    value={manualStaffData['job_title'] || ''}
+                    onChange={(e) => setManualStaffData(prev => ({ ...prev, 'job_title': e.target.value }))}
+                    className="bg-slate-50"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="manual-email" className="text-xs font-bold uppercase text-slate-500">Email *</Label>
+                  <Input
+                    id="manual-email"
+                    type="email"
+                    placeholder="john@company.com"
+                    value={manualStaffData['email'] || ''}
+                    onChange={(e) => setManualStaffData(prev => ({ ...prev, 'email': e.target.value }))}
+                    className="bg-slate-50"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="manual-phone" className="text-xs font-bold uppercase text-slate-500">Phone</Label>
+                  <Input
+                    id="manual-phone"
+                    type="tel"
+                    placeholder="+1 234 567 890"
+                    value={manualStaffData['phone'] || ''}
+                    onChange={(e) => setManualStaffData(prev => ({ ...prev, 'phone': e.target.value }))}
+                    className="bg-slate-50"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="manual-vanity" className="text-xs font-bold uppercase text-slate-500">Vanity URL</Label>
+                  <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-md px-2 h-10">
+                    <span className="text-[10px] text-slate-400 font-mono">/</span>
+                    <input
+                      id="manual-vanity"
+                      className="bg-transparent border-none outline-none text-sm flex-1"
+                      placeholder="john-doe"
+                      value={manualStaffData['vanity_url'] || ''}
+                      onChange={(e) => setManualStaffData(prev => ({ ...prev, 'vanity_url': e.target.value }))}
+                    />
                   </div>
-                ))
-              }
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <DialogFooter>
-        <Button variant="ghost" onClick={() => setShowAddStaffDialog(false)} disabled={isAddingStaff}>Cancel</Button>
-        <Button onClick={handleManualAdd} className="bg-indigo-600 hover:bg-indigo-700" disabled={isAddingStaff}>
-          {isAddingStaff ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Adding...
-            </>
-          ) : (
-            'Add to Directory'
-          )}
-        </Button>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog >
-
-  {/* Bulk Import Dialog */ }
-  < Dialog open={showImportDialog} onOpenChange={setShowImportDialog} >
-    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-      <DialogHeader>
-        <DialogTitle className="flex items-center gap-2 text-2xl font-black">
-          <FileSpreadsheet className="w-6 h-6 text-emerald-600" />
-          Bulk CSV Import
-        </DialogTitle>
-        <DialogDescription className="text-base">
-          Upload a CSV file to add multiple staff members at once. Ensure your column titles match the required format.
-        </DialogDescription>
-      </DialogHeader>
-
-      <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 space-y-4">
-        <div className="flex items-center gap-3 text-amber-800 font-bold">
-          <Info className="w-5 h-5" />
-          Required Column Titles
-        </div>
-        <p className="text-sm text-amber-700 leading-relaxed">
-          For the most accurate import, please use the exact column titles listed below in the first row of your sheet.
-        </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {[
-            { title: 'FullName', desc: 'Complete name of the staff member' },
-            { title: 'Email', desc: 'Corporate or personal email address' },
-            { title: 'Phone', desc: 'Contact number with country code' },
-            { title: 'JobTitle', desc: 'Official designation/role in company' },
-            { title: 'Address', desc: 'Full office or residential address' },
-            { title: 'Bio', desc: 'Short professional biography' }
-          ].map(item => (
-            <div key={item.title} className="bg-white/50 border border-amber-200/50 rounded-xl p-3 flex items-center justify-between group hover:bg-white transition-all">
-              <div>
-                <code className="text-indigo-700 font-black text-sm">{item.title}</code>
-                <p className="text-[10px] text-amber-600 font-medium">{item.desc}</p>
+                </div>
               </div>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-amber-400 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => copyToClipboard(item.title)}>
-                <Copy className="w-3.5 h-3.5" />
-              </Button>
-            </div>
-          ))}
-        </div>
-      </div>
 
-      <div className="p-8 border-2 border-dashed border-slate-200 rounded-2xl text-center space-y-4 bg-slate-50/50">
-        {isProcessingBulk ? (
-          <div className="space-y-4">
-            <Loader2 className="w-10 h-10 animate-spin text-indigo-600 mx-auto" />
-            <div className="space-y-1">
-              <p className="font-bold text-slate-900">Importing Data...</p>
-              <p className="text-xs text-slate-500">Processed {importStatus?.current} of {importStatus?.total} records</p>
+              {/* Additional Parameters */}
+              <div className="pt-2">
+                <div className="text-xs text-slate-400 mb-2 font-medium">Additional Information</div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {AVAILABLE_PARAMETERS
+                    .filter(p => !['display_name', 'email', 'phone', 'avatar_url'].includes(p.id))
+                    .map(param => (
+                      <div key={param.id} className="space-y-2">
+                        <Label htmlFor={`manual-${param.id}`} className="text-xs font-bold uppercase text-slate-500">
+                          {param.label} {param.required && <span className="text-red-500">*</span>}
+                        </Label>
+                        {param.id === 'dob' ? (
+                          <Input
+                            id={`manual-${param.id}`}
+                            type="date"
+                            value={manualStaffData[param.id] || ''}
+                            onChange={(e) => setManualStaffData(prev => ({ ...prev, [param.id]: e.target.value }))}
+                            className="bg-slate-50"
+                          />
+                        ) : param.id === 'gender' ? (
+                          <select
+                            id={`manual-${param.id}`}
+                            className="w-full h-10 px-3 py-2 bg-slate-50 border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            value={manualStaffData[param.id] || ''}
+                            onChange={(e) => setManualStaffData(prev => ({ ...prev, [param.id]: e.target.value }))}
+                          >
+                            <option value="">Select Gender</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Other</option>
+                            <option value="prefer_not_to_say">Prefer not to say</option>
+                          </select>
+                        ) : (
+                          <Input
+                            id={`manual-${param.id}`}
+                            placeholder={`Enter ${param.label.toLowerCase()}`}
+                            value={manualStaffData[param.id] || ''}
+                            onChange={(e) => setManualStaffData(prev => ({ ...prev, [param.id]: e.target.value }))}
+                            className="bg-slate-50"
+                          />
+                        )}
+                      </div>
+                    ))
+                  }
+                </div>
+              </div>
             </div>
           </div>
-        ) : (
-          <>
-            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto shadow-sm">
-              <Upload className="w-8 h-8 text-slate-400" />
-            </div>
-            <div className="space-y-1">
-              <p className="font-bold text-slate-900">Select CSV File</p>
-              <p className="text-xs text-slate-500">Upload your staff data sheet to begin processing</p>
-            </div>
-            <Button className="relative overflow-hidden bg-indigo-600 hover:bg-indigo-700">
-              <Upload className="w-4 h-4 mr-2" />
-              Browse Files
-              <input
-                type="file"
-                className="absolute inset-0 opacity-0 cursor-pointer"
-                accept=".csv"
-                onChange={handleBulkImport}
-              />
-            </Button>
-          </>
-        )}
-      </div>
 
-      <DialogFooter className="sm:justify-between">
-        <p className="text-[11px] text-slate-400 italic flex items-center gap-1">
-          <ShieldCheck className="w-3 h-3" /> All data is encrypted and saved to your secure cloud.
-        </p>
-        <Button variant="ghost" onClick={() => setShowImportDialog(false)}>Close</Button>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog >
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowAddStaffDialog(false)} disabled={isAddingStaff}>Cancel</Button>
+            <Button onClick={handleManualAdd} className="bg-indigo-600 hover:bg-indigo-700" disabled={isAddingStaff}>
+              {isAddingStaff ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                'Add to Directory'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog >
+
+      {/* Bulk Import Dialog */}
+      < Dialog open={showImportDialog} onOpenChange={setShowImportDialog} >
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-2xl font-black">
+              <FileSpreadsheet className="w-6 h-6 text-emerald-600" />
+              Bulk CSV Import
+            </DialogTitle>
+            <DialogDescription className="text-base">
+              Upload a CSV file to add multiple staff members at once. Ensure your column titles match the required format.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 space-y-4">
+            <div className="flex items-center gap-3 text-amber-800 font-bold">
+              <Info className="w-5 h-5" />
+              Required Column Titles
+            </div>
+            <p className="text-sm text-amber-700 leading-relaxed">
+              For the most accurate import, please use the exact column titles listed below in the first row of your sheet.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {[
+                { title: 'FullName', desc: 'Complete name of the staff member' },
+                { title: 'Email', desc: 'Corporate or personal email address' },
+                { title: 'Phone', desc: 'Contact number with country code' },
+                { title: 'JobTitle', desc: 'Official designation/role in company' },
+                { title: 'Address', desc: 'Full office or residential address' },
+                { title: 'Bio', desc: 'Short professional biography' }
+              ].map(item => (
+                <div key={item.title} className="bg-white/50 border border-amber-200/50 rounded-xl p-3 flex items-center justify-between group hover:bg-white transition-all">
+                  <div>
+                    <code className="text-indigo-700 font-black text-sm">{item.title}</code>
+                    <p className="text-[10px] text-amber-600 font-medium">{item.desc}</p>
+                  </div>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-amber-400 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => copyToClipboard(item.title)}>
+                    <Copy className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="p-8 border-2 border-dashed border-slate-200 rounded-2xl text-center space-y-4 bg-slate-50/50">
+            {isProcessingBulk ? (
+              <div className="space-y-4">
+                <Loader2 className="w-10 h-10 animate-spin text-indigo-600 mx-auto" />
+                <div className="space-y-1">
+                  <p className="font-bold text-slate-900">Importing Data...</p>
+                  <p className="text-xs text-slate-500">Processed {importStatus?.current} of {importStatus?.total} records</p>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto shadow-sm">
+                  <Upload className="w-8 h-8 text-slate-400" />
+                </div>
+                <div className="space-y-1">
+                  <p className="font-bold text-slate-900">Select CSV File</p>
+                  <p className="text-xs text-slate-500">Upload your staff data sheet to begin processing</p>
+                </div>
+                <Button className="relative overflow-hidden bg-indigo-600 hover:bg-indigo-700">
+                  <Upload className="w-4 h-4 mr-2" />
+                  Browse Files
+                  <input
+                    type="file"
+                    className="absolute inset-0 opacity-0 cursor-pointer"
+                    accept=".csv"
+                    onChange={handleBulkImport}
+                  />
+                </Button>
+              </>
+            )}
+          </div>
+
+          <DialogFooter className="sm:justify-between">
+            <p className="text-[11px] text-slate-400 italic flex items-center gap-1">
+              <ShieldCheck className="w-3 h-3" /> All data is encrypted and saved to your secure cloud.
+            </p>
+            <Button variant="ghost" onClick={() => setShowImportDialog(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog >
     </div >
   );
 };
