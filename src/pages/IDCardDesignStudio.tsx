@@ -81,7 +81,7 @@ const IDCardDesignStudio: React.FC = () => {
   const background = currentSideData.background;
 
   // Preview data (sample data for preview)
-  const [previewData] = useState({
+  const [previewData, setPreviewData] = useState({
     company_logo_url: '',
     avatar_url: '',
     display_name: 'John Doe',
@@ -484,6 +484,9 @@ const IDCardDesignStudio: React.FC = () => {
         <aside className="w-72 border-l bg-card">
           <ElementProperties
             element={selectedElement}
+            user={user}
+            previewData={previewData}
+            onUpdatePreview={(updates) => setPreviewData(prev => ({ ...prev, ...updates }))}
             onUpdate={(updates) => selectedElement && handleUpdateElement(selectedElement.id, updates)}
             onDelete={handleDeleteElement}
             onDuplicate={handleDuplicateElement}

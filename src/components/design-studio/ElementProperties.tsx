@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -11,9 +11,13 @@ import { CanvasElement, FONT_FAMILIES } from '@/types/design-studio';
 import {
   AlignLeft, AlignCenter, AlignRight, Bold, Lock, Unlock,
   Trash2, Copy, EyeOff, Eye, ChevronUp, ChevronDown,
-  ArrowUpToLine, ArrowDownToLine
+  ArrowUpToLine, ArrowDownToLine, Sparkles, Camera, Loader2, Upload
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { User } from '@supabase/supabase-js';
+import { AiAvatarGenerator } from '@/components/editor/AiAvatarGenerator';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 interface ElementPropertiesProps {
   element: CanvasElement | null;
@@ -24,6 +28,9 @@ interface ElementPropertiesProps {
   onSendBackward: () => void;
   onBringToFront: () => void;
   onSendToBack: () => void;
+  user?: User | null;
+  previewData?: any;
+  onUpdatePreview?: (updates: any) => void;
 }
 
 export const ElementProperties: React.FC<ElementPropertiesProps> = ({
@@ -35,7 +42,13 @@ export const ElementProperties: React.FC<ElementPropertiesProps> = ({
   onSendBackward,
   onBringToFront,
   onSendToBack,
+  user,
+  previewData,
+  onUpdatePreview,
 }) => {
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
   if (!element) {
     return (
       <Card className="h-full">
@@ -51,6 +64,43 @@ export const ElementProperties: React.FC<ElementPropertiesProps> = ({
 
   const updateStyle = (styleUpdates: Partial<CanvasElement['style']>) => {
     onUpdate({ style: { ...element.style, ...styleUpdates } });
+  };
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user || !onUpdatePreview) return;
+
+    setUploadingAvatar(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${Math.random()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      onUpdatePreview({ avatar_url: publicUrl });
+
+      toast({
+        title: "Photo uploaded!",
+        description: "Preview photo updated.",
+      });
+    } catch (error: any) {
+      console.error('Error uploading photo:', error);
+      toast({
+        title: "Upload failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setUploadingAvatar(false);
+    }
   };
 
   const isTextElement = ['name', 'designation', 'employee_id', 'department', 'email', 'phone', 'custom_text'].includes(element.type);
@@ -129,6 +179,64 @@ export const ElementProperties: React.FC<ElementPropertiesProps> = ({
             </div>
 
             <Separator />
+
+            {/* Profile Photo - Special Section */}
+            {element.type === 'profile_photo' && (
+              <>
+                <div>
+                  <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">
+                    Profile Photo
+                  </h4>
+                  <div className="space-y-4 mt-2 text-center p-3 border rounded-lg bg-muted/20">
+                    <img
+                      src={previewData?.avatar_url || 'https://via.placeholder.com/150'}
+                      alt="Preview"
+                      className="w-20 h-20 mx-auto rounded-full object-cover border-2 border-primary/20 shadow-sm"
+                    />
+                    <div className="relative">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        onChange={handleAvatarUpload}
+                        disabled={uploadingAvatar}
+                      />
+                      <Button variant="outline" size="sm" className="w-full h-8 text-[10px]" disabled={uploadingAvatar}>
+                        {uploadingAvatar ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Upload className="w-3 h-3 mr-1" />}
+                        Upload Specimen Photo
+                      </Button>
+                    </div>
+                  </div>
+
+                  {user && (
+                    <div className="mt-4">
+                      <button
+                        onClick={() => setShowAdvanced(!showAdvanced)}
+                        className="flex items-center gap-2 text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors w-full justify-center"
+                      >
+                        <Sparkles className="w-3 h-3" />
+                        <span>Advanced: AI Profile Image</span>
+                        <ChevronDown className={`w-3 h-3 transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
+                      </button>
+
+                      {showAdvanced && (
+                        <div className="mt-2 p-2 border border-border rounded-lg bg-card animate-fade-in scale-90 -mx-4 overflow-hidden origin-top">
+                          <AiAvatarGenerator
+                            userId={user.id}
+                            currentName={previewData?.display_name || 'User'}
+                            baseImageUrl={previewData?.avatar_url}
+                            onImageGenerated={(imageUrl) => {
+                              onUpdatePreview?.({ avatar_url: imageUrl });
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <Separator />
+              </>
+            )}
 
             {/* Text Properties */}
             {isTextElement && (
