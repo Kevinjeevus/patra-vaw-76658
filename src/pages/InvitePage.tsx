@@ -18,7 +18,8 @@ import {
     Info,
     Mail,
     Phone,
-    ShieldCheck
+    ShieldCheck,
+    User
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -35,6 +36,16 @@ export const InvitePage: React.FC = () => {
     const [company, setCompany] = useState<any>(null);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
+
+    // Manual Entry State
+    const [manualSuccess, setManualSuccess] = useState(false);
+    const [showManualForm, setShowManualForm] = useState(false);
+    const [manualData, setManualData] = useState({
+        full_name: '',
+        email: '',
+        phone: '',
+        designation: ''
+    });
 
     // Form states for joining
     const [selectedCard, setSelectedCard] = useState<string>('');
@@ -95,9 +106,58 @@ export const InvitePage: React.FC = () => {
         }
     };
 
+    const handleManualJoin = async () => {
+        // Validate
+        if (!manualData.full_name || !manualData.email) {
+            toast({
+                title: "Missing Information",
+                description: "Please provide at least your name and email.",
+                variant: "destructive"
+            });
+            return;
+        }
+
+        setJoining(true);
+        try {
+            const { error: insertError } = await supabase
+                .from('invited_employees')
+                .insert({
+                    company_profile_id: company.id,
+                    invite_code: inviteId,
+                    status: 'invited', // Using 'invited' as they are waiting for account creation/approval
+                    is_approved: false, // Explicitly false, waiting for approval
+                    data_submitted: {
+                        display_name: manualData.full_name,
+                        email: manualData.email,
+                        phone: manualData.phone,
+                        job_title: manualData.designation
+                    },
+                    designation: manualData.designation
+                });
+
+            if (insertError) throw insertError;
+
+            setManualSuccess(true);
+            toast({
+                title: "Request Sent!",
+                description: "Your information has been sent to the company admin for approval.",
+            });
+
+        } catch (err: any) {
+            console.error('Error submitting manual join:', err);
+            toast({
+                title: "Error",
+                description: err.message || "Failed to submit request.",
+                variant: "destructive"
+            });
+        } finally {
+            setJoining(false);
+        }
+    };
+
     const handleJoin = async () => {
         if (!user) {
-            // Redirect to auth with return path
+            // Should not happen with new flow, but safe fallback
             navigate(`/auth?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`);
             return;
         }
@@ -249,6 +309,35 @@ export const InvitePage: React.FC = () => {
         );
     }
 
+    if (manualSuccess) {
+        return (
+            <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-4">
+                <Card className="max-w-md w-full border-none shadow-2xl shadow-indigo-200/50 rounded-3xl overflow-hidden animate-in zoom-in-95 duration-300">
+                    <CardContent className="p-8 text-center space-y-6">
+                        <div className="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mx-auto">
+                            <UserPlus className="w-10 h-10 text-indigo-600" />
+                        </div>
+                        <div className="space-y-2">
+                            <h1 className="text-2xl font-bold text-slate-900">Information Submitted!</h1>
+                            <p className="text-slate-500 text-lg">Your details have been sent to <span className="font-semibold text-slate-900">{company.company_name}</span> for approval.</p>
+                        </div>
+
+                        <div className="p-4 bg-slate-50 rounded-xl space-y-3">
+                            <p className="text-sm font-medium text-slate-900">Don't have an account yet?</p>
+                            <p className="text-xs text-slate-500">Create a Patra account to manage your digital identity and access your company card once approved.</p>
+                            <Button
+                                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
+                                onClick={() => navigate('/auth')}
+                            >
+                                Create Free Account <ArrowRight className="w-4 h-4 ml-2" />
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-[#F8FAFC] flex flex-col md:flex-row">
             {/* Design Sidebar / Decorative side */}
@@ -299,111 +388,165 @@ export const InvitePage: React.FC = () => {
                             </AvatarFallback>
                         </Avatar>
                         <div className="space-y-2">
-                            <Badge variant="secondary" className="bg-indigo-50 text-indigo-600 border-none font-bold px-3 py-1 uppercase tracking-wider text-[10px]">Official Invitation</Badge>
                             <h2 className="text-3xl font-black text-slate-900 tracking-tight">Join {company.company_name}</h2>
+                            <p className="text-slate-500 text-sm">Official Team Invitation</p>
                         </div>
                     </div>
 
                     {/* Company Info Card */}
                     <Card className="border-none shadow-xl shadow-slate-200/50 bg-white rounded-[2rem] overflow-hidden">
                         <CardContent className="p-8 space-y-6">
-                            {company.bio && (
-                                <div className="space-y-2">
-                                    <div className="flex items-center gap-2 text-slate-400 mb-1">
-                                        <Info className="w-3.5 h-3.5" />
-                                        <span className="text-[10px] uppercase font-bold tracking-widest">About the Company</span>
+                            {!user && !showManualForm && (
+                                <div className="space-y-4">
+                                    <div className="text-center space-y-2 mb-6">
+                                        <h3 className="text-lg font-bold text-slate-900">How would you like to join?</h3>
+                                        <p className="text-sm text-slate-500">Choose an option to proceed with your invitation</p>
                                     </div>
-                                    <p className="text-slate-600 text-sm leading-relaxed italic">
-                                        "{company.bio}"
-                                    </p>
+
+                                    <Button
+                                        className="w-full bg-indigo-600 hover:bg-indigo-700 h-14 rounded-xl font-bold text-base shadow-lg shadow-indigo-100 transition-all hover:scale-[1.02]"
+                                        onClick={() => navigate(`/auth?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`)}
+                                    >
+                                        <User className="w-5 h-5 mr-3" />
+                                        I have an account
+                                    </Button>
+
+                                    <div className="relative">
+                                        <div className="absolute inset-0 flex items-center">
+                                            <span className="w-full border-t border-slate-100" />
+                                        </div>
+                                        <div className="relative flex justify-center text-xs uppercase">
+                                            <span className="bg-white px-2 text-slate-400 font-bold tracking-wider">Or</span>
+                                        </div>
+                                    </div>
+
+                                    <Button
+                                        variant="outline"
+                                        className="w-full h-14 rounded-xl font-bold text-base border-2 hover:bg-slate-50 transition-all hover:scale-[1.02]"
+                                        onClick={() => setShowManualForm(true)}
+                                    >
+                                        Fill details manually
+                                    </Button>
+
+                                    <div className="text-center pt-2">
+                                        <p className="text-xs text-slate-400">
+                                            Don't have an account? <span className="text-indigo-600 cursor-pointer font-semibold" onClick={() => setShowManualForm(true)}>Use manual entry</span>
+                                        </p>
+                                    </div>
                                 </div>
                             )}
 
-                            <div className="space-y-4 pt-4 border-t border-slate-50">
-                                {company.address && (
-                                    <div className="flex items-start gap-4 p-4 bg-slate-50 rounded-2xl">
-                                        <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center flex-shrink-0">
-                                            <MapPin className="w-5 h-5 text-indigo-500" />
-                                        </div>
-                                        <div>
-                                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-0.5">Location</p>
-                                            <p className="text-sm font-semibold text-slate-700">{company.address}</p>
-                                        </div>
+                            {!user && showManualForm && (
+                                <div className="space-y-4 animate-in slide-in-from-right-4 duration-300">
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <Button variant="ghost" size="sm" className="-ml-2" onClick={() => setShowManualForm(false)}>
+                                            <ArrowRight className="w-4 h-4 rotate-180" />
+                                        </Button>
+                                        <h3 className="font-bold text-slate-900">Submit Your Details</h3>
                                     </div>
-                                )}
 
-                                {company.vanity_url && (
-                                    <div className="flex items-start gap-4 p-4 bg-slate-50 rounded-2xl">
-                                        <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center flex-shrink-0">
-                                            <Globe className="w-5 h-5 text-indigo-500" />
-                                        </div>
-                                        <div>
-                                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-0.5">Corporate Portal</p>
-                                            <p className="text-sm font-semibold text-slate-700">patra.app/{company.vanity_url}</p>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="p-6 bg-indigo-600 rounded-3xl text-white space-y-4 shadow-lg shadow-indigo-200">
-                                <div className="space-y-1">
-                                    <h3 className="font-bold">Next Steps</h3>
-                                    <p className="text-indigo-100 text-xs">By joining, you'll be able to display your company affiliation on your digital card.</p>
-                                </div>
-
-                                {!user ? (
-                                    <Button
-                                        className="w-full bg-white text-indigo-600 hover:bg-indigo-50 h-12 rounded-xl font-bold"
-                                        onClick={handleJoin}
-                                    >
-                                        Sign In to Join Team
-                                        <ArrowRight className="w-4 h-4 ml-2" />
-                                    </Button>
-                                ) : (
                                     <div className="space-y-4">
                                         <div className="space-y-2">
-                                            <Label className="text-white text-xs font-bold opacity-80 uppercase tracking-widest">Select Your Digital Card</Label>
-                                            <div className="space-y-2 max-h-[160px] overflow-y-auto pr-2 custom-scrollbar">
-                                                {userCards.length > 0 ? (
-                                                    userCards.map(card => (
-                                                        <button
-                                                            key={card.id}
-                                                            onClick={() => setSelectedCard(card.id)}
-                                                            className={`w-full flex items-center justify-between p-3 rounded-xl border-2 transition-all ${selectedCard === card.id
-                                                                    ? 'bg-white/20 border-white text-white'
-                                                                    : 'bg-white/5 border-transparent text-indigo-100 hover:bg-white/10'
-                                                                }`}
-                                                        >
-                                                            <div className="flex items-center gap-3">
-                                                                <div className={`w-2 h-2 rounded-full ${selectedCard === card.id ? 'bg-white' : 'bg-transparent border border-white/50'}`} />
-                                                                <span className="text-sm font-bold truncate max-w-[180px]">{card.title}</span>
-                                                            </div>
-                                                            {selectedCard === card.id && <CheckCircle2 className="w-4 h-4 text-white" />}
-                                                        </button>
-                                                    ))
-                                                ) : (
-                                                    <p className="text-sm italic opacity-80">You don't have any digital cards yet.</p>
-                                                )}
+                                            <Label htmlFor="manual-name">Full Name *</Label>
+                                            <Input
+                                                id="manual-name"
+                                                value={manualData.full_name}
+                                                onChange={(e) => setManualData(prev => ({ ...prev, full_name: e.target.value }))}
+                                                placeholder="John Doe"
+                                                className="bg-slate-50 border-slate-200"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="manual-email">Email Address *</Label>
+                                            <Input
+                                                id="manual-email"
+                                                type="email"
+                                                value={manualData.email}
+                                                onChange={(e) => setManualData(prev => ({ ...prev, email: e.target.value }))}
+                                                placeholder="john@example.com"
+                                                className="bg-slate-50 border-slate-200"
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="manual-phone">Phone</Label>
+                                                <Input
+                                                    id="manual-phone"
+                                                    type="tel"
+                                                    value={manualData.phone}
+                                                    onChange={(e) => setManualData(prev => ({ ...prev, phone: e.target.value }))}
+                                                    placeholder="+1..."
+                                                    className="bg-slate-50 border-slate-200"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="manual-job">Job Title</Label>
+                                                <Input
+                                                    id="manual-job"
+                                                    value={manualData.designation}
+                                                    onChange={(e) => setManualData(prev => ({ ...prev, designation: e.target.value }))}
+                                                    placeholder="e.g. Designer"
+                                                    className="bg-slate-50 border-slate-200"
+                                                />
                                             </div>
                                         </div>
 
                                         <Button
-                                            className="w-full bg-white text-indigo-600 hover:bg-indigo-50 h-12 rounded-xl font-bold shadow-sm"
-                                            onClick={handleJoin}
-                                            disabled={joining || (userCards.length === 0)}
+                                            className="w-full bg-slate-900 text-white hover:bg-slate-800 h-12 rounded-xl mt-4 font-bold"
+                                            onClick={handleManualJoin}
+                                            disabled={joining}
                                         >
-                                            {joining ? (
-                                                <>
-                                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                                    Processing...
-                                                </>
-                                            ) : (
-                                                'Confirm & Join Team'
-                                            )}
+                                            {joining ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
+                                            Submit Request
                                         </Button>
                                     </div>
-                                )}
-                            </div>
+                                </div>
+                            )}
+
+                            {user && (
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <Label className="text-slate-500 text-xs font-bold uppercase tracking-widest">Select Your Digital Card</Label>
+                                        <div className="space-y-2 max-h-[160px] overflow-y-auto pr-2 custom-scrollbar">
+                                            {userCards.length > 0 ? (
+                                                userCards.map(card => (
+                                                    <button
+                                                        key={card.id}
+                                                        onClick={() => setSelectedCard(card.id)}
+                                                        className={`w-full flex items-center justify-between p-3 rounded-xl border-2 transition-all ${selectedCard === card.id
+                                                            ? 'bg-indigo-50 border-indigo-600 text-indigo-700'
+                                                            : 'bg-slate-50 border-transparent text-slate-600 hover:bg-slate-100'
+                                                            }`}
+                                                    >
+                                                        <div className="flex items-center gap-3">
+                                                            <div className={`w-2 h-2 rounded-full ${selectedCard === card.id ? 'bg-indigo-600' : 'bg-slate-300'}`} />
+                                                            <span className="text-sm font-bold truncate max-w-[180px]">{card.title}</span>
+                                                        </div>
+                                                        {selectedCard === card.id && <CheckCircle2 className="w-4 h-4 text-indigo-600" />}
+                                                    </button>
+                                                ))
+                                            ) : (
+                                                <p className="text-sm italic opacity-80 text-slate-500">You don't have any digital cards yet.</p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <Button
+                                        className="w-full bg-indigo-600 text-white hover:bg-indigo-700 h-12 rounded-xl font-bold shadow-lg shadow-indigo-100"
+                                        onClick={handleJoin}
+                                        disabled={joining || (userCards.length === 0)}
+                                    >
+                                        {joining ? (
+                                            <>
+                                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                Processing...
+                                            </>
+                                        ) : (
+                                            'Confirm & Join Team'
+                                        )}
+                                    </Button>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
 
@@ -423,15 +566,15 @@ export const InvitePage: React.FC = () => {
                     width: 4px;
                 }
                 .custom-scrollbar::-webkit-scrollbar-track {
-                    background: rgba(255, 255, 255, 0.1);
+                    background: rgba(0, 0, 0, 0.05);
                     border-radius: 10px;
                 }
                 .custom-scrollbar::-webkit-scrollbar-thumb {
-                    background: rgba(255, 255, 255, 0.3);
+                    background: rgba(0, 0, 0, 0.1);
                     border-radius: 10px;
                 }
                 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                    background: rgba(255, 255, 255, 0.5);
+                    background: rgba(0, 0, 0, 0.2);
                 }
             `}} />
         </div>

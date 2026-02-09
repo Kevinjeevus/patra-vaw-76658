@@ -885,9 +885,7 @@ export const CompanyDashboard: React.FC = () => {
                                 <Button size="sm" variant="ghost" className="text-indigo-600" onClick={() => window.open(`/${profile?.vanity_url}?userid=${emp.profiles.vanity_url}`, '_blank')}>
                                   <LinkIcon className="w-4 h-4 mr-1" /> View ID
                                 </Button>
-                              ) : (
-                                <span className="text-xs text-slate-400 italic mr-3">Pending Activation</span>
-                              )}
+                              ) : null}
                               <Dialog open={!!editingEmployee && editingEmployee.id === emp.id} onOpenChange={(open) => !open && setEditingEmployee(null)}>
                                 <DialogTrigger asChild>
                                   <Button
@@ -984,11 +982,11 @@ export const CompanyDashboard: React.FC = () => {
                                     </div>
                                   )}
 
-                                  <DialogFooter className="gap-2 sm:justify-between">
+                                  <DialogFooter className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2 w-full">
                                     <Button
                                       variant="destructive"
                                       onClick={handleDeleteEmployee}
-                                      className="mr-auto"
+                                      className="w-full sm:w-auto"
                                     >
                                       <Trash2 className="w-4 h-4 mr-2" />
                                       Remove
@@ -1114,9 +1112,9 @@ export const CompanyDashboard: React.FC = () => {
                       <BarChart3 className="w-6 h-6" />
                     </div>
                     <h4 className="font-bold text-slate-900">Invite Usage</h4>
-                    <p className="text-sm text-slate-500">You have {employees.length} employees currently using this invite system.</p>
+                    <p className="text-sm text-slate-500">You have {employees.length} employees currently in your directory.</p>
                     <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                      <div className="bg-green-500 h-full w-[45%]" />
+                      <div className="bg-green-500 h-full transition-all duration-500" style={{ width: `${Math.min((employees.length / 50) * 100, 100)}%` }} />
                     </div>
                   </div>
                 </div>
@@ -1999,6 +1997,19 @@ export const CompanyDashboard: React.FC = () => {
                     onChange={(e) => setManualStaffData(prev => ({ ...prev, 'phone': e.target.value }))}
                     className="bg-slate-50"
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="manual-vanity" className="text-xs font-bold uppercase text-slate-500">Vanity URL</Label>
+                  <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-md px-2 h-10">
+                    <span className="text-[10px] text-slate-400 font-mono">/</span>
+                    <input
+                      id="manual-vanity"
+                      className="bg-transparent border-none outline-none text-sm flex-1"
+                      placeholder="john-doe"
+                      value={manualStaffData['vanity_url'] || ''}
+                      onChange={(e) => setManualStaffData(prev => ({ ...prev, 'vanity_url': e.target.value }))}
+                    />
+                  </div>
                 </div>
               </div>
 
