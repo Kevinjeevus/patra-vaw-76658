@@ -181,6 +181,7 @@ export const CompanyDashboard: React.FC = () => {
     company_description: '',
   });
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  const [editingImage, setEditingImage] = useState<File | null>(null);
   const [isUpdatingStaff, setIsUpdatingStaff] = useState(false);
 
   useEffect(() => {
@@ -406,13 +407,36 @@ export const CompanyDashboard: React.FC = () => {
     if (!editingEmployee) return;
     setIsUpdatingStaff(true);
     try {
+      let avatarUrl = editingEmployee.data_submitted?.avatar_url;
+
+      if (editingImage && user) {
+        const fileExt = editingImage.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `${user.id}/staff/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(filePath, editingImage, {
+            contentType: editingImage.type || undefined,
+            upsert: false,
+          });
+
+        if (uploadError) throw uploadError;
+
+        const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+        avatarUrl = data.publicUrl;
+      }
+
       // 1. Update invited_employees
       const { error: empError } = await supabase
         .from('invited_employees')
         .update({
           designation: editingEmployee.designation,
           staff_id: editingEmployee.staff_id,
-          data_submitted: editingEmployee.data_submitted
+          data_submitted: {
+            ...editingEmployee.data_submitted,
+            avatar_url: avatarUrl
+          }
         })
         .eq('id', editingEmployee.id);
 
@@ -424,7 +448,8 @@ export const CompanyDashboard: React.FC = () => {
           .from('profiles')
           .update({
             display_name: String(editingEmployee.data_submitted?.display_name || ''),
-            vanity_url: editingEmployee.profiles.vanity_url
+            vanity_url: editingEmployee.profiles.vanity_url,
+            avatar_url: avatarUrl
           })
           .eq('id', editingEmployee.profiles.id);
 
@@ -886,7 +911,12 @@ export const CompanyDashboard: React.FC = () => {
                                   <LinkIcon className="w-4 h-4 mr-1" /> View ID
                                 </Button>
                               ) : null}
-                              <Dialog open={!!editingEmployee && editingEmployee.id === emp.id} onOpenChange={(open) => !open && setEditingEmployee(null)}>
+                              <Dialog open={!!editingEmployee && editingEmployee.id === emp.id} onOpenChange={(open) => {
+                                if (!open) {
+                                  setEditingEmployee(null);
+                                  setEditingImage(null);
+                                }
+                              }}>
                                 <DialogTrigger asChild>
                                   <Button
                                     size="sm"
@@ -907,6 +937,42 @@ export const CompanyDashboard: React.FC = () => {
                                   {editingEmployee && (
                                     <div className="py-4 space-y-6">
                                       {/* Basic Info Section */}
+                                      <div className="flex flex-col items-center gap-4 mb-4">
+                                        <div className="group relative w-32 h-32 bg-slate-100 rounded-full overflow-hidden border-2 border-dashed border-slate-300 hover:border-indigo-500 transition-colors cursor-pointer">
+                                          {editingImage ? (
+                                            <img
+                                              src={URL.createObjectURL(editingImage)}
+                                              alt="Preview"
+                                              className="w-full h-full object-cover"
+                                            />
+                                          ) : editingEmployee.data_submitted?.avatar_url ? (
+                                            <img
+                                              src={editingEmployee.data_submitted.avatar_url}
+                                              alt="Current"
+                                              className="w-full h-full object-cover"
+                                            />
+                                          ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-slate-400">
+                                              <Camera className="w-8 h-8" />
+                                            </div>
+                                          )}
+                                          <input
+                                            type="file"
+                                            className="absolute inset-0 opacity-0 cursor-pointer"
+                                            accept="image/*"
+                                            onChange={(e) => {
+                                              if (e.target.files?.[0]) {
+                                                setEditingImage(e.target.files[0]);
+                                              }
+                                            }}
+                                          />
+                                          <div className="absolute inset-x-0 bottom-0 bg-black/50 text-white text-[10px] py-1 text-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                            Change Photo
+                                          </div>
+                                        </div>
+                                        <p className="text-[10px] text-slate-400">Click to update profile photo</p>
+                                      </div>
+
                                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div className="space-y-2">
                                           <Label>Full Name</Label>
@@ -992,7 +1058,10 @@ export const CompanyDashboard: React.FC = () => {
                                       Remove
                                     </Button>
                                     <div className="flex gap-2">
-                                      <Button variant="outline" onClick={() => setEditingEmployee(null)}>Cancel</Button>
+                                      <Button variant="outline" onClick={() => {
+                                        setEditingEmployee(null);
+                                        setEditingImage(null);
+                                      }}>Cancel</Button>
                                       <Button
                                         className="bg-indigo-600 hover:bg-indigo-700"
                                         disabled={isUpdatingStaff}
