@@ -427,7 +427,7 @@ export const CompanyDashboard: React.FC = () => {
             vanity_url: editingEmployee.profiles.vanity_url
           })
           .eq('id', editingEmployee.profiles.id);
-        
+
         if (profError) throw profError;
       }
 
@@ -438,6 +438,25 @@ export const CompanyDashboard: React.FC = () => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
       setIsUpdatingStaff(false);
+    }
+  };
+
+  const handleDeleteEmployee = async () => {
+    if (!editingEmployee) return;
+    if (!confirm('Are you sure you want to remove this employee from the directory? This action cannot be undone.')) return;
+
+    try {
+      const { error } = await supabase
+        .from('invited_employees')
+        .delete()
+        .eq('id', editingEmployee.id);
+
+      if (error) throw error;
+      toast({ title: "Employee Removed", description: "The employee has been removed from your directory." });
+      setEditingEmployee(null);
+      fetchEmployees();
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     }
   };
 
@@ -871,9 +890,9 @@ export const CompanyDashboard: React.FC = () => {
                               )}
                               <Dialog open={!!editingEmployee && editingEmployee.id === emp.id} onOpenChange={(open) => !open && setEditingEmployee(null)}>
                                 <DialogTrigger asChild>
-                                  <Button 
-                                    size="sm" 
-                                    variant="ghost" 
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
                                     className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
                                     onClick={() => setEditingEmployee({ ...emp })}
                                   >
@@ -886,14 +905,14 @@ export const CompanyDashboard: React.FC = () => {
                                     <DialogTitle>Edit Employee Profile</DialogTitle>
                                     <DialogDescription>Modify details for {emp.profiles?.display_name || 'Staff Member'}</DialogDescription>
                                   </DialogHeader>
-                                  
+
                                   {editingEmployee && (
                                     <div className="py-4 space-y-6">
                                       {/* Basic Info Section */}
                                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div className="space-y-2">
                                           <Label>Full Name</Label>
-                                          <Input 
+                                          <Input
                                             value={String(editingEmployee.data_submitted?.display_name || '')}
                                             onChange={(e) => setEditingEmployee({
                                               ...editingEmployee,
@@ -903,7 +922,7 @@ export const CompanyDashboard: React.FC = () => {
                                         </div>
                                         <div className="space-y-2">
                                           <Label>Official Designation</Label>
-                                          <Input 
+                                          <Input
                                             value={editingEmployee.designation || ''}
                                             onChange={(e) => setEditingEmployee({
                                               ...editingEmployee,
@@ -913,7 +932,7 @@ export const CompanyDashboard: React.FC = () => {
                                         </div>
                                         <div className="space-y-2">
                                           <Label>Staff ID (Alphanumeric)</Label>
-                                          <Input 
+                                          <Input
                                             value={editingEmployee.staff_id || ''}
                                             onChange={(e) => setEditingEmployee({
                                               ...editingEmployee,
@@ -925,7 +944,7 @@ export const CompanyDashboard: React.FC = () => {
                                           <Label>Personal Vanity URL</Label>
                                           <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-md px-2 h-10">
                                             <span className="text-[10px] text-slate-400 font-mono">/</span>
-                                            <input 
+                                            <input
                                               className="bg-transparent border-none outline-none text-sm flex-1"
                                               value={editingEmployee.profiles?.vanity_url || ''}
                                               onChange={(e) => setEditingEmployee({
@@ -942,7 +961,7 @@ export const CompanyDashboard: React.FC = () => {
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                           <div className="space-y-2">
                                             <Label>Email Address</Label>
-                                            <Input 
+                                            <Input
                                               value={String(editingEmployee.data_submitted?.email || '')}
                                               onChange={(e) => setEditingEmployee({
                                                 ...editingEmployee,
@@ -952,7 +971,7 @@ export const CompanyDashboard: React.FC = () => {
                                           </div>
                                           <div className="space-y-2">
                                             <Label>Phone Number</Label>
-                                            <Input 
+                                            <Input
                                               value={String(editingEmployee.data_submitted?.phone || '')}
                                               onChange={(e) => setEditingEmployee({
                                                 ...editingEmployee,
@@ -965,16 +984,26 @@ export const CompanyDashboard: React.FC = () => {
                                     </div>
                                   )}
 
-                                  <DialogFooter className="gap-2">
-                                    <Button variant="outline" onClick={() => setEditingEmployee(null)}>Cancel</Button>
-                                    <Button 
-                                      className="bg-indigo-600 hover:bg-indigo-700"
-                                      disabled={isUpdatingStaff}
-                                      onClick={handleUpdateStaff}
+                                  <DialogFooter className="gap-2 sm:justify-between">
+                                    <Button
+                                      variant="destructive"
+                                      onClick={handleDeleteEmployee}
+                                      className="mr-auto"
                                     >
-                                      {isUpdatingStaff ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
-                                      Save All Changes
+                                      <Trash2 className="w-4 h-4 mr-2" />
+                                      Remove
                                     </Button>
+                                    <div className="flex gap-2">
+                                      <Button variant="outline" onClick={() => setEditingEmployee(null)}>Cancel</Button>
+                                      <Button
+                                        className="bg-indigo-600 hover:bg-indigo-700"
+                                        disabled={isUpdatingStaff}
+                                        onClick={handleUpdateStaff}
+                                      >
+                                        {isUpdatingStaff ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
+                                        Save All Changes
+                                      </Button>
+                                    </div>
                                   </DialogFooter>
                                 </DialogContent>
                               </Dialog>
@@ -1464,7 +1493,7 @@ export const CompanyDashboard: React.FC = () => {
                       <Plus className="w-4 h-4" />
                     </Button>
                   </div>
-              </CardContent>
+                </CardContent>
               </Card>
 
               {/* Template Customizer with Studio X */}
@@ -1564,11 +1593,10 @@ export const CompanyDashboard: React.FC = () => {
                                   cardViewTheme: preset.color
                                 }));
                               }}
-                              className={`w-12 h-12 rounded-xl border-2 transition-all hover:scale-110 ${
-                                (cardCustomization as any)?.cardViewTheme === preset.color 
-                                  ? 'border-slate-900 ring-2 ring-offset-2 ring-slate-400' 
-                                  : 'border-transparent'
-                              }`}
+                              className={`w-12 h-12 rounded-xl border-2 transition-all hover:scale-110 ${(cardCustomization as any)?.cardViewTheme === preset.color
+                                ? 'border-slate-900 ring-2 ring-offset-2 ring-slate-400'
+                                : 'border-transparent'
+                                }`}
                               style={{ backgroundColor: preset.color }}
                               title={preset.name}
                             />
@@ -1619,7 +1647,7 @@ export const CompanyDashboard: React.FC = () => {
                             onChange={async (e) => {
                               const file = e.target.files?.[0];
                               if (!file || !user || !profile) return;
-                              
+
                               try {
                                 const fileExt = file.name.split('.').pop();
                                 const fileName = `card-bg-${Date.now()}.${fileExt}`;
@@ -1642,7 +1670,7 @@ export const CompanyDashboard: React.FC = () => {
                                   cardViewBgImage: bgUrl,
                                   cardViewBgType: 'image'
                                 }));
-                                
+
                                 toast({ title: "Background uploaded", description: "Save your changes to apply the new background." });
                               } catch (error: any) {
                                 console.error('Background upload error:', error);

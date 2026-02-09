@@ -6,14 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { 
-    Loader2, 
-    Building2, 
-    MapPin, 
-    Globe, 
-    UserPlus, 
-    ArrowRight, 
-    CheckCircle2, 
+import {
+    Loader2,
+    Building2,
+    MapPin,
+    Globe,
+    UserPlus,
+    ArrowRight,
+    CheckCircle2,
     AlertCircle,
     Info,
     Mail,
@@ -29,7 +29,7 @@ export const InvitePage: React.FC = () => {
     const inviteId = searchParams.get('id');
     const navigate = useNavigate();
     const { user, loading: authLoading } = useAuth();
-    
+
     const [loading, setLoading] = useState(true);
     const [joining, setJoining] = useState(false);
     const [company, setCompany] = useState<any>(null);
@@ -84,7 +84,7 @@ export const InvitePage: React.FC = () => {
                 .from('digital_cards')
                 .select('id, title, content_json')
                 .eq('owner_user_id', user!.id);
-            
+
             if (error) throw error;
             setUserCards(data || []);
             if (data && data.length > 0) {
@@ -114,34 +114,78 @@ export const InvitePage: React.FC = () => {
 
         setJoining(true);
         try {
-            // Logic to join company: 
-            // Usually this means updating the digital card's company info or linking to company_id
-            // For now, let's assume we update the selected card's company field
-            
-            const { error: updateError } = await supabase
+            // Get user profile first
+            const { data: userProfile, error: profileError } = await supabase
+                .from('profiles')
+                .select('id, display_name, email, phone')
+                .eq('user_id', user.id)
+                .single();
+
+            if (profileError || !userProfile) throw new Error("User profile not found");
+
+            // Check if already in invited_employees
+            const { data: existingInvite } = await supabase
+                .from('invited_employees')
+                .select('id')
+                .eq('company_profile_id', company.id)
+                .eq('employee_user_id', user.id)
+                .maybeSingle();
+
+            if (existingInvite) {
+                const { error: updateError } = await supabase
+                    .from('invited_employees')
+                    .update({
+                        status: 'joined',
+                        joined_at: new Date().toISOString(),
+                        // We don't auto-approve, let admin approve
+                    })
+                    .eq('id', existingInvite.id);
+                if (updateError) throw updateError;
+            } else {
+                const { error: insertError } = await supabase
+                    .from('invited_employees')
+                    .insert({
+                        company_profile_id: company.id,
+                        employee_user_id: user.id,
+                        employee_profile_id: userProfile.id,
+                        invite_code: inviteId,
+                        status: 'joined',
+                        is_approved: false,
+                        joined_at: new Date().toISOString(),
+                        data_submitted: {
+                            display_name: userProfile.display_name,
+                            email: userProfile.email,
+                            phone: userProfile.phone
+                        }
+                    });
+                if (insertError) throw insertError;
+            }
+
+            // Update card account type as well
+            const { error: updateCardError } = await supabase
                 .from('digital_cards')
                 .update({
                     account_type: 'company_employee'
                 })
                 .eq('id', selectedCard);
 
-            if (updateError) throw updateError;
+            if (updateCardError) throw updateCardError;
 
             setSuccess(true);
             toast({
                 title: "Welcome to the team!",
-                description: `You have successfully joined ${company.company_name}.`,
+                description: `You have successfully joined ${company.company_name}. Please wait for admin approval.`,
             });
-            
+
             setTimeout(() => {
                 navigate('/dashboard');
             }, 2000);
 
-        } catch (err) {
+        } catch (err: any) {
             console.error('Error joining company:', err);
             toast({
                 title: "Error",
-                description: "Failed to join the company. Please try again.",
+                description: err.message || "Failed to join the company. Please try again.",
                 variant: "destructive"
             });
         } finally {
@@ -174,7 +218,7 @@ export const InvitePage: React.FC = () => {
                             <h1 className="text-2xl font-bold text-slate-900">Invitation Error</h1>
                             <p className="text-slate-500">{error}</p>
                         </div>
-                        <Button 
+                        <Button
                             className="w-full h-12 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-semibold transition-all"
                             onClick={() => navigate('/')}
                         >
@@ -213,7 +257,7 @@ export const InvitePage: React.FC = () => {
                     <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-white rounded-full blur-[120px]" />
                     <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-indigo-400 rounded-full blur-[120px]" />
                 </div>
-                
+
                 <div className="relative z-10 max-w-lg space-y-8 text-white">
                     <div className="w-16 h-16 bg-white/20 backdrop-blur-xl rounded-2xl flex items-center justify-center ring-1 ring-white/30">
                         <ShieldCheck className="w-8 h-8 text-white" />
@@ -226,7 +270,7 @@ export const InvitePage: React.FC = () => {
                             Join <span className="text-white font-bold">{company.company_name}</span> and unlock a world of connected professional identity.
                         </p>
                     </div>
-                    
+
                     <div className="grid grid-cols-2 gap-4">
                         {[
                             { label: 'Verified Profile', icon: CheckCircle2 },
@@ -306,9 +350,9 @@ export const InvitePage: React.FC = () => {
                                     <h3 className="font-bold">Next Steps</h3>
                                     <p className="text-indigo-100 text-xs">By joining, you'll be able to display your company affiliation on your digital card.</p>
                                 </div>
-                                
+
                                 {!user ? (
-                                    <Button 
+                                    <Button
                                         className="w-full bg-white text-indigo-600 hover:bg-indigo-50 h-12 rounded-xl font-bold"
                                         onClick={handleJoin}
                                     >
@@ -322,14 +366,13 @@ export const InvitePage: React.FC = () => {
                                             <div className="space-y-2 max-h-[160px] overflow-y-auto pr-2 custom-scrollbar">
                                                 {userCards.length > 0 ? (
                                                     userCards.map(card => (
-                                                        <button 
+                                                        <button
                                                             key={card.id}
                                                             onClick={() => setSelectedCard(card.id)}
-                                                            className={`w-full flex items-center justify-between p-3 rounded-xl border-2 transition-all ${
-                                                                selectedCard === card.id 
-                                                                ? 'bg-white/20 border-white text-white' 
-                                                                : 'bg-white/5 border-transparent text-indigo-100 hover:bg-white/10'
-                                                            }`}
+                                                            className={`w-full flex items-center justify-between p-3 rounded-xl border-2 transition-all ${selectedCard === card.id
+                                                                    ? 'bg-white/20 border-white text-white'
+                                                                    : 'bg-white/5 border-transparent text-indigo-100 hover:bg-white/10'
+                                                                }`}
                                                         >
                                                             <div className="flex items-center gap-3">
                                                                 <div className={`w-2 h-2 rounded-full ${selectedCard === card.id ? 'bg-white' : 'bg-transparent border border-white/50'}`} />
@@ -343,8 +386,8 @@ export const InvitePage: React.FC = () => {
                                                 )}
                                             </div>
                                         </div>
-                                        
-                                        <Button 
+
+                                        <Button
                                             className="w-full bg-white text-indigo-600 hover:bg-indigo-50 h-12 rounded-xl font-bold shadow-sm"
                                             onClick={handleJoin}
                                             disabled={joining || (userCards.length === 0)}
@@ -367,14 +410,15 @@ export const InvitePage: React.FC = () => {
                     {/* Footer / Help */}
                     <div className="text-center pb-8">
                         <p className="text-slate-400 text-xs">
-                            Invitation from <span className="font-bold text-slate-500">{company.company_name}</span>. 
+                            Invitation from <span className="font-bold text-slate-500">{company.company_name}</span>.
                             Verified by Patra.
                         </p>
                     </div>
                 </div>
             </div>
-            
-            <style dangerouslySetInnerHTML={{ __html: `
+
+            <style dangerouslySetInnerHTML={{
+                __html: `
                 .custom-scrollbar::-webkit-scrollbar {
                     width: 4px;
                 }

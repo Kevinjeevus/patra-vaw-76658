@@ -62,5 +62,10 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     return <Navigate to="/onboarding" replace />;
   }
 
+  // Redirect AWAY from onboarding if completed
+  if (!profileCheck.needsOnboarding && location.pathname.includes('/onboarding')) {
+    return <Navigate to="/" replace />;
+  }
+
   return <>{children}</>;
 };
