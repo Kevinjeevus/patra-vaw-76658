@@ -28,6 +28,7 @@ import {
   BarChart3,
   Copy,
   RefreshCw,
+  Share2,
   UserPlus,
   Send,
   Download,
@@ -915,20 +916,40 @@ export const CompanyDashboard: React.FC = () => {
                               </Button>
                             </div>
                           ) : (
-                            <div className="flex justify-end gap-2">
-                              {emp.profiles?.vanity_url ? (
-                                <>
-                                  <Button size="sm" variant="ghost" className="text-indigo-600" onClick={() => window.open(`/${profile?.vanity_url}?userid=${emp.profiles.vanity_url}`, '_blank')}>
-                                    <LinkIcon className="w-4 h-4 mr-1" /> View ID
+                            <div className="flex justify-end gap-1">
+                              {emp.profiles?.vanity_url && (
+                                <div className="flex items-center gap-1 mr-2 pr-2 border-r border-slate-100">
+                                  <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-indigo-600 hover:bg-indigo-50" title="View Digital ID" onClick={() => window.open(`/${profile?.vanity_url}?userid=${emp.profiles.vanity_url}`, '_blank')}>
+                                    <LinkIcon className="w-4 h-4" />
                                   </Button>
-                                  <Button size="sm" variant="ghost" className="text-indigo-600" onClick={() => {
+                                  <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-indigo-600 hover:bg-indigo-50" title="Copy Card Link" onClick={() => {
                                     navigator.clipboard.writeText(`${window.location.origin}/${profile?.vanity_url}?userid=${emp.profiles.vanity_url}`);
                                     toast({ title: "Link copied", description: "ID card link copied to clipboard" });
                                   }}>
-                                    <Copy className="w-4 h-4 mr-1" /> Copy
+                                    <Copy className="w-4 h-4" />
                                   </Button>
-                                </>
-                              ) : null}
+                                  {typeof navigator.share !== 'undefined' && (
+                                    <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-indigo-600 hover:bg-indigo-50" title="Share Card" onClick={() => {
+                                      navigator.share({
+                                        title: `${emp.profiles?.display_name}'s ID Card`,
+                                        url: `${window.location.origin}/${profile?.vanity_url}?userid=${emp.profiles.vanity_url}`
+                                      }).catch(() => { });
+                                    }}>
+                                      <Share2 className="w-4 h-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                              )}
+
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-slate-600 hover:text-indigo-600 hover:bg-indigo-50"
+                                onClick={() => setEditingEmployee({ ...emp })}
+                              >
+                                <Eye className="w-4 h-4 mr-1" />
+                                View
+                              </Button>
 
                               <Button
                                 size="sm"
