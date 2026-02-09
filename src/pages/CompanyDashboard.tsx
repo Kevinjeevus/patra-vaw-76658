@@ -911,27 +911,35 @@ export const CompanyDashboard: React.FC = () => {
                           ) : (
                             <div className="flex justify-end gap-2">
                               {emp.profiles?.vanity_url ? (
-                                <Button size="sm" variant="ghost" className="text-indigo-600" onClick={() => window.open(`/${profile?.vanity_url}?userid=${emp.profiles.vanity_url}`, '_blank')}>
-                                  <LinkIcon className="w-4 h-4 mr-1" /> View ID
-                                </Button>
+                                <>
+                                  <Button size="sm" variant="ghost" className="text-indigo-600" onClick={() => window.open(`/${profile?.vanity_url}?userid=${emp.profiles.vanity_url}`, '_blank')}>
+                                    <LinkIcon className="w-4 h-4 mr-1" /> View ID
+                                  </Button>
+                                  <Button size="sm" variant="ghost" className="text-indigo-600" onClick={() => {
+                                    navigator.clipboard.writeText(`${window.location.origin}/${profile?.vanity_url}?userid=${emp.profiles.vanity_url}`);
+                                    toast({ title: "Link copied", description: "ID card link copied to clipboard" });
+                                  }}>
+                                    <Copy className="w-4 h-4 mr-1" /> Copy
+                                  </Button>
+                                </>
                               ) : null}
+
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                                onClick={() => setEditingEmployee({ ...emp })}
+                              >
+                                <Edit3 className="w-4 h-4 mr-1" />
+                                Edit
+                              </Button>
+
                               <Dialog open={!!editingEmployee && editingEmployee.id === emp.id} onOpenChange={(open) => {
                                 if (!open) {
                                   setEditingEmployee(null);
                                   setEditingImage(null);
                                 }
                               }}>
-                                <DialogTrigger asChild>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
-                                    onClick={() => setEditingEmployee({ ...emp })}
-                                  >
-                                    <Edit3 className="w-4 h-4 mr-1" />
-                                    Edit
-                                  </Button>
-                                </DialogTrigger>
                                 <DialogContent className="max-h-[90vh] overflow-y-auto max-w-lg">
                                   <DialogHeader>
                                     <DialogTitle>Edit Employee Profile</DialogTitle>
