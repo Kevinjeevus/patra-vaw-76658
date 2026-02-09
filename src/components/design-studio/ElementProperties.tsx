@@ -8,9 +8,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CanvasElement, FONT_FAMILIES } from '@/types/design-studio';
-import { 
-  AlignLeft, AlignCenter, AlignRight, Bold, Lock, Unlock, 
-  Trash2, Copy, EyeOff, Eye, ChevronUp, ChevronDown 
+import {
+  AlignLeft, AlignCenter, AlignRight, Bold, Lock, Unlock,
+  Trash2, Copy, EyeOff, Eye, ChevronUp, ChevronDown,
+  ArrowUpToLine, ArrowDownToLine
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -21,6 +22,8 @@ interface ElementPropertiesProps {
   onDuplicate: () => void;
   onBringForward: () => void;
   onSendBackward: () => void;
+  onBringToFront: () => void;
+  onSendToBack: () => void;
 }
 
 export const ElementProperties: React.FC<ElementPropertiesProps> = ({
@@ -30,6 +33,8 @@ export const ElementProperties: React.FC<ElementPropertiesProps> = ({
   onDuplicate,
   onBringForward,
   onSendBackward,
+  onBringToFront,
+  onSendToBack,
 }) => {
   if (!element) {
     return (
@@ -132,7 +137,7 @@ export const ElementProperties: React.FC<ElementPropertiesProps> = ({
                   <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">
                     Typography
                   </h4>
-                  
+
                   {element.type === 'custom_text' && (
                     <div className="mb-2">
                       <Label className="text-xs">Text Content</Label>
@@ -244,7 +249,7 @@ export const ElementProperties: React.FC<ElementPropertiesProps> = ({
                 Appearance
               </h4>
               <div className="space-y-2">
-            {element.type === 'qr_code' && (
+                {element.type === 'qr_code' && (
                   <div>
                     <Label className="text-xs">QR Code Content</Label>
                     <Select
@@ -347,14 +352,24 @@ export const ElementProperties: React.FC<ElementPropertiesProps> = ({
               <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">
                 Layer
               </h4>
-              <div className="flex gap-1">
-                <Button variant="outline" size="sm" className="flex-1 h-8" onClick={onBringForward}>
-                  <ChevronUp className="w-3 h-3 mr-1" />
-                  <span className="text-xs">Forward</span>
+              <div className="grid grid-cols-2 gap-1 mb-1">
+                <Button variant="outline" size="sm" className="h-8" onClick={onBringToFront} title="Bring to Front">
+                  <ArrowUpToLine className="w-3 h-3 mr-1" />
+                  <span className="text-[10px]">Front</span>
                 </Button>
-                <Button variant="outline" size="sm" className="flex-1 h-8" onClick={onSendBackward}>
+                <Button variant="outline" size="sm" className="h-8" onClick={onSendToBack} title="Send to Back">
+                  <ArrowDownToLine className="w-3 h-3 mr-1" />
+                  <span className="text-[10px]">Back</span>
+                </Button>
+              </div>
+              <div className="grid grid-cols-2 gap-1">
+                <Button variant="outline" size="sm" className="h-8" onClick={onBringForward} title="Bring Forward">
+                  <ChevronUp className="w-3 h-3 mr-1" />
+                  <span className="text-[10px]">Forward</span>
+                </Button>
+                <Button variant="outline" size="sm" className="h-8" onClick={onSendBackward} title="Send Backward">
                   <ChevronDown className="w-3 h-3 mr-1" />
-                  <span className="text-xs">Back</span>
+                  <span className="text-[10px]">Backward</span>
                 </Button>
               </div>
             </div>

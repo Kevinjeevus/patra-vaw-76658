@@ -7,16 +7,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { 
-  DesignCanvas, 
-  ElementToolbox, 
-  ElementProperties, 
+import {
+  DesignCanvas,
+  ElementToolbox,
+  ElementProperties,
   BackgroundSettings,
-  TemplateGallery 
+  TemplateGallery,
+  LayerManager
 } from '@/components/design-studio';
-import { 
-  CanvasElement, 
-  CanvasBackground, 
+import {
+  CanvasElement,
+  CanvasBackground,
   CardDimensions,
   ElementType,
   DEFAULT_ELEMENTS,
@@ -26,9 +27,10 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
-import { 
-  Save, Download, Upload, Undo, Redo, ZoomIn, ZoomOut, 
-  LayoutGrid, Eye, ArrowLeft, Globe, Lock, Sparkles, FlipHorizontal
+import {
+  Save, Download, Upload, Undo, Redo, ZoomIn, ZoomOut,
+  LayoutGrid, Eye, ArrowLeft, Globe, Lock, Sparkles, FlipHorizontal,
+  Layers
 } from 'lucide-react';
 
 type CardSide = 'front' | 'back';
@@ -41,10 +43,10 @@ interface CardSideData {
 const IDCardDesignStudio: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  
+
   // Current side being edited
   const [activeSide, setActiveSide] = useState<CardSide>('front');
-  
+
   // Separate state for front and back
   const [frontData, setFrontData] = useState<CardSideData>({
     elements: [],
@@ -54,30 +56,30 @@ const IDCardDesignStudio: React.FC = () => {
     elements: [],
     background: { type: 'color', value: '#f8fafc' },
   });
-  
+
   const [dimensions, setDimensions] = useState<CardDimensions>(DEFAULT_CARD_DIMENSIONS);
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   const [scale, setScale] = useState(1.5);
-  
+
   // Template state
   const [templateName, setTemplateName] = useState('Untitled Design');
   const [templateDescription, setTemplateDescription] = useState('');
   const [currentTemplateId, setCurrentTemplateId] = useState<string | null>(null);
-  
+
   // UI state
   const [isSaving, setIsSaving] = useState(false);
   const [showPublishDialog, setShowPublishDialog] = useState(false);
   const [isPublic, setIsPublic] = useState(false);
   const [activeTab, setActiveTab] = useState('elements');
-  
+
   // Get current side data
   const currentSideData = activeSide === 'front' ? frontData : backData;
   const setCurrentSideData = activeSide === 'front' ? setFrontData : setBackData;
-  
+
   // Convenience accessors
   const elements = currentSideData.elements;
   const background = currentSideData.background;
-  
+
   // Preview data (sample data for preview)
   const [previewData] = useState({
     company_logo_url: '',
@@ -167,20 +169,65 @@ const IDCardDesignStudio: React.FC = () => {
   }, [selectedElement, elements.length, setCurrentSideData]);
 
   // Layer operations
+  const normalizeZIndices = useCallback((elements: CanvasElement[]): CanvasElement[] => {
+    return [...elements]
+      .sort((a, b) => a.zIndex - b.zIndex)
+      .map((el, index) => ({ ...el, zIndex: index + 1 }));
+  }, []);
+
+  const handleReorder = useCallback((id: string, action: 'front' | 'back' | 'forward' | 'backward') => {
+    setCurrentSideData(prev => {
+      const element = prev.elements.find(el => el.id === id);
+      if (!element) return prev;
+
+      let newElements = [...prev.elements].sort((a, b) => a.zIndex - b.zIndex);
+      const currentIndex = newElements.findIndex(el => el.id === id);
+
+      switch (action) {
+        case 'front':
+          // Move to end of array
+          newElements.splice(currentIndex, 1);
+          newElements.push(element);
+          break;
+        case 'back':
+          // Move to beginning of array
+          newElements.splice(currentIndex, 1);
+          newElements.unshift(element);
+          break;
+        case 'forward':
+          if (currentIndex < newElements.length - 1) {
+            [newElements[currentIndex], newElements[currentIndex + 1]] = [newElements[currentIndex + 1], newElements[currentIndex]];
+          }
+          break;
+        case 'backward':
+          if (currentIndex > 0) {
+            [newElements[currentIndex], newElements[currentIndex - 1]] = [newElements[currentIndex - 1], newElements[currentIndex]];
+          }
+          break;
+      }
+
+      return {
+        ...prev,
+        elements: normalizeZIndices(newElements),
+      };
+    });
+  }, [setCurrentSideData, normalizeZIndices]);
+
   const handleBringForward = useCallback(() => {
-    if (!selectedElement) return;
-    const maxZ = Math.max(...elements.map(el => el.zIndex));
-    if (selectedElement.zIndex < maxZ) {
-      handleUpdateElement(selectedElement.id, { zIndex: selectedElement.zIndex + 1 });
-    }
-  }, [selectedElement, elements, handleUpdateElement]);
+    if (selectedElementId) handleReorder(selectedElementId, 'forward');
+  }, [selectedElementId, handleReorder]);
 
   const handleSendBackward = useCallback(() => {
-    if (!selectedElement) return;
-    if (selectedElement.zIndex > 1) {
-      handleUpdateElement(selectedElement.id, { zIndex: selectedElement.zIndex - 1 });
-    }
-  }, [selectedElement, handleUpdateElement]);
+    if (selectedElementId) handleReorder(selectedElementId, 'backward');
+  }, [selectedElementId, handleReorder]);
+
+  const handleBringToFront = useCallback(() => {
+    if (selectedElementId) handleReorder(selectedElementId, 'front');
+  }, [selectedElementId, handleReorder]);
+
+  const handleSendToBack = useCallback(() => {
+    if (selectedElementId) handleReorder(selectedElementId, 'back');
+  }, [selectedElementId, handleReorder]);
 
   // Save template (saves both front and back)
   const handleSave = async () => {
@@ -244,8 +291,8 @@ const IDCardDesignStudio: React.FC = () => {
     try {
       const { error } = await supabase
         .from('custom_id_templates')
-        .update({ 
-          is_published: true, 
+        .update({
+          is_published: true,
           is_public: isPublic,
           name: templateName,
           description: templateDescription,
@@ -253,10 +300,10 @@ const IDCardDesignStudio: React.FC = () => {
         .eq('id', currentTemplateId);
 
       if (error) throw error;
-      
+
       setShowPublishDialog(false);
-      toast({ 
-        title: 'Design published!', 
+      toast({
+        title: 'Design published!',
         description: isPublic ? 'Others can now use your template.' : 'Only you can see this template.',
       });
     } catch (error: any) {
@@ -273,14 +320,14 @@ const IDCardDesignStudio: React.FC = () => {
       elements: template.elements || [],
       background: template.background || { type: 'color', value: '#ffffff' },
     });
-    
+
     // Load back side data from canvas_config if available
     const canvasConfig = template.canvas_config as { back_elements?: CanvasElement[]; back_background?: CanvasBackground } | null;
     setBackData({
       elements: canvasConfig?.back_elements || [],
       background: canvasConfig?.back_background || { type: 'color', value: '#f8fafc' },
     });
-    
+
     setDimensions(template.card_dimensions || DEFAULT_CARD_DIMENSIONS);
     setTemplateName(`${template.name} (Copy)`);
     setTemplateDescription(template.description || '');
@@ -307,22 +354,22 @@ const IDCardDesignStudio: React.FC = () => {
             />
           </div>
         </div>
-        
+
         <div className="flex items-center gap-2">
           {/* Zoom controls */}
           <div className="flex items-center gap-1 mr-4 bg-muted rounded-md p-1">
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               className="h-7 w-7"
               onClick={() => setScale(Math.max(0.5, scale - 0.25))}
             >
               <ZoomOut className="w-3.5 h-3.5" />
             </Button>
             <span className="text-xs w-12 text-center">{Math.round(scale * 100)}%</span>
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               className="h-7 w-7"
               onClick={() => setScale(Math.min(3, scale + 0.25))}
             >
@@ -334,7 +381,7 @@ const IDCardDesignStudio: React.FC = () => {
             <Save className="w-4 h-4 mr-2" />
             {isSaving ? 'Saving...' : 'Save'}
           </Button>
-          
+
           <Button size="sm" onClick={() => setShowPublishDialog(true)}>
             <Globe className="w-4 h-4 mr-2" />
             Publish
@@ -347,19 +394,30 @@ const IDCardDesignStudio: React.FC = () => {
         {/* Left Sidebar */}
         <aside className="w-64 border-r bg-card flex flex-col">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-            <TabsList className="mx-2 mt-2 grid grid-cols-3">
-              <TabsTrigger value="elements" className="text-xs">Elements</TabsTrigger>
-              <TabsTrigger value="background" className="text-xs">Background</TabsTrigger>
-              <TabsTrigger value="gallery" className="text-xs">Gallery</TabsTrigger>
+            <TabsList className="mx-2 mt-2 grid grid-cols-4">
+              <TabsTrigger value="elements" className="px-0 text-[10px]">Elements</TabsTrigger>
+              <TabsTrigger value="layers" className="px-0 text-[10px]">Layers</TabsTrigger>
+              <TabsTrigger value="background" className="px-0 text-[10px]">Style</TabsTrigger>
+              <TabsTrigger value="gallery" className="px-0 text-[10px]">Gallery</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="elements" className="flex-1 m-0">
-              <ElementToolbox 
+              <ElementToolbox
                 onAddElement={handleAddElement}
                 existingElements={elements.map(el => el.type)}
               />
             </TabsContent>
-            
+
+            <TabsContent value="layers" className="flex-1 m-0">
+              <LayerManager
+                elements={elements}
+                selectedElementId={selectedElementId}
+                onSelectElement={setSelectedElementId}
+                onUpdateElement={handleUpdateElement}
+                onReorder={handleReorder}
+              />
+            </TabsContent>
+
             <TabsContent value="background" className="flex-1 m-0">
               <BackgroundSettings
                 background={background}
@@ -368,7 +426,7 @@ const IDCardDesignStudio: React.FC = () => {
                 onUpdateDimensions={setDimensions}
               />
             </TabsContent>
-            
+
             <TabsContent value="gallery" className="flex-1 m-0 p-4 overflow-auto">
               <TemplateGallery onUseTemplate={handleUseTemplate} />
             </TabsContent>
@@ -408,7 +466,7 @@ const IDCardDesignStudio: React.FC = () => {
               <FlipHorizontal className="w-4 h-4" />
             </Button>
           </div>
-          
+
           <div className="flex-1 overflow-auto">
             <DesignCanvas
               elements={elements}
@@ -432,6 +490,8 @@ const IDCardDesignStudio: React.FC = () => {
             onDuplicate={handleDuplicateElement}
             onBringForward={handleBringForward}
             onSendBackward={handleSendBackward}
+            onBringToFront={handleBringToFront}
+            onSendToBack={handleSendToBack}
           />
         </aside>
       </div>
@@ -448,11 +508,11 @@ const IDCardDesignStudio: React.FC = () => {
               Share your design with others or keep it private.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-4">
             <div>
               <Label>Template Name</Label>
-              <Input 
+              <Input
                 value={templateName}
                 onChange={(e) => setTemplateName(e.target.value)}
                 className="mt-1"
@@ -460,7 +520,7 @@ const IDCardDesignStudio: React.FC = () => {
             </div>
             <div>
               <Label>Description</Label>
-              <Textarea 
+              <Textarea
                 value={templateDescription}
                 onChange={(e) => setTemplateDescription(e.target.value)}
                 placeholder="Describe your template..."
