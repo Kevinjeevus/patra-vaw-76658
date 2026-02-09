@@ -171,7 +171,6 @@ const IDCardDesignStudio: React.FC = () => {
   // Layer operations
   const normalizeZIndices = useCallback((elements: CanvasElement[]): CanvasElement[] => {
     return [...elements]
-      .sort((a, b) => a.zIndex - b.zIndex)
       .map((el, index) => ({ ...el, zIndex: index + 1 }));
   }, []);
 
