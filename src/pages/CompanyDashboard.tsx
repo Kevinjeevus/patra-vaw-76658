@@ -109,8 +109,6 @@ const AVAILABLE_PARAMETERS = [
   { id: 'display_name', label: 'Full Name', required: true },
   { id: 'email', label: 'Email', required: true },
   { id: 'phone', label: 'Phone Number', required: false },
-  { id: 'dob', label: 'Date of Birth', required: false },
-  { id: 'gender', label: 'Gender', required: false },
   { id: 'avatar_url', label: 'Profile Picture', required: false },
 ];
 
@@ -818,8 +816,6 @@ export const CompanyDashboard: React.FC = () => {
                       <TableHead className="min-w-[100px]">Staff ID</TableHead>
                       <TableHead className="min-w-[100px]">Profile ID</TableHead>
                       <TableHead className="min-w-[150px]">Designation</TableHead>
-                      <TableHead className="min-w-[120px]">DOB</TableHead>
-                      <TableHead className="min-w-[100px]">Gender</TableHead>
                       <TableHead className="min-w-[150px]">Joined Date</TableHead>
                       <TableHead className="min-w-[120px]">Status</TableHead>
                       <TableHead className="text-right min-w-[150px]">Actions</TableHead>
@@ -911,35 +907,27 @@ export const CompanyDashboard: React.FC = () => {
                           ) : (
                             <div className="flex justify-end gap-2">
                               {emp.profiles?.vanity_url ? (
-                                <>
-                                  <Button size="sm" variant="ghost" className="text-indigo-600" onClick={() => window.open(`/${profile?.vanity_url}?userid=${emp.profiles.vanity_url}`, '_blank')}>
-                                    <LinkIcon className="w-4 h-4 mr-1" /> View ID
-                                  </Button>
-                                  <Button size="sm" variant="ghost" className="text-indigo-600" onClick={() => {
-                                    navigator.clipboard.writeText(`${window.location.origin}/${profile?.vanity_url}?userid=${emp.profiles.vanity_url}`);
-                                    toast({ title: "Link copied", description: "ID card link copied to clipboard" });
-                                  }}>
-                                    <Copy className="w-4 h-4 mr-1" /> Copy
-                                  </Button>
-                                </>
+                                <Button size="sm" variant="ghost" className="text-indigo-600" onClick={() => window.open(`/${profile?.vanity_url}?userid=${emp.profiles.vanity_url}`, '_blank')}>
+                                  <LinkIcon className="w-4 h-4 mr-1" /> View ID
+                                </Button>
                               ) : null}
-
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
-                                onClick={() => setEditingEmployee({ ...emp })}
-                              >
-                                <Edit3 className="w-4 h-4 mr-1" />
-                                Edit
-                              </Button>
-
                               <Dialog open={!!editingEmployee && editingEmployee.id === emp.id} onOpenChange={(open) => {
                                 if (!open) {
                                   setEditingEmployee(null);
                                   setEditingImage(null);
                                 }
                               }}>
+                                <DialogTrigger asChild>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                                    onClick={() => setEditingEmployee({ ...emp })}
+                                  >
+                                    <Edit3 className="w-4 h-4 mr-1" />
+                                    Edit
+                                  </Button>
+                                </DialogTrigger>
                                 <DialogContent className="max-h-[90vh] overflow-y-auto max-w-lg">
                                   <DialogHeader>
                                     <DialogTitle>Edit Employee Profile</DialogTitle>
@@ -1028,34 +1016,6 @@ export const CompanyDashboard: React.FC = () => {
                                                 profiles: { ...editingEmployee.profiles, vanity_url: e.target.value }
                                               })}
                                             />
-                                          </div>
-                                          <div className="space-y-2">
-                                            <Label>Date of Birth</Label>
-                                            <Input
-                                              type="date"
-                                              value={String(editingEmployee.data_submitted?.dob || '')}
-                                              onChange={(e) => setEditingEmployee({
-                                                ...editingEmployee,
-                                                data_submitted: { ...editingEmployee.data_submitted, dob: e.target.value }
-                                              })}
-                                            />
-                                          </div>
-                                          <div className="space-y-2">
-                                            <Label>Gender</Label>
-                                            <select
-                                              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                              value={String(editingEmployee.data_submitted?.gender || '')}
-                                              onChange={(e) => setEditingEmployee({
-                                                ...editingEmployee,
-                                                data_submitted: { ...editingEmployee.data_submitted, gender: e.target.value }
-                                              })}
-                                            >
-                                              <option value="">Select Gender</option>
-                                              <option value="male">Male</option>
-                                              <option value="female">Female</option>
-                                              <option value="other">Other</option>
-                                              <option value="prefer_not_to_say">Prefer not to say</option>
-                                            </select>
                                           </div>
                                         </div>
                                       </div>
@@ -2000,10 +1960,10 @@ export const CompanyDashboard: React.FC = () => {
               </Card>
             </div>
           </TabsContent>
-        </Tabs >
-      </main >
+        </Tabs>
+      </main>
       {/* Manual Add Staff Dialog */}
-      < Dialog open={showAddStaffDialog} onOpenChange={(open) => {
+      <Dialog open={showAddStaffDialog} onOpenChange={(open) => {
         setShowAddStaffDialog(open);
         if (!open) {
           setManualStaffData({});
@@ -2133,36 +2093,13 @@ export const CompanyDashboard: React.FC = () => {
                         <Label htmlFor={`manual-${param.id}`} className="text-xs font-bold uppercase text-slate-500">
                           {param.label} {param.required && <span className="text-red-500">*</span>}
                         </Label>
-                        {param.id === 'dob' ? (
-                          <Input
-                            id={`manual-${param.id}`}
-                            type="date"
-                            value={manualStaffData[param.id] || ''}
-                            onChange={(e) => setManualStaffData(prev => ({ ...prev, [param.id]: e.target.value }))}
-                            className="bg-slate-50"
-                          />
-                        ) : param.id === 'gender' ? (
-                          <select
-                            id={`manual-${param.id}`}
-                            className="w-full h-10 px-3 py-2 bg-slate-50 border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            value={manualStaffData[param.id] || ''}
-                            onChange={(e) => setManualStaffData(prev => ({ ...prev, [param.id]: e.target.value }))}
-                          >
-                            <option value="">Select Gender</option>
-                            <option value="male">Male</option>
-                            <option value="female">Female</option>
-                            <option value="other">Other</option>
-                            <option value="prefer_not_to_say">Prefer not to say</option>
-                          </select>
-                        ) : (
-                          <Input
-                            id={`manual-${param.id}`}
-                            placeholder={`Enter ${param.label.toLowerCase()}`}
-                            value={manualStaffData[param.id] || ''}
-                            onChange={(e) => setManualStaffData(prev => ({ ...prev, [param.id]: e.target.value }))}
-                            className="bg-slate-50"
-                          />
-                        )}
+                        <Input
+                          id={`manual-${param.id}`}
+                          placeholder={`Enter ${param.label.toLowerCase()}`}
+                          value={manualStaffData[param.id] || ''}
+                          onChange={(e) => setManualStaffData(prev => ({ ...prev, [param.id]: e.target.value }))}
+                          className="bg-slate-50"
+                        />
                       </div>
                     ))
                   }
@@ -2185,10 +2122,10 @@ export const CompanyDashboard: React.FC = () => {
             </Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog >
+      </Dialog>
 
       {/* Bulk Import Dialog */}
-      < Dialog open={showImportDialog} onOpenChange={setShowImportDialog} >
+      <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-2xl font-black">
@@ -2269,7 +2206,7 @@ export const CompanyDashboard: React.FC = () => {
             <Button variant="ghost" onClick={() => setShowImportDialog(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog >
-    </div >
+      </Dialog>
+    </div>
   );
 };
