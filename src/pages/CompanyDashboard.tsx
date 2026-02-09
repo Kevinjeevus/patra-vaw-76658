@@ -886,8 +886,14 @@ export const CompanyDashboard: React.FC = () => {
                             </Dialog>
                           </div>
                         </TableCell>
+                        <TableCell className="text-slate-600 text-sm">
+                          {emp.data_submitted?.dob ? new Date(emp.data_submitted.dob).toLocaleDateString() : '—'}
+                        </TableCell>
+                        <TableCell className="text-slate-600 text-sm capitalize">
+                          {emp.data_submitted?.gender || '—'}
+                        </TableCell>
                         <TableCell className="text-slate-500 text-sm">
-                          {new Date(emp.joined_at).toLocaleDateString()}
+                          {emp.joined_at ? new Date(emp.joined_at).toLocaleDateString() : '—'}
                         </TableCell>
                         <TableCell>
                           {emp.is_approved ? (
