@@ -43,6 +43,7 @@ import { IDCardCustomization, DEFAULT_CUSTOMIZATION, ID_CARD_TEMPLATES } from '@
 import { DesignTemplate } from '@/types/design-studio';
 
 import { Checkbox } from '@/components/ui/checkbox';
+import { Slider } from '@/components/ui/slider';
 
 type Json =
   | string
@@ -185,6 +186,7 @@ export const CompanyDashboard: React.FC = () => {
   });
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [editingImage, setEditingImage] = useState<File | null>(null);
+  const [imageCrop, setImageCrop] = useState({ scale: 1, x: 0, y: 0 });
   const [isUpdatingStaff, setIsUpdatingStaff] = useState(false);
 
   useEffect(() => {
@@ -406,6 +408,39 @@ export const CompanyDashboard: React.FC = () => {
     }
   };
 
+  const cropImage = (imageFile: File, crop: { scale: number, x: number, y: number }): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const size = 300;
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return reject(new Error('Canvas context not found'));
+
+        const minDim = Math.min(img.width, img.height);
+        const scale = crop.scale * (size / minDim);
+        const drawWidth = img.width * scale;
+        const drawHeight = img.height * scale;
+
+        const dx = (size - drawWidth) / 2 + (crop.x * size / 100);
+        const dy = (size - drawHeight) / 2 + (crop.y * size / 100);
+
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, size, size);
+        ctx.drawImage(img, dx, dy, drawWidth, drawHeight);
+
+        canvas.toBlob((blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error('Canvas toBlob failed'));
+        }, 'image/webp', 0.82);
+      };
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = URL.createObjectURL(imageFile);
+    });
+  };
+
   const handleUpdateStaff = async () => {
     if (!editingEmployee) return;
     setIsUpdatingStaff(true);
@@ -413,14 +448,16 @@ export const CompanyDashboard: React.FC = () => {
       let avatarUrl = editingEmployee.data_submitted?.avatar_url;
 
       if (editingImage && user) {
-        const fileExt = editingImage.name.split('.').pop();
+        const fileExt = 'webp';
         const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
         const filePath = `${user.id}/staff/${fileName}`;
 
+        const croppedBlob = await cropImage(editingImage, imageCrop);
+
         const { error: uploadError } = await supabase.storage
           .from('avatars')
-          .upload(filePath, editingImage, {
-            contentType: editingImage.type || undefined,
+          .upload(filePath, croppedBlob, {
+            contentType: 'image/webp',
             upsert: false,
           });
 
@@ -562,16 +599,16 @@ export const CompanyDashboard: React.FC = () => {
       let avatarUrl = manualStaffData.avatar_url;
 
       if (selectedImage) {
-        const fileExt = selectedImage.name.split('.').pop();
+        const fileExt = 'webp';
         const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-        // Storage RLS for `avatars` requires the first folder to be the uploader's auth.uid()
-        // policy: (storage.foldername(name))[1] = auth.uid()::text
         const filePath = `${user.id}/staff/${fileName}`;
+
+        const croppedBlob = await cropImage(selectedImage, imageCrop);
 
         const { error: uploadError } = await supabase.storage
           .from('avatars')
-          .upload(filePath, selectedImage, {
-            contentType: selectedImage.type || undefined,
+          .upload(filePath, croppedBlob, {
+            contentType: 'image/webp',
             upsert: false,
           });
 
@@ -965,6 +1002,9 @@ export const CompanyDashboard: React.FC = () => {
                                 if (!open) {
                                   setEditingEmployee(null);
                                   setEditingImage(null);
+                                  setImageCrop({ scale: 1, x: 0, y: 0 });
+                                } else {
+                                  setImageCrop({ scale: 1, x: 0, y: 0 });
                                 }
                               }}>
                                 <DialogContent className="max-h-[90vh] overflow-y-auto max-w-lg">
@@ -979,11 +1019,16 @@ export const CompanyDashboard: React.FC = () => {
                                       <div className="flex flex-col items-center gap-4 mb-4">
                                         <div className="group relative w-32 h-32 bg-slate-100 rounded-full overflow-hidden border-2 border-dashed border-slate-300 hover:border-indigo-500 transition-colors cursor-pointer">
                                           {editingImage ? (
-                                            <img
-                                              src={URL.createObjectURL(editingImage)}
-                                              alt="Preview"
-                                              className="w-full h-full object-cover"
-                                            />
+                                            <div className="w-full h-full relative group">
+                                              <img
+                                                src={URL.createObjectURL(editingImage)}
+                                                alt="Preview"
+                                                className="w-full h-full object-cover transition-transform duration-200"
+                                                style={{
+                                                  transform: `scale(${imageCrop.scale}) translate(${imageCrop.x}%, ${imageCrop.y}%)`
+                                                }}
+                                              />
+                                            </div>
                                           ) : editingEmployee.data_submitted?.avatar_url ? (
                                             <img
                                               src={editingEmployee.data_submitted.avatar_url}
@@ -998,18 +1043,55 @@ export const CompanyDashboard: React.FC = () => {
                                           <input
                                             type="file"
                                             className="absolute inset-0 opacity-0 cursor-pointer"
-                                            accept="image/*"
                                             onChange={(e) => {
-                                              if (e.target.files?.[0]) {
-                                                setEditingImage(e.target.files[0]);
-                                              }
+                                              const file = e.target.files?.[0];
+                                              if (file) setEditingImage(file);
                                             }}
                                           />
-                                          <div className="absolute inset-x-0 bottom-0 bg-black/50 text-white text-[10px] py-1 text-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                            Change Photo
-                                          </div>
                                         </div>
-                                        <p className="text-[10px] text-slate-400">Click to update profile photo</p>
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Click to update photo</p>
+
+                                        {editingImage && (
+                                          <div className="w-full max-w-[200px] space-y-4 px-2">
+                                            <div className="space-y-1.5">
+                                              <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase">
+                                                <span>Zoom</span>
+                                                <span>{Math.round(imageCrop.scale * 100)}%</span>
+                                              </div>
+                                              <Slider
+                                                value={[imageCrop.scale]}
+                                                min={1}
+                                                max={3}
+                                                step={0.01}
+                                                onValueChange={([val]) => setImageCrop(prev => ({ ...prev, scale: val }))}
+                                              />
+                                            </div>
+                                            <div className="space-y-1.5">
+                                              <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase">
+                                                <span>Move X</span>
+                                              </div>
+                                              <Slider
+                                                value={[imageCrop.x]}
+                                                min={-50}
+                                                max={50}
+                                                step={1}
+                                                onValueChange={([val]) => setImageCrop(prev => ({ ...prev, x: val }))}
+                                              />
+                                            </div>
+                                            <div className="space-y-1.5">
+                                              <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase">
+                                                <span>Move Y</span>
+                                              </div>
+                                              <Slider
+                                                value={[imageCrop.y]}
+                                                min={-50}
+                                                max={50}
+                                                step={1}
+                                                onValueChange={([val]) => setImageCrop(prev => ({ ...prev, y: val }))}
+                                              />
+                                            </div>
+                                          </div>
+                                        )}
                                       </div>
 
                                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -2035,6 +2117,9 @@ export const CompanyDashboard: React.FC = () => {
         if (!open) {
           setManualStaffData({});
           setSelectedImage(null);
+          setImageCrop({ scale: 1, x: 0, y: 0 });
+        } else {
+          setImageCrop({ scale: 1, x: 0, y: 0 });
         }
       }}>
         <DialogContent className="max-w-2xl">
@@ -2057,7 +2142,10 @@ export const CompanyDashboard: React.FC = () => {
                   <img
                     src={URL.createObjectURL(selectedImage)}
                     alt="Preview"
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover transition-transform duration-200"
+                    style={{
+                      transform: `scale(${imageCrop.scale}) translate(${imageCrop.x}%, ${imageCrop.y}%)`
+                    }}
                   />
                 ) : manualStaffData.avatar_url ? (
                   <img
@@ -2080,10 +2168,50 @@ export const CompanyDashboard: React.FC = () => {
                     }
                   }}
                 />
-                <div className="absolute inset-x-0 bottom-0 bg-black/50 text-white text-[10px] py-1 text-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  Click to Upload
-                </div>
               </div>
+
+              {selectedImage && (
+                <div className="w-full max-w-[160px] space-y-3 px-1 mt-2">
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[9px] font-bold text-slate-500 uppercase">
+                      <span>Zoom</span>
+                      <span>{Math.round(imageCrop.scale * 100)}%</span>
+                    </div>
+                    <Slider
+                      value={[imageCrop.scale]}
+                      min={1}
+                      max={3}
+                      step={0.01}
+                      onValueChange={([val]) => setImageCrop(prev => ({ ...prev, scale: val }))}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[9px] font-bold text-slate-500 uppercase">
+                      <span>Move X</span>
+                    </div>
+                    <Slider
+                      value={[imageCrop.x]}
+                      min={-50}
+                      max={50}
+                      step={1}
+                      onValueChange={([val]) => setImageCrop(prev => ({ ...prev, x: val }))}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[9px] font-bold text-slate-500 uppercase">
+                      <span>Move Y</span>
+                    </div>
+                    <Slider
+                      value={[imageCrop.y]}
+                      min={-50}
+                      max={50}
+                      step={1}
+                      onValueChange={([val]) => setImageCrop(prev => ({ ...prev, y: val }))}
+                    />
+                  </div>
+                </div>
+              )}
+
               <p className="text-[10px] text-slate-400 text-center max-w-[120px]">
                 Recommended: Square image, max 2MB
               </p>
