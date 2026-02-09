@@ -22,9 +22,15 @@ interface AiAvatarGeneratorProps {
   userId: string;
   currentName: string;
   onImageGenerated: (imageUrl: string) => void;
+  baseImageUrl?: string | null;
 }
 
-export const AiAvatarGenerator: React.FC<AiAvatarGeneratorProps> = ({ userId, currentName, onImageGenerated }) => {
+export const AiAvatarGenerator: React.FC<AiAvatarGeneratorProps> = ({
+  userId,
+  currentName,
+  onImageGenerated,
+  baseImageUrl
+}) => {
   const [customPrompt, setCustomPrompt] = useState('');
   const [generating, setGenerating] = useState(false);
   const [generatedUrl, setGeneratedUrl] = useState<string | null>(null);
@@ -41,7 +47,7 @@ export const AiAvatarGenerator: React.FC<AiAvatarGeneratorProps> = ({ userId, cu
 
     try {
       const { data, error } = await supabase.functions.invoke('generate-avatar', {
-        body: { prompt, userId },
+        body: { prompt, userId, baseImageUrl },
       });
 
       if (error) throw error;

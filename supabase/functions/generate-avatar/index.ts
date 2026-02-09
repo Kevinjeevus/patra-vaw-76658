@@ -10,7 +10,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { prompt, userId } = await req.json();
+    const { prompt, userId, baseImageUrl } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
@@ -33,7 +33,12 @@ serve(async (req) => {
         messages: [
           {
             role: "user",
-            content: `Generate a professional profile picture/avatar based on this description: ${prompt}. Make it a clean, high-quality portrait-style image suitable for a professional ID card or business card. Square aspect ratio, centered subject.`,
+            content: baseImageUrl
+              ? [
+                { type: "text", text: `Generate a professional profile picture/avatar based on my photo and this description: ${prompt}. The resulting image should clearly resemble the person in the provided photo, maintain their distinct facial features, but reflect the requested style. Make it a clean, high-quality portrait-style image suitable for a professional ID card. Square aspect ratio, centered subject.` },
+                { type: "image_url", image_url: { url: baseImageUrl } }
+              ]
+              : `Generate a professional profile picture/avatar based on this description: ${prompt}. Make it a clean, high-quality portrait-style image suitable for a professional ID card or business card. Square aspect ratio, centered subject.`,
           },
         ],
         modalities: ["image", "text"],

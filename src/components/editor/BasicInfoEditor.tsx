@@ -257,6 +257,7 @@ export const BasicInfoEditor: React.FC<BasicInfoEditorProps> = ({ cardData, setC
                                     <AiAvatarGenerator
                                         userId={user.id}
                                         currentName={cardData.fullName}
+                                        baseImageUrl={cardData.avatarUrl}
                                         onImageGenerated={(imageUrl) => {
                                             setCardData({ ...cardData, avatarUrl: imageUrl });
                                             setCustomAvatarUrl(imageUrl);
