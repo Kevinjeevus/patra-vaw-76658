@@ -51,11 +51,13 @@ export const ElementProperties: React.FC<ElementPropertiesProps> = ({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
+  console.log('ElementProperties rendered. Element:', element?.type, 'User:', !!user);
+
   if (!element) {
     return (
       <Card className="h-full">
         <CardHeader className="py-3 px-4">
-          <CardTitle className="text-sm font-medium">Properties</CardTitle>
+          <CardTitle className="text-sm font-medium">PROPERTIES [UPDATE]</CardTitle>
         </CardHeader>
         <CardContent className="flex items-center justify-center h-40 text-muted-foreground text-sm">
           Select an element to edit
@@ -219,9 +221,14 @@ export const ElementProperties: React.FC<ElementPropertiesProps> = ({
                         </div>
                         <Switch
                           checked={element.aiStylizationEnabled || false}
-                          onCheckedChange={(checked) => onUpdate({ aiStylizationEnabled: checked })}
+                          onCheckedChange={(checked) => {
+                            console.log('Switch toggled:', checked);
+                            onUpdate({ aiStylizationEnabled: checked });
+                          }}
                         />
                       </div>
+
+                      {console.log('AI Stylization Enabled:', element.aiStylizationEnabled)}
 
                       {(element.aiStylizationEnabled) && (
                         <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
