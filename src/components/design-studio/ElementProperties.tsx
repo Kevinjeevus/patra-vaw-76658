@@ -51,13 +51,11 @@ export const ElementProperties: React.FC<ElementPropertiesProps> = ({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
-  console.log('ElementProperties rendered. Element:', element?.type, 'User:', !!user);
-
   if (!element) {
     return (
       <Card className="h-full">
         <CardHeader className="py-3 px-4">
-          <CardTitle className="text-sm font-medium">PROPERTIES [UPDATE]</CardTitle>
+          <CardTitle className="text-sm font-medium">Properties</CardTitle>
         </CardHeader>
         <CardContent className="flex items-center justify-center h-40 text-muted-foreground text-sm">
           Select an element to edit
@@ -222,13 +220,10 @@ export const ElementProperties: React.FC<ElementPropertiesProps> = ({
                         <Switch
                           checked={element.aiStylizationEnabled || false}
                           onCheckedChange={(checked) => {
-                            console.log('Switch toggled:', checked);
                             onUpdate({ aiStylizationEnabled: checked });
                           }}
                         />
                       </div>
-
-                      {console.log('AI Stylization Enabled:', element.aiStylizationEnabled)}
 
                       {(element.aiStylizationEnabled) && (
                         <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
@@ -380,6 +375,62 @@ export const ElementProperties: React.FC<ElementPropertiesProps> = ({
                         />
                       </div>
                     </div>
+
+                    {/* Advanced Text Controls */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-[10px]">Letter Spacing</Label>
+                        <Input
+                          type="number"
+                          value={element.style.letterSpacing || 0}
+                          onChange={(e) => updateStyle({ letterSpacing: parseFloat(e.target.value) || 0 })}
+                          className="h-7 text-xs"
+                          min={-5}
+                          max={20}
+                          step={0.5}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-[10px]">Line Height</Label>
+                        <Input
+                          type="number"
+                          value={element.style.lineHeight || 1.2}
+                          onChange={(e) => updateStyle({ lineHeight: parseFloat(e.target.value) || 1.2 })}
+                          className="h-7 text-xs"
+                          min={0.5}
+                          max={3}
+                          step={0.1}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label className="text-[10px]">Text Shadow</Label>
+                      <Input
+                        type="text"
+                        value={element.style.textShadow || ''}
+                        onChange={(e) => updateStyle({ textShadow: e.target.value })}
+                        className="h-7 text-xs"
+                        placeholder="1px 1px 2px rgba(0,0,0,0.3)"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[10px]">Gradient Text</Label>
+                      <Switch
+                        checked={element.style.gradientText || false}
+                        onCheckedChange={(checked) => updateStyle({ gradientText: checked, gradientTextColors: checked ? 'linear-gradient(135deg, #667eea, #764ba2)' : undefined })}
+                      />
+                    </div>
+                    {element.style.gradientText && (
+                      <Input
+                        type="text"
+                        value={element.style.gradientTextColors || ''}
+                        onChange={(e) => updateStyle({ gradientTextColors: e.target.value })}
+                        className="h-7 text-xs"
+                        placeholder="linear-gradient(135deg, #667eea, #764ba2)"
+                      />
+                    )}
                   </div>
                 </div>
                 <Separator />

@@ -5,22 +5,14 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { ElementType, DEFAULT_ELEMENTS, ELEMENT_ICONS } from '@/types/design-studio';
 import { 
   Building2, User, Type, Briefcase, Hash, Users, Mail, Phone, 
-  QrCode, Text, Square, Minus, Plus, GripVertical
+  QrCode, Text, Square, Minus, Plus, GripVertical, MapPin, Heart,
+  Calendar, CalendarX, Barcode, PenTool, Star, Shield, Image
 } from 'lucide-react';
 
 const iconMap: Record<string, React.ComponentType<any>> = {
-  Building2,
-  User,
-  Type,
-  Briefcase,
-  Hash,
-  Users,
-  Mail,
-  Phone,
-  QrCode,
-  Text,
-  Square,
-  Minus,
+  Building2, User, Type, Briefcase, Hash, Users, Mail, Phone,
+  QrCode, Text, Square, Minus, MapPin, Heart, Calendar, CalendarX,
+  Barcode, PenTool, Star, Shield, Image,
 };
 
 interface ElementToolboxProps {
@@ -32,13 +24,20 @@ export const ElementToolbox: React.FC<ElementToolboxProps> = ({
   onAddElement,
   existingElements,
 }) => {
-  const dataElements: ElementType[] = ['company_logo', 'profile_photo', 'name', 'designation', 'employee_id', 'department', 'email', 'phone', 'qr_code'];
-  const decorativeElements: ElementType[] = ['custom_text', 'shape', 'divider'];
+  const dataElements: ElementType[] = [
+    'company_logo', 'profile_photo', 'name', 'designation', 'employee_id',
+    'department', 'email', 'phone', 'address', 'blood_group',
+    'joining_date', 'expiry_date', 'qr_code', 'barcode', 'signature',
+  ];
+  const decorativeElements: ElementType[] = ['custom_text', 'shape', 'divider', 'line', 'icon', 'badge', 'image'];
+
+  // Elements that can have multiple instances
+  const multiInstanceTypes: ElementType[] = ['custom_text', 'shape', 'divider', 'line', 'icon', 'badge', 'image'];
 
   const renderElementButton = (type: ElementType) => {
     const config = DEFAULT_ELEMENTS[type];
     const IconComponent = iconMap[ELEMENT_ICONS[type]];
-    const isAlreadyAdded = existingElements.includes(type) && !['custom_text', 'shape', 'divider'].includes(type);
+    const isAlreadyAdded = existingElements.includes(type) && !multiInstanceTypes.includes(type);
 
     return (
       <Button
@@ -64,14 +63,13 @@ export const ElementToolbox: React.FC<ElementToolboxProps> = ({
   };
 
   return (
-    <Card className="h-full">
+    <Card className="h-full border-0 rounded-none">
       <CardHeader className="py-3 px-4">
         <CardTitle className="text-sm font-medium">Elements</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         <ScrollArea className="h-[calc(100vh-400px)]">
           <div className="px-4 pb-4 space-y-4">
-            {/* Data Elements */}
             <div>
               <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">
                 Data Fields
@@ -81,7 +79,6 @@ export const ElementToolbox: React.FC<ElementToolboxProps> = ({
               </div>
             </div>
 
-            {/* Decorative Elements */}
             <div>
               <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">
                 Decorative
