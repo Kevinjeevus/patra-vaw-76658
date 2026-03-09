@@ -220,7 +220,6 @@ export const ElementProperties: React.FC<ElementPropertiesProps> = ({
                         <Switch
                           checked={element.aiStylizationEnabled || false}
                           onCheckedChange={(checked) => {
-                            console.log('Switch toggled:', checked);
                             onUpdate({ aiStylizationEnabled: checked });
                           }}
                         />
