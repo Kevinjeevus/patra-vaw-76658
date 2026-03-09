@@ -51,13 +51,11 @@ export const ElementProperties: React.FC<ElementPropertiesProps> = ({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
-  console.log('ElementProperties rendered. Element:', element?.type, 'User:', !!user);
-
   if (!element) {
     return (
       <Card className="h-full">
         <CardHeader className="py-3 px-4">
-          <CardTitle className="text-sm font-medium">PROPERTIES [UPDATE]</CardTitle>
+          <CardTitle className="text-sm font-medium">Properties</CardTitle>
         </CardHeader>
         <CardContent className="flex items-center justify-center h-40 text-muted-foreground text-sm">
           Select an element to edit

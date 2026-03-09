@@ -495,7 +495,7 @@ export const StaffCardView: React.FC = () => {
                             userData={{
                                 company_logo_url: staffData.companyLogo,
                                 avatar_url: staffData.avatar_url,
-                                stylized_avatar_url: (staffData as any).stylized_avatar_url,
+                                
                                 display_name: staffData.fullName,
                                 job_title: staffData.jobTitle,
                                 employee_display_id: staffData.staffId,

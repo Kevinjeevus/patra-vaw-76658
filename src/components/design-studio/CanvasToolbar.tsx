@@ -108,7 +108,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
       {/* Canvas controls */}
       <ToolBtn icon={Grid3X3} label="Toggle Grid" onClick={onToggleGrid} active={showGrid} />
       <ToolBtn icon={Ruler} label="Toggle Ruler" onClick={onToggleRuler} active={showRuler} />
-      <ToolBtn icon={Distribute} label="Snap to Grid" onClick={onToggleSnap} active={snapToGrid} />
+      <ToolBtn icon={LayoutGrid} label="Snap to Grid" onClick={onToggleSnap} active={snapToGrid} />
 
       <Separator orientation="vertical" className="h-6 mx-1" />
 
