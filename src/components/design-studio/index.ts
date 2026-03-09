@@ -5,3 +5,6 @@ export { BackgroundSettings } from './BackgroundSettings';
 export { TemplateGallery } from './TemplateGallery';
 export { LayerManager } from './LayerManager';
 export { StudioXTemplateSelector } from './StudioXTemplateSelector';
+export { CanvasToolbar } from './CanvasToolbar';
+export { CanvasRuler } from './CanvasRuler';
+export { AlignmentGuides, calculateSnapGuides } from './AlignmentGuides';
