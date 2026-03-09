@@ -228,8 +228,6 @@ export const ElementProperties: React.FC<ElementPropertiesProps> = ({
                         />
                       </div>
 
-                      {console.log('AI Stylization Enabled:', element.aiStylizationEnabled)}
-
                       {(element.aiStylizationEnabled) && (
                         <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
                           <Label className="text-[10px]">AI Style Prompt</Label>
