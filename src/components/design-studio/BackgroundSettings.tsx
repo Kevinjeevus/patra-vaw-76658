@@ -5,8 +5,11 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { CanvasBackground, CardDimensions, DEFAULT_CARD_DIMENSIONS, VERTICAL_CARD_DIMENSIONS } from '@/types/design-studio';
-import { Upload, Image as ImageIcon, Palette, Sparkles } from 'lucide-react';
+import { Slider } from '@/components/ui/slider';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { CanvasBackground, CardDimensions, DEFAULT_CARD_DIMENSIONS, VERTICAL_CARD_DIMENSIONS, CARD_SIZE_PRESETS } from '@/types/design-studio';
+import { Upload, Image as ImageIcon, Palette, Sparkles, Grid3X3 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
@@ -39,6 +42,13 @@ const COLOR_PRESETS = [
   '#ec4899', '#db2777', '#be185d', '#9d174d',
 ];
 
+const PATTERN_TYPES = [
+  { value: 'dots', label: 'Dots' },
+  { value: 'grid', label: 'Grid' },
+  { value: 'diagonal', label: 'Diagonal' },
+  { value: 'crosshatch', label: 'Crosshatch' },
+];
+
 export const BackgroundSettings: React.FC<BackgroundSettingsProps> = ({
   background,
   dimensions,
@@ -59,17 +69,11 @@ export const BackgroundSettings: React.FC<BackgroundSettingsProps> = ({
       const fileExt = file.name.split('.').pop();
       const filePath = `${user.id}/id-backgrounds/${Date.now()}.${fileExt}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file);
-
+      const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, file);
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
-
-      onUpdateBackground({ type: 'image', value: publicUrl });
+      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath);
+      onUpdateBackground({ ...background, type: 'image', value: publicUrl });
       toast({ title: 'Background uploaded!' });
     } catch (error: any) {
       toast({ title: 'Upload failed', description: error.message, variant: 'destructive' });
@@ -79,16 +83,43 @@ export const BackgroundSettings: React.FC<BackgroundSettingsProps> = ({
   };
 
   return (
-    <Card className="h-full">
+    <Card className="h-full border-0 rounded-none">
       <CardHeader className="py-3 px-4">
         <CardTitle className="text-sm font-medium">Background & Size</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         <ScrollArea className="h-[calc(100vh-400px)]">
           <div className="px-4 pb-4 space-y-4">
+            {/* Card Size Presets */}
+            <div>
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Card Size</Label>
+              <Select onValueChange={(val) => {
+                const preset = CARD_SIZE_PRESETS.find(p => p.name === val);
+                if (preset && preset.name !== 'Custom') {
+                  onUpdateDimensions({
+                    width: preset.width,
+                    height: preset.height,
+                    orientation: preset.width > preset.height ? 'horizontal' : 'vertical',
+                    unit: 'px',
+                  });
+                }
+              }}>
+                <SelectTrigger className="h-8 text-xs mt-1">
+                  <SelectValue placeholder="Select preset..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {CARD_SIZE_PRESETS.map(p => (
+                    <SelectItem key={p.name} value={p.name}>
+                      {p.name} <span className="text-muted-foreground">({p.description})</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Card Orientation */}
             <div>
-              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Card Orientation</Label>
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Orientation</Label>
               <div className="flex gap-2 mt-2">
                 <Button
                   variant={dimensions.orientation === 'horizontal' ? 'default' : 'outline'}
@@ -109,20 +140,55 @@ export const BackgroundSettings: React.FC<BackgroundSettingsProps> = ({
               </div>
             </div>
 
+            {/* Custom Dimensions */}
+            <div>
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Custom Dimensions</Label>
+              <div className="grid grid-cols-2 gap-2 mt-1">
+                <div>
+                  <Label className="text-[10px]">Width (px)</Label>
+                  <Input
+                    type="number"
+                    value={dimensions.width}
+                    onChange={(e) => onUpdateDimensions({ ...dimensions, width: parseInt(e.target.value) || 100 })}
+                    className="h-7 text-xs"
+                    min={100}
+                    max={1000}
+                  />
+                </div>
+                <div>
+                  <Label className="text-[10px]">Height (px)</Label>
+                  <Input
+                    type="number"
+                    value={dimensions.height}
+                    onChange={(e) => onUpdateDimensions({ ...dimensions, height: parseInt(e.target.value) || 100 })}
+                    className="h-7 text-xs"
+                    min={100}
+                    max={1000}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
             {/* Background Type Tabs */}
             <Tabs defaultValue="color" className="w-full">
-              <TabsList className="w-full grid grid-cols-3">
-                <TabsTrigger value="color" className="text-xs">
-                  <Palette className="w-3 h-3 mr-1" />
+              <TabsList className="w-full grid grid-cols-4">
+                <TabsTrigger value="color" className="text-[10px]">
+                  <Palette className="w-3 h-3 mr-0.5" />
                   Color
                 </TabsTrigger>
-                <TabsTrigger value="gradient" className="text-xs">
-                  <Sparkles className="w-3 h-3 mr-1" />
+                <TabsTrigger value="gradient" className="text-[10px]">
+                  <Sparkles className="w-3 h-3 mr-0.5" />
                   Gradient
                 </TabsTrigger>
-                <TabsTrigger value="image" className="text-xs">
-                  <ImageIcon className="w-3 h-3 mr-1" />
+                <TabsTrigger value="image" className="text-[10px]">
+                  <ImageIcon className="w-3 h-3 mr-0.5" />
                   Image
+                </TabsTrigger>
+                <TabsTrigger value="pattern" className="text-[10px]">
+                  <Grid3X3 className="w-3 h-3 mr-0.5" />
+                  Pattern
                 </TabsTrigger>
               </TabsList>
 
@@ -168,8 +234,7 @@ export const BackgroundSettings: React.FC<BackgroundSettingsProps> = ({
                       type="color"
                       value={background.value || '#667eea'}
                       onChange={(e) => onUpdateBackground({ 
-                        type: 'gradient', 
-                        value: e.target.value,
+                        type: 'gradient', value: e.target.value,
                         secondaryValue: background.secondaryValue || '#764ba2',
                         gradientDirection: background.gradientDirection || '135deg',
                       })}
@@ -182,14 +247,29 @@ export const BackgroundSettings: React.FC<BackgroundSettingsProps> = ({
                       type="color"
                       value={background.secondaryValue || '#764ba2'}
                       onChange={(e) => onUpdateBackground({ 
-                        type: 'gradient', 
-                        value: background.value || '#667eea',
+                        type: 'gradient', value: background.value || '#667eea',
                         secondaryValue: e.target.value,
                         gradientDirection: background.gradientDirection || '135deg',
                       })}
                       className="h-10 w-full p-1 cursor-pointer"
                     />
                   </div>
+                </div>
+                <div>
+                  <Label className="text-xs">Direction</Label>
+                  <Select
+                    value={background.gradientDirection || '135deg'}
+                    onValueChange={(val) => onUpdateBackground({ ...background, type: 'gradient', gradientDirection: val })}
+                  >
+                    <SelectTrigger className="h-8 text-xs mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {['0deg', '45deg', '90deg', '135deg', '180deg', '225deg', '270deg', '315deg'].map(d => (
+                        <SelectItem key={d} value={d}>{d}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <Label className="text-xs">Presets</Label>
@@ -200,10 +280,8 @@ export const BackgroundSettings: React.FC<BackgroundSettingsProps> = ({
                         className="h-10 rounded border border-border hover:ring-2 hover:ring-primary transition-all text-xs text-white font-medium"
                         style={{ background: `linear-gradient(${preset.direction}, ${preset.value}, ${preset.secondary})` }}
                         onClick={() => onUpdateBackground({ 
-                          type: 'gradient', 
-                          value: preset.value,
-                          secondaryValue: preset.secondary,
-                          gradientDirection: preset.direction,
+                          type: 'gradient', value: preset.value,
+                          secondaryValue: preset.secondary, gradientDirection: preset.direction,
                         })}
                       >
                         {preset.name}
@@ -219,38 +297,34 @@ export const BackgroundSettings: React.FC<BackgroundSettingsProps> = ({
                   <div className="mt-1">
                     <label className="flex flex-col items-center justify-center h-24 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
                       <Upload className="w-6 h-6 text-muted-foreground mb-1" />
-                      <span className="text-xs text-muted-foreground">
-                        {isUploading ? 'Uploading...' : 'Click to upload'}
-                      </span>
-                      <input
-                        type="file"
-                        className="hidden"
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                        disabled={isUploading}
-                      />
+                      <span className="text-xs text-muted-foreground">{isUploading ? 'Uploading...' : 'Click to upload'}</span>
+                      <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} disabled={isUploading} />
                     </label>
                   </div>
                 </div>
                 {background.type === 'image' && background.value && (
-                  <div>
-                    <Label className="text-xs">Current Background</Label>
-                    <div className="mt-1 relative rounded-lg overflow-hidden aspect-video">
-                      <img 
-                        src={background.value} 
-                        alt="Background" 
-                        className="w-full h-full object-cover"
-                      />
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        className="absolute bottom-2 right-2"
-                        onClick={() => onUpdateBackground({ type: 'color', value: '#ffffff' })}
-                      >
-                        Remove
-                      </Button>
+                  <>
+                    <div>
+                      <Label className="text-xs">Current Background</Label>
+                      <div className="mt-1 relative rounded-lg overflow-hidden aspect-video">
+                        <img src={background.value} alt="Background" className="w-full h-full object-cover" />
+                        <Button variant="secondary" size="sm" className="absolute bottom-2 right-2"
+                          onClick={() => onUpdateBackground({ type: 'color', value: '#ffffff' })}>
+                          Remove
+                        </Button>
+                      </div>
                     </div>
-                  </div>
+                    <div>
+                      <Label className="text-[10px]">Blur</Label>
+                      <Slider
+                        value={[background.blur || 0]}
+                        onValueChange={([v]) => onUpdateBackground({ ...background, blur: v })}
+                        max={20}
+                        step={1}
+                        className="mt-1"
+                      />
+                    </div>
+                  </>
                 )}
                 <div>
                   <Label className="text-xs">Or enter URL</Label>
@@ -258,15 +332,78 @@ export const BackgroundSettings: React.FC<BackgroundSettingsProps> = ({
                     type="url"
                     placeholder="https://example.com/image.jpg"
                     className="mt-1"
-                    onChange={(e) => {
-                      if (e.target.value) {
-                        onUpdateBackground({ type: 'image', value: e.target.value });
-                      }
-                    }}
+                    onChange={(e) => { if (e.target.value) onUpdateBackground({ type: 'image', value: e.target.value }); }}
                   />
                 </div>
               </TabsContent>
+
+              <TabsContent value="pattern" className="mt-3 space-y-3">
+                <div>
+                  <Label className="text-xs">Base Color</Label>
+                  <Input
+                    type="color"
+                    value={background.value || '#f8fafc'}
+                    onChange={(e) => onUpdateBackground({ ...background, type: 'pattern', value: e.target.value })}
+                    className="h-10 w-full p-1 cursor-pointer mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Pattern Type</Label>
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    {PATTERN_TYPES.map(pt => (
+                      <Button
+                        key={pt.value}
+                        variant={background.patternType === pt.value ? 'default' : 'outline'}
+                        size="sm"
+                        className="text-xs"
+                        onClick={() => onUpdateBackground({ ...background, type: 'pattern', patternType: pt.value })}
+                      >
+                        {pt.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              </TabsContent>
             </Tabs>
+
+            <Separator />
+
+            {/* Overlay */}
+            <div>
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Overlay Color</Label>
+              <div className="flex gap-2 mt-1">
+                <Input
+                  type="color"
+                  value={background.overlayColor || '#000000'}
+                  onChange={(e) => onUpdateBackground({ ...background, overlayColor: e.target.value })}
+                  className="h-8 w-12 p-1 cursor-pointer"
+                />
+                <Input
+                  type="text"
+                  value={background.overlayColor || ''}
+                  onChange={(e) => onUpdateBackground({ ...background, overlayColor: e.target.value || undefined })}
+                  className="h-8 text-xs flex-1"
+                  placeholder="None"
+                />
+                {background.overlayColor && (
+                  <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => onUpdateBackground({ ...background, overlayColor: undefined })}>
+                    Clear
+                  </Button>
+                )}
+              </div>
+              {background.overlayColor && (
+                <div className="mt-2">
+                  <Label className="text-[10px]">Overlay Opacity</Label>
+                  <Slider
+                    value={[(background.opacity || 0.3) * 100]}
+                    onValueChange={([v]) => onUpdateBackground({ ...background, opacity: v / 100 })}
+                    max={100}
+                    step={5}
+                    className="mt-1"
+                  />
+                </div>
+              )}
+            </div>
           </div>
         </ScrollArea>
       </CardContent>
