@@ -3,10 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
-  Undo, Redo, Copy, Trash2, Lock, Unlock, Group, Ungroup,
+  Undo, Redo, Copy, Trash2, Lock, Unlock,
   AlignStartVertical, AlignEndVertical, AlignCenterVertical,
   AlignStartHorizontal, AlignEndHorizontal, AlignCenterHorizontal,
-  Distribute, Grid3X3, Maximize, ZoomIn, ZoomOut, Ruler
+  LayoutGrid, Grid3X3, Maximize, ZoomIn, ZoomOut, Ruler
 } from 'lucide-react';
 import { CanvasElement } from '@/types/design-studio';
 
