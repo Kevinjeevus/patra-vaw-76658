@@ -1,4 +1,4 @@
-# SDKs & Libraries
+﻿# SDKs & Libraries
 
 Official and community SDKs for integrating Patra into your applications.
 
@@ -190,7 +190,7 @@ var card = await patra.Cards.GetAsync("johndoe");
 If there's no SDK for your language, use the REST API directly:
 
 ```bash
-curl https://api.patra.app/v1/cards/johndoe \
+curl https://vaw-patra.vercel.app/v1/cards/johndoe \
   -H "Authorization: Bearer sk_live_xxxxxxxxxxxxx"
 ```
 
@@ -282,7 +282,7 @@ Want to create an SDK for your favorite language? Check out our [SDK Development
 
 ## Support
 
-- **Documentation**: https://docs.patra.app
+- **Documentation**: https://vaw-patra.vercel.app/docs
 - **GitHub**: https://github.com/patra
 - **Discord**: https://discord.gg/patra
 - **Email**: developers@patra.app

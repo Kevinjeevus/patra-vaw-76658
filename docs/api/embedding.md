@@ -1,4 +1,4 @@
-# Embedding Patra Cards
+﻿# Embedding Patra Cards
 
 Embed Patra digital cards on any website, blog, or application with our simple embed solutions.
 
@@ -13,7 +13,7 @@ The easiest way to embed a Patra card. The script automatically finds and render
      data-user="johndoe" 
      data-theme="light">
 </div>
-<script src="https://patra.app/embed.js" async></script>
+<script src="https://vaw-patra.vercel.app/embed.js" async></script>
 ```
 
 **Attributes:**
@@ -28,7 +28,7 @@ For complete isolation and security:
 
 ```html
 <iframe
-  src="https://patra.app/embed/johndoe?theme=light"
+  src="https://vaw-patra.vercel.app/embed/johndoe?theme=light"
   width="400"
   height="600"
   frameborder="0"
@@ -101,7 +101,7 @@ Make the card responsive:
        data-height="600">
   </div>
 </div>
-<script src="https://patra.app/embed.js" async></script>
+<script src="https://vaw-patra.vercel.app/embed.js" async></script>
 ```
 
 ## Advanced Usage
@@ -115,7 +115,7 @@ Embed multiple cards on the same page:
 <div class="patra-embed" data-user="janedoe"></div>
 <div class="patra-embed" data-user="bobsmith"></div>
 
-<script src="https://patra.app/embed.js" async></script>
+<script src="https://vaw-patra.vercel.app/embed.js" async></script>
 ```
 
 ### Custom Styling
@@ -153,7 +153,7 @@ Add this to your WordPress post or page:
 
 ```html
 <div class="patra-embed" data-user="johndoe"></div>
-<script src="https://patra.app/embed.js" async></script>
+<script src="https://vaw-patra.vercel.app/embed.js" async></script>
 ```
 
 ## Webflow Integration
@@ -215,7 +215,7 @@ Use the iframe method if you encounter CORS issues.
        data-height="500">
   </div>
 </aside>
-<script src="https://patra.app/embed.js" async></script>
+<script src="https://vaw-patra.vercel.app/embed.js" async></script>
 ```
 
 ### Team Page
@@ -232,7 +232,7 @@ Use the iframe method if you encounter CORS issues.
     <div class="patra-embed" data-user="bobsmith"></div>
   </div>
 </div>
-<script src="https://patra.app/embed.js" async></script>
+<script src="https://vaw-patra.vercel.app/embed.js" async></script>
 ```
 
 ### Email Signature
@@ -240,7 +240,7 @@ Use the iframe method if you encounter CORS issues.
 For email signatures, use a linked image instead:
 
 ```html
-<a href="https://patra.app/johndoe">
-  <img src="https://patra.app/cards/johndoe/badge.png" alt="View my Patra card">
+<a href="https://vaw-patra.vercel.app/johndoe">
+  <img src="https://vaw-patra.vercel.app/cards/johndoe/badge.png" alt="View my Patra card">
 </a>
 ```

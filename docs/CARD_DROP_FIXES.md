@@ -1,4 +1,4 @@
-# Card Drop Feature - Final Updates
+﻿# Card Drop Feature - Final Updates
 
 ## ✅ Changes Made
 
@@ -96,7 +96,7 @@ const { data: cardData } = await supabase
 3. User can enter:
    - `@abc123` (with @ prefix)
    - `abc123` (without @ prefix)
-   - Full URL: `https://patra.app/abc123`
+   - Full URL: `https://vaw-patra.vercel.app/abc123`
 4. System queries `digital_cards` table for matching `vanity_url`
 5. Fetches owner's profile data via join
 6. Shows preview with name, job title, avatar

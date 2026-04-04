@@ -1,4 +1,4 @@
-# API Endpoints Reference
+﻿# API Endpoints Reference
 
 Complete reference for all Patra API endpoints.
 
@@ -16,7 +16,7 @@ Retrieve public details for a specific user card.
 **Example Request:**
 
 ```bash
-curl https://api.patra.app/v1/cards/johndoe \
+curl https://vaw-patra.vercel.app/v1/cards/johndoe \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
@@ -30,7 +30,7 @@ curl https://api.patra.app/v1/cards/johndoe \
   "jobTitle": "Senior Software Engineer",
   "company": "Tech Corp",
   "bio": "Building the future of digital identity",
-  "avatarUrl": "https://patra.app/storage/avatars/johndoe.jpg",
+  "avatarUrl": "https://vaw-patra.vercel.app/storage/avatars/johndoe.jpg",
   "email": "john@example.com",
   "phone": "+1234567890",
   "location": "San Francisco, CA",
@@ -51,7 +51,7 @@ curl https://api.patra.app/v1/cards/johndoe \
     "primaryColor": "#3b82f6",
     "layout": "modern"
   },
-  "qrCodeUrl": "https://patra.app/qr/johndoe.png",
+  "qrCodeUrl": "https://vaw-patra.vercel.app/qr/johndoe.png",
   "createdAt": "2024-01-15T10:30:00Z",
   "updatedAt": "2024-11-28T14:22:00Z"
 }
@@ -73,7 +73,7 @@ Search for user cards by name, job title, or company.
 **Example Request:**
 
 ```bash
-curl "https://api.patra.app/v1/cards/search?q=engineer&limit=5" \
+curl "https://vaw-patra.vercel.app/v1/cards/search?q=engineer&limit=5" \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
@@ -117,7 +117,7 @@ Download a user's contact information in vCard format.
 **Example Request:**
 
 ```bash
-curl https://api.patra.app/v1/cards/johndoe/vcard \
+curl https://vaw-patra.vercel.app/v1/cards/johndoe/vcard \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -o johndoe.vcf
 ```
@@ -153,7 +153,7 @@ Retrieve analytics data for a specific card (requires ownership).
 **Example Request:**
 
 ```bash
-curl "https://api.patra.app/v1/cards/johndoe/analytics?period=30d" \
+curl "https://vaw-patra.vercel.app/v1/cards/johndoe/analytics?period=30d" \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
@@ -200,7 +200,7 @@ Create a new user account by providing just the Patra username. User details wil
 **Example Request:**
 
 ```bash
-curl -X POST https://api.patra.app/v1/users/quick-create \
+curl -X POST https://vaw-patra.vercel.app/v1/users/quick-create \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"patraUsername": "johndoe"}'
@@ -233,7 +233,7 @@ Retrieve detailed profile information for a user.
 **Example Request:**
 
 ```bash
-curl https://api.patra.app/v1/users/johndoe \
+curl https://vaw-patra.vercel.app/v1/users/johndoe \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
@@ -255,7 +255,7 @@ Get the embed code for a specific card.
 **Example Request:**
 
 ```bash
-curl "https://api.patra.app/v1/embed/johndoe?theme=dark" \
+curl "https://vaw-patra.vercel.app/v1/embed/johndoe?theme=dark" \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
@@ -263,9 +263,9 @@ curl "https://api.patra.app/v1/embed/johndoe?theme=dark" \
 
 ```json
 {
-  "embedCode": "<div class=\"patra-embed\" data-user=\"johndoe\" data-theme=\"dark\"></div><script src=\"https://patra.app/embed.js\" async></script>",
-  "iframeCode": "<iframe src=\"https://patra.app/embed/johndoe?theme=dark\" width=\"400\" height=\"600\" frameborder=\"0\"></iframe>",
-  "previewUrl": "https://patra.app/embed/johndoe?theme=dark"
+  "embedCode": "<div class=\"patra-embed\" data-user=\"johndoe\" data-theme=\"dark\"></div><script src=\"https://vaw-patra.vercel.app/embed.js\" async></script>",
+  "iframeCode": "<iframe src=\"https://vaw-patra.vercel.app/embed/johndoe?theme=dark\" width=\"400\" height=\"600\" frameborder=\"0\"></iframe>",
+  "previewUrl": "https://vaw-patra.vercel.app/embed/johndoe?theme=dark"
 }
 ```
 

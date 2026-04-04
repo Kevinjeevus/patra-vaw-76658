@@ -1,4 +1,4 @@
-# Authentication
+﻿# Authentication
 
 The Patra API uses API keys to authenticate requests. You can view and manage your API keys in the Developer Dashboard.
 
@@ -24,14 +24,14 @@ API keys are used to authenticate your application with the Patra API. Each key 
 Include your API key in the `Authorization` header using Bearer authentication:
 
 ```bash
-curl https://api.patra.app/v1/cards/johndoe \
+curl https://vaw-patra.vercel.app/v1/cards/johndoe \
   -H "Authorization: Bearer sk_live_xxxxxxxxxxxxx"
 ```
 
 ### JavaScript Example
 
 ```javascript
-const response = await fetch('https://api.patra.app/v1/cards/johndoe', {
+const response = await fetch('https://vaw-patra.vercel.app/v1/cards/johndoe', {
   headers: {
     'Authorization': 'Bearer sk_live_xxxxxxxxxxxxx'
   }
@@ -50,7 +50,7 @@ headers = {
 }
 
 response = requests.get(
-    'https://api.patra.app/v1/cards/johndoe',
+    'https://vaw-patra.vercel.app/v1/cards/johndoe',
     headers=headers
 )
 
@@ -62,7 +62,7 @@ data = response.json()
 ```javascript
 const axios = require('axios');
 
-const response = await axios.get('https://api.patra.app/v1/cards/johndoe', {
+const response = await axios.get('https://vaw-patra.vercel.app/v1/cards/johndoe', {
   headers: {
     'Authorization': 'Bearer sk_live_xxxxxxxxxxxxx'
   }

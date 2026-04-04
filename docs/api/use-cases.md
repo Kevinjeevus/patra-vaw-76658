@@ -1,4 +1,4 @@
-# Patra API - Use Cases
+﻿# Patra API - Use Cases
 
 Real-world examples of what you can build with the Patra API.
 
@@ -48,7 +48,7 @@ console.log(user);
   <div class="patra-embed" data-user="cto"></div>
   <div class="patra-embed" data-user="designer"></div>
 </div>
-<script src="https://patra.app/embed.js" async></script>
+<script src="https://vaw-patra.vercel.app/embed.js" async></script>
 ```
 
 **Benefits:**
@@ -154,7 +154,7 @@ app.post('/webhooks/patra', async (req, res) => {
     <!-- Article content -->
   </div>
 </article>
-<script src="https://patra.app/embed.js" async></script>
+<script src="https://vaw-patra.vercel.app/embed.js" async></script>
 ```
 
 **Benefits:**
@@ -194,7 +194,7 @@ async function handleApplication(patraUsername) {
     linkedin: candidate.socialLinks.linkedin,
     portfolio: candidate.website,
     bio: candidate.bio,
-    profileUrl: `https://patra.app/${patraUsername}`
+    profileUrl: `https://vaw-patra.vercel.app/${patraUsername}`
   });
 }
 ```
@@ -298,7 +298,7 @@ const signature = `
     <a href="${card.socialLinks.linkedin}">LinkedIn</a> | 
     <a href="${card.website}">Website</a>
   </div>
-  <a href="https://patra.app/${card.username}">
+  <a href="https://vaw-patra.vercel.app/${card.username}">
     View my digital card
   </a>
 </div>

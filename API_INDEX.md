@@ -1,4 +1,4 @@
-# Patra API - Complete Implementation ✨
+﻿# Patra API - Complete Implementation ✨
 
 ## 🎉 What's Been Created
 
@@ -45,7 +45,7 @@ Body: { "patraUsername": "johndoe" }
 ### 2. **Card Embedding**
 ```html
 <div class="patra-embed" data-user="johndoe"></div>
-<script src="https://patra.app/embed.js" async></script>
+<script src="https://vaw-patra.vercel.app/embed.js" async></script>
 ```
 Embed digital cards on **any website** with one line of code.
 

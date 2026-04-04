@@ -1,4 +1,4 @@
-# Backend Integration Status - Card Dropping Feature
+﻿# Backend Integration Status - Card Dropping Feature
 
 ## ✅ Completed
 
@@ -44,7 +44,7 @@ The Supabase generated types don't include the new tables (`saved_profiles`, `pr
 The `profiles` table doesn't have a `username` column. The current implementation uses `vanity_url` from `digital_cards` as the identifier.
 
 **Current Flow:**
-1. User scans QR code containing: `https://patra.app/{vanity_url}`
+1. User scans QR code containing: `https://vaw-patra.vercel.app/{vanity_url}`
 2. System extracts `vanity_url`
 3. Queries `digital_cards` table to find the card
 4. Joins with `profiles` table to get owner's profile data

@@ -1,4 +1,4 @@
-# Patra API - Getting Started
+﻿# Patra API - Getting Started
 
 Welcome to the Patra API! This guide will help you get started with integrating Patra's digital identity platform into your application.
 
@@ -6,7 +6,7 @@ Welcome to the Patra API! This guide will help you get started with integrating 
 
 ### 1. Get Your API Key
 
-1. Sign up for a Patra account at [https://patra.app](https://patra.app)
+1. Sign up for a Patra account at [https://vaw-patra.vercel.app](https://vaw-patra.vercel.app)
 2. Navigate to Settings → Developer
 3. Generate a new API key
 4. Keep your API key secure - treat it like a password!
@@ -14,7 +14,7 @@ Welcome to the Patra API! This guide will help you get started with integrating 
 ### 2. Make Your First Request
 
 ```bash
-curl https://api.patra.app/v1/cards/johndoe \
+curl https://vaw-patra.vercel.app/v1/cards/johndoe \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
@@ -38,7 +38,7 @@ curl https://api.patra.app/v1/cards/johndoe \
 All API requests should be made to:
 
 ```
-https://api.patra.app/v1
+https://vaw-patra.vercel.app/v1
 ```
 
 ## Authentication

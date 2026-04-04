@@ -1,4 +1,4 @@
-# Patra Dashboard Redesign - Complete Implementation Plan
+﻿# Patra Dashboard Redesign - Complete Implementation Plan
 
 ## 📋 Overview
 
@@ -355,7 +355,7 @@ interface ActivityItem {
 │   │                         │      │
 │   └─────────────────────────┘      │
 │                                     │
-│   patra.app/:username?card          │
+│   vaw-patra.vercel.app/:username?card          │
 │                                     │
 │   ☀️ Screen brightness boosted     │
 │   ⏱️ Expires in: 28:45              │

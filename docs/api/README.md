@@ -1,4 +1,4 @@
-# Patra API Documentation
+﻿# Patra API Documentation
 
 Complete documentation for the Patra API - integrate digital identity features into your applications.
 
@@ -41,7 +41,7 @@ Display user cards on any website with a simple embed code.
 
 ```html
 <div class="patra-embed" data-user="johndoe"></div>
-<script src="https://patra.app/embed.js" async></script>
+<script src="https://vaw-patra.vercel.app/embed.js" async></script>
 ```
 
 ### 3. **Real-time Sync**
@@ -65,7 +65,7 @@ Authenticate your requests using API keys. Get yours from the [Developer Dashboa
 
 ### Base URL
 ```
-https://api.patra.app/v1
+https://vaw-patra.vercel.app/v1
 ```
 
 ## 🔑 Key Features
@@ -134,14 +134,14 @@ We provide official SDKs for:
 
 ### Step 1: Get Your API Key
 ```
-1. Sign up at https://patra.app
+1. Sign up at https://vaw-patra.vercel.app
 2. Go to Settings → Developer
 3. Generate a new API key
 ```
 
 ### Step 2: Make Your First Request
 ```bash
-curl https://api.patra.app/v1/cards/johndoe \
+curl https://vaw-patra.vercel.app/v1/cards/johndoe \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
@@ -179,7 +179,7 @@ Need help? We're here for you:
 - **Email**: developers@patra.app
 - **Discord**: https://discord.gg/patra
 - **GitHub**: https://github.com/patra
-- **Status Page**: https://status.patra.app
+- **Status Page**: https://status.vaw-patra.vercel.app
 
 ## 🎓 Tutorials
 
@@ -193,9 +193,9 @@ Coming soon:
 ## 📄 License & Terms
 
 By using the Patra API, you agree to our:
-- [Terms of Service](https://patra.app/terms)
-- [Privacy Policy](https://patra.app/privacy)
-- [API Terms](https://patra.app/api-terms)
+- [Terms of Service](https://vaw-patra.vercel.app/terms)
+- [Privacy Policy](https://vaw-patra.vercel.app/privacy)
+- [API Terms](https://vaw-patra.vercel.app/api-terms)
 
 ## 🔄 Changelog
 

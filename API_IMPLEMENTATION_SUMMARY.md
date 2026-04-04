@@ -1,4 +1,4 @@
-# Patra API Implementation Summary
+﻿# Patra API Implementation Summary
 
 ## 🎉 What We've Built
 
@@ -168,7 +168,7 @@ Just provide a Patra username, and all user details are fetched from our server 
 ### 3. **Card Embedding**
 Three ways to embed cards:
 - **Script tag**: `<div class="patra-embed" data-user="johndoe"></div>`
-- **Iframe**: `<iframe src="https://patra.app/embed/johndoe"></iframe>`
+- **Iframe**: `<iframe src="https://vaw-patra.vercel.app/embed/johndoe"></iframe>`
 - **React**: `<PatraCard username="johndoe" />`
 
 ### 4. **Search Functionality**

@@ -1,4 +1,4 @@
-# Card Dropping Feature - Complete Implementation Plan
+﻿# Card Dropping Feature - Complete Implementation Plan
 
 ## 📋 Overview
 
@@ -437,7 +437,7 @@ Create a new card drop session and generate QR code.
 {
   "sessionId": "uuid",
   "sessionToken": "unique-token",
-  "qrCodeUrl": "https://patra.app/:username?card?token=xxx",
+  "qrCodeUrl": "https://vaw-patra.vercel.app/:username?card?token=xxx",
   "qrCodeDataUrl": "data:image/png;base64,...",
   "expiresAt": "2025-12-04T20:32:00Z"
 }

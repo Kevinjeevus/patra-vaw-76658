@@ -18,7 +18,9 @@ import {
   Server,
   ArrowLeft,
   Layout,
-  Play
+  Play,
+  Webhook,
+  Activity
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -161,6 +163,7 @@ export const ApiDocs: React.FC = () => {
     { id: 'introduction', label: 'Introduction', icon: BookOpen },
     { id: 'authentication', label: 'Authentication', icon: Key },
     { id: 'endpoints', label: 'Endpoints', icon: Server },
+    { id: 'webhooks', label: 'Webhooks', icon: Webhook },
     { id: 'embedding', label: 'Embedding', icon: Globe },
     { id: 'sdks', label: 'SDKs & Libraries', icon: Code },
   ];
@@ -267,20 +270,38 @@ export const ApiDocs: React.FC = () => {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Authorization Header</CardTitle>
-                  <CardDescription>Pass your API key in the header of your requests.</CardDescription>
+                  <CardTitle>Authentication Headers</CardTitle>
+                  <CardDescription>Pass your private API key in the header of your requests to access corporate endpoints.</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="bg-slate-950 text-slate-50 p-4 rounded-lg font-mono text-sm relative group">
-                    <code>Authorization: Bearer [YOUR_ANON_KEY]</code>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => handleCopy('Authorization: Bearer [YOUR_ANON_KEY]', 'auth-header')}
-                    >
-                      {copiedId === 'auth-header' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                    </Button>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase text-muted-foreground">For Public Get Card (Anon Key)</Label>
+                    <div className="bg-slate-950 text-slate-50 p-4 rounded-lg font-mono text-sm relative group">
+                      <code>Authorization: Bearer [YOUR_ANON_KEY]</code>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => handleCopy('Authorization: Bearer [YOUR_ANON_KEY]', 'auth-header')}
+                      >
+                        {copiedId === 'auth-header' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase text-muted-foreground">For Corporate API (Private Key)</Label>
+                    <div className="bg-slate-950 text-blue-400 p-4 rounded-lg font-mono text-sm relative group">
+                      <code>x-api-key: pk_live_[YOUR_PRIVATE_KEY]</code>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => handleCopy('x-api-key: pk_live_[YOUR_PRIVATE_KEY]', 'api-key-header')}
+                      >
+                        {copiedId === 'api-key-header' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -298,8 +319,10 @@ export const ApiDocs: React.FC = () => {
               </div>
 
               <Tabs defaultValue="get-card" className="w-full">
-                <TabsList className="w-full justify-start">
-                  <TabsTrigger value="get-card">Get Card</TabsTrigger>
+                <TabsList className="w-full justify-start border-b rounded-none bg-transparent h-auto p-0 gap-6">
+                  <TabsTrigger value="get-card" className="data-[state=active]:border-primary data-[state=active]:bg-transparent border-b-2 border-transparent rounded-none px-0 pb-3">Get Card</TabsTrigger>
+                  <TabsTrigger value="create-staff" className="data-[state=active]:border-primary data-[state=active]:bg-transparent border-b-2 border-transparent rounded-none px-0 pb-3">Create Staff (Corporate)</TabsTrigger>
+                  <TabsTrigger value="update-staff" className="data-[state=active]:border-primary data-[state=active]:bg-transparent border-b-2 border-transparent rounded-none px-0 pb-3">Update Staff</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="get-card" className="mt-6 space-y-6">
@@ -413,7 +436,134 @@ export const ApiDocs: React.FC = () => {
                     </CardContent>
                   </Card>
                 </TabsContent>
+
+                <TabsContent value="create-staff" className="mt-6 space-y-6">
+                  <div className="flex items-center gap-3">
+                    <Badge variant="default" className="bg-blue-600 hover:bg-blue-700">POST</Badge>
+                    <code className="text-lg font-mono">/functions/v1/api-v1/staff</code>
+                  </div>
+
+                  <p className="text-muted-foreground">
+                    Automatically create or issue an ID card when a new staff member is added to your system.
+                  </p>
+
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Request Body (JSON)</h3>
+                    <div className="bg-slate-950 text-slate-50 p-4 rounded-lg font-mono text-sm">
+                      <pre>{`{
+  "email": "string",
+  "display_name": "string",
+  "job_title": "string",
+  "staff_id": "string (optional)",
+  "phone": "string (optional)",
+  "metadata": {
+    "department": "string",
+    "location": "string"
+  }
+}`}</pre>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Success Response</h3>
+                    <div className="bg-slate-950 text-slate-50 p-4 rounded-lg font-mono text-sm">
+                      <pre>{`{
+  "success": true,
+  "card": {
+    "id": "uuid",
+    "staff_id": "string",
+    "url": "https://patra.app/your-company/STF-123",
+    "qr_code": "imageUrl"
+  }
+}`}</pre>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="update-staff" className="mt-6 space-y-6">
+                  <div className="flex items-center gap-3">
+                    <Badge variant="default" className="bg-amber-600 hover:bg-amber-700">PATCH</Badge>
+                    <code className="text-lg font-mono">/functions/v1/api-v1/staff/:id</code>
+                  </div>
+
+                  <p className="text-muted-foreground">
+                    Update an existing staff member's profile data. Changes will be reflected on their digital card in real-time.
+                  </p>
+
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Path Parameters</h3>
+                    <div className="grid grid-cols-[1fr_2fr] gap-4 text-sm border-b pb-2">
+                      <div className="font-mono text-primary">id</div>
+                      <div className="text-muted-foreground">The <code>staff_id</code> of the employee to update.</div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Request Body</h3>
+                    <p className="text-sm text-muted-foreground">Specify only the fields you wish to update.</p>
+                    <div className="bg-slate-950 text-slate-50 p-4 rounded-lg font-mono text-sm">
+                      <pre>{`{
+  "job_title": "Senior Manager",
+  "phone": "+1234567890"
+}`}</pre>
+                    </div>
+                  </div>
+                </TabsContent>
               </Tabs>
+            </div>
+          )}
+
+          {/* Webhooks */}
+          {activeSection === 'webhooks' && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <h2 className="text-3xl font-bold">Webhooks</h2>
+              <p className="text-muted-foreground">
+                Stay in sync with real-time updates. Configure your webhook URL in the <span className="font-bold cursor-pointer underline" onClick={() => navigate('/dashboard?tab=api')}>Company Dashboard</span>.
+              </p>
+
+              <div className="space-y-8">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Webhook Payload Example</CardTitle>
+                    <CardDescription>All webhooks are sent as POST requests with a JSON body.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="bg-slate-950 text-slate-50 p-4 rounded-lg font-mono text-sm relative group">
+                      <pre>{`{
+  "event": "staff.added",
+  "timestamp": "2024-03-24T12:00:00Z",
+  "company_id": "uuid",
+  "data": {
+    "id": "uuid",
+    "staff_id": "STF-123",
+    "display_name": "Jane Doe",
+    "email": "jane@company.com",
+    "card_url": "https://patra.app/company/STF-123"
+  }
+}`}</pre>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => handleCopy('{"event": "staff.added", ...}', 'webhook-payload')}
+                      >
+                        {copiedId === 'webhook-payload' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <div className="space-y-4">
+                  <h3 className="text-xl font-bold">Verification</h3>
+                  <p className="text-muted-foreground">
+                    Each request includes a <code>X-Patra-Signature</code> header. You should verify this against your Webhook Secret to ensure the request came from us.
+                  </p>
+                  <div className="bg-muted p-4 rounded-xl border">
+                    <p className="text-sm font-mono text-primary mb-2">X-Patra-Signature: whsec_...</p>
+                    <p className="text-xs text-muted-foreground">Currently, we pass the secret directly for simplicity. True HMAC signatures are coming soon.</p>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 

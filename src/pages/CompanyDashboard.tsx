@@ -34,7 +34,13 @@ import {
   Download,
   ListChecks,
   Smartphone,
-  Check
+  Check,
+  Webhook,
+  Terminal,
+  Activity,
+  Code2,
+  Key,
+  Layout
 } from 'lucide-react';
 import { IDCardRenderer } from '@/components/card/IDCardRenderer';
 import { IDCardCustomizer } from '@/components/card/IDCardCustomizer';
@@ -130,6 +136,7 @@ export const CompanyDashboard: React.FC = () => {
       case 'data-collection': return 'parameters';
       case 'id-design': return 'display';
       case 'branding': return 'branding';
+      case 'api': return 'api';
       default: return 'staff';
     }
   };
@@ -143,6 +150,7 @@ export const CompanyDashboard: React.FC = () => {
       case 'parameters': return 'data-collection';
       case 'display': return 'id-design';
       case 'branding': return 'branding';
+      case 'api': return 'api';
       default: return 'employees';
     }
   };
@@ -188,6 +196,15 @@ export const CompanyDashboard: React.FC = () => {
   const [editingImage, setEditingImage] = useState<File | null>(null);
   const [imageCrop, setImageCrop] = useState({ scale: 1, x: 0, y: 0 });
   const [isUpdatingStaff, setIsUpdatingStaff] = useState(false);
+  const [apiSettings, setApiSettings] = useState({
+    webhook_url: '',
+    webhook_secret: '',
+    webhook_events: ['staff.added'],
+    api_key: '',
+    default_design_id: 'corporate-classic'
+  });
+  const [isSavingApi, setIsSavingApi] = useState(false);
+  const [copiedApiKey, setCopiedApiKey] = useState(false);
 
   useEffect(() => {
     // Only proceed once auth has finished loading the session
@@ -263,6 +280,15 @@ export const CompanyDashboard: React.FC = () => {
         ? data.display_parameters as string[]
         : ['display_name', 'email', 'job_title'];
       setDisplayParameters(displayParams);
+
+      const savedApiSettings = (data.display_parameters as any)?.api_settings || {};
+      setApiSettings({
+        webhook_url: savedApiSettings.webhook_url || '',
+        webhook_secret: savedApiSettings.webhook_secret || 'whsec_' + Math.random().toString(36).substring(7),
+        webhook_events: savedApiSettings.webhook_events || ['staff.added'],
+        api_key: savedApiSettings.api_key || 'pk_live_' + data.id.replace(/-/g, '').substring(0, 24),
+        default_design_id: savedApiSettings.default_design_id || 'corporate-classic'
+      });
 
       return data;
     } catch (error: any) {
@@ -346,6 +372,38 @@ export const CompanyDashboard: React.FC = () => {
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     }
+  };
+
+  const handleSaveApiSettings = async () => {
+    if (!profile) return;
+    setIsSavingApi(true);
+    try {
+      const currentDisplayParams = (profile.display_parameters as any) || {};
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          display_parameters: {
+            ...currentDisplayParams,
+            api_settings: apiSettings
+          }
+        })
+        .eq('id', profile.id);
+
+      if (error) throw error;
+      toast({ title: "Success", description: "API settings updated successfully" });
+      fetchProfile();
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setIsSavingApi(false);
+    }
+  };
+
+  const handleRegenerateApiKey = () => {
+    if (!confirm('Are you sure? Existing integrations using the old key will stop working.')) return;
+    const newKey = 'pk_live_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    setApiSettings(prev => ({ ...prev, api_key: newKey }));
+    toast({ title: "New API key generated", description: "Remember to save your changes." });
   };
 
   const generateStaffId = (): string => {
@@ -821,6 +879,7 @@ export const CompanyDashboard: React.FC = () => {
               <TabsTrigger value="parameters" className="rounded-lg px-6">Data Collection</TabsTrigger>
               <TabsTrigger value="display" className="rounded-lg px-6">ID Card Design</TabsTrigger>
               <TabsTrigger value="branding" className="rounded-lg px-6">Branding</TabsTrigger>
+              <TabsTrigger value="api" className="rounded-lg px-6">API & Integrations</TabsTrigger>
             </TabsList>
           </div>
 
@@ -2107,6 +2166,239 @@ export const CompanyDashboard: React.FC = () => {
                   )}
                 </CardContent>
               </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="api">
+            <div className="space-y-6">
+              {/* API Access Card */}
+              <Card className="bg-slate-900 text-white border-none shadow-xl overflow-hidden relative">
+                <div className="absolute top-0 right-0 p-8 opacity-10">
+                  <Terminal className="w-32 h-32" />
+                </div>
+                <CardHeader>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge variant="secondary" className="bg-blue-500/20 text-blue-300 border-none">Active V1</Badge>
+                  </div>
+                  <CardTitle className="text-2xl font-bold flex items-center gap-3">
+                    <Key className="w-6 h-6 text-blue-400" />
+                    Developer API Access
+                  </CardTitle>
+                  <CardDescription className="text-slate-400 max-w-xl">
+                    Integrate Patra with your existing HR systems, CRMs, or custom websites to automate staff card issuance and updates.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6 relative z-10">
+                  <div className="space-y-3">
+                    <Label className="text-slate-300 text-xs font-bold uppercase tracking-widest">Your Private API Key</Label>
+                    <div className="flex gap-2">
+                      <div className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 flex items-center h-12 font-mono text-sm text-blue-300">
+                        {apiSettings.api_key || 'Generate a key to start...'}
+                      </div>
+                      <Button
+                        variant="secondary"
+                        className="h-12 px-6 bg-white/10 hover:bg-white/20 border-none text-white transition-all hover:scale-105 active:scale-95"
+                        onClick={() => {
+                          navigator.clipboard.writeText(apiSettings.api_key);
+                          setCopiedApiKey(true);
+                          setTimeout(() => setCopiedApiKey(false), 2000);
+                          toast({ title: "Copied", description: "API Key copied to clipboard" });
+                        }}
+                      >
+                        {copiedApiKey ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        className="h-12 text-slate-400 hover:text-white hover:bg-white/5"
+                        onClick={handleRegenerateApiKey}
+                      >
+                        <RefreshCw className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <p className="text-[10px] text-slate-500 font-medium tracking-tight">Keep this key secret. Never share it in client-side code or public repositories.</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+                    <div className="p-5 bg-white/5 rounded-2xl border border-white/10 hover:bg-white/10 hover:border-blue-500/30 transition-all cursor-pointer group" onClick={() => navigate('/docs')}>
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                          <Code2 className="w-5 h-5 text-blue-400" />
+                        </div>
+                        <h4 className="font-bold text-lg">REST API Docs</h4>
+                      </div>
+                      <p className="text-sm text-slate-400 leading-relaxed">Full documentation for our JSON REST endpoints to create, update, and manage staff cards.</p>
+                    </div>
+                    <div className="p-5 bg-white/5 rounded-2xl border border-white/5 opacity-50 cursor-not-allowed">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                          <Activity className="w-5 h-5 text-purple-400" />
+                        </div>
+                        <h4 className="font-bold text-lg">GraphQL API</h4>
+                      </div>
+                      <p className="text-sm text-slate-400 leading-relaxed">Powerful GraphQL API for complex data queries and real-time subscriptions. (Coming Soon)</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Webhooks Card */}
+                <Card className="shadow-xl border-none bg-white rounded-3xl overflow-hidden">
+                  <CardHeader className="bg-slate-50/50 border-b border-slate-100">
+                    <CardTitle className="flex items-center gap-2 text-indigo-900">
+                      <Webhook className="w-5 h-5 text-indigo-600" />
+                      Real-time Webhooks
+                    </CardTitle>
+                    <CardDescription>Receive instant updates to your system when data changes on Patra.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6 pt-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="webhook-url" className="text-xs font-bold uppercase text-slate-500 tracking-wider">Target Endpoint URL</Label>
+                      <Input
+                        id="webhook-url"
+                        placeholder="https://your-api.com/webhooks/patra"
+                        value={apiSettings.webhook_url}
+                        onChange={(e) => setApiSettings(prev => ({ ...prev, webhook_url: e.target.value }))}
+                        className="bg-slate-50 border-slate-200 h-12 rounded-xl focus:ring-indigo-500"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                       <Label className="text-xs font-bold uppercase text-slate-500 tracking-wider">Signing Secret</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="webhook-secret"
+                          value={apiSettings.webhook_secret}
+                          readOnly
+                          className="bg-slate-50 border-slate-200 h-12 rounded-xl font-mono text-xs text-slate-600"
+                        />
+                        <Button variant="outline" className="h-12 w-12 rounded-xl border-slate-200 hover:bg-slate-100" onClick={() => {
+                          const newSecret = 'whsec_' + Math.random().toString(36).substring(2, 15);
+                          setApiSettings(prev => ({ ...prev, webhook_secret: newSecret }));
+                        }}>
+                          <RefreshCw className="w-4 h-4 text-slate-500" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="space-y-4 pt-2">
+                      <Label className="text-xs font-bold uppercase text-slate-500 tracking-wider">Event Subscription</Label>
+                      <div className="space-y-3">
+                        {[
+                          { id: 'staff.added', label: 'Staff Member Created', desc: 'Triggered when a new staff member is successfully added and card URL is generated.' },
+                          { id: 'profile.updated', label: 'Employee Data Updated', desc: 'Triggered when an employee modifies their profile details or photo.' },
+                          { id: 'card.viewed', label: 'Card Interaction Trace', desc: 'Real-time notification for every card view with analytics metadata.' }
+                        ].map(event => (
+                          <div key={event.id} className={`flex items-start gap-4 p-4 rounded-2xl border transition-all ${apiSettings.webhook_events.includes(event.id) ? 'bg-indigo-50/50 border-indigo-200 ring-4 ring-indigo-500/5' : 'bg-slate-50 border-slate-100'}`}>
+                            <Checkbox
+                              id={`event-${event.id}`}
+                              checked={apiSettings.webhook_events.includes(event.id)}
+                              className="mt-1 border-indigo-200 data-[state=checked]:bg-indigo-600"
+                              onCheckedChange={(checked) => {
+                                setApiSettings(prev => ({
+                                  ...prev,
+                                  webhook_events: checked
+                                    ? [...prev.webhook_events, event.id]
+                                    : prev.webhook_events.filter(e => e !== event.id)
+                                }));
+                              }}
+                            />
+                            <div className="space-y-1">
+                              <Label htmlFor={`event-${event.id}`} className="font-bold text-slate-900 cursor-pointer">{event.label}</Label>
+                              <p className="text-[11px] text-slate-500 leading-tight">{event.desc}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Default Design Selection */}
+                <Card className="shadow-xl border-none bg-white rounded-3xl overflow-hidden">
+                  <CardHeader className="bg-slate-50/50 border-b border-slate-100">
+                    <CardTitle className="flex items-center gap-2 text-indigo-900">
+                      <Layout className="w-5 h-5 text-indigo-600" />
+                      API Default Design
+                    </CardTitle>
+                    <CardDescription>Select the default template for all cards generated via API endpoints.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6 pt-6">
+                    <div className="grid grid-cols-2 gap-4">
+                      {ID_CARD_TEMPLATES.map(template => (
+                        <div
+                          key={template.id}
+                          className={`relative rounded-2xl border-2 p-4 cursor-pointer transition-all duration-300 hover:shadow-lg ${apiSettings.default_design_id === template.id ? 'border-indigo-600 bg-indigo-50/30' : 'border-slate-100 bg-slate-50/30 grayscale hover:grayscale-0'}`}
+                          onClick={() => setApiSettings(prev => ({ ...prev, default_design_id: template.id }))}
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="text-xs font-bold text-indigo-900 truncate">{template.name}</h4>
+                            {apiSettings.default_design_id === template.id && (
+                                <div className="bg-indigo-600 rounded-full p-0.5">
+                                    <Check className="w-3 h-3 text-white" />
+                                </div>
+                            )}
+                          </div>
+                          
+                          <div className="h-24 bg-slate-200 rounded-xl overflow-hidden relative shadow-inner">
+                             {/* Small mock preview */}
+                             <div 
+                                className="absolute inset-0 bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center"
+                                style={{ backgroundColor: template.defaultColors.background }}
+                             >
+                                <div className="text-[8px] opacity-20 rotate-[-20deg] font-black tracking-tighter italic select-none">PATRA CORPORATE</div>
+                             </div>
+                             <div 
+                                className="absolute top-0 left-0 right-0 h-1.5 opacity-60" 
+                                style={{ backgroundColor: template.defaultColors.primary }}
+                             />
+                             <div 
+                                className="absolute bottom-2 left-2 w-8 h-8 rounded-lg opacity-40 shadow-sm" 
+                                style={{ backgroundColor: template.defaultColors.accent }}
+                             />
+                          </div>
+                          
+                          {template.isPremium && (
+                            <Badge className="absolute top-2 right-2 scale-75 bg-amber-500 border-none text-white shadow-sm">PREMIUM</Badge>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="pt-6 border-t border-slate-100 space-y-4">
+                      <div className="bg-slate-900 rounded-2xl p-4 font-mono text-[10px] text-blue-300 overflow-hidden relative">
+                         <div className="flex items-center gap-2 mb-2 text-slate-500">
+                             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                             <span>POST /api/v1/staff</span>
+                         </div>
+                         <pre className="text-blue-200/80">
+{`{
+  "full_name": "Sarah Connor",
+  "email": "sarah@resistance.inc",
+  "design": "${apiSettings.default_design_id}"
+}`}
+                         </pre>
+                         <div className="absolute top-0 right-0 p-2 opacity-10">
+                            <Code2 className="w-12 h-12" />
+                         </div>
+                      </div>
+                      <p className="text-[11px] text-slate-500 text-center leading-relaxed italic">
+                        New staff members added via API will receive this design by default. You can override this per request using the <code>design</code> parameter.
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Save API Button */}
+              <div className="flex justify-end pt-10 pb-20">
+                <Button 
+                  onClick={handleSaveApiSettings} 
+                  disabled={isSavingApi}
+                  className="bg-indigo-600 hover:bg-indigo-700 px-12 shadow-2xl shadow-indigo-300 h-14 rounded-2xl text-xl font-bold transition-all hover:scale-[1.02] active:scale-95"
+                >
+                  {isSavingApi ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <ShieldCheck className="w-5 h-5 mr-2" />}
+                  Deploy API Configuration
+                </Button>
+              </div>
             </div>
           </TabsContent>
         </Tabs >
